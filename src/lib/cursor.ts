@@ -1,5 +1,9 @@
+import { CURSOR_NAME } from "./utils/latex_utils";
+
 export type CursorIndex = number;
 export type Cursor = CursorIndex[];
+
+const BLINK_INTERVAL = 530;
 
 interface CursorInfo {
   /* Indicates whether the current zocket is the parent of the cursor element */
@@ -30,3 +34,37 @@ export function extractCursorInfo(cursor: Cursor): CursorInfo {
     };
   }
 }
+
+class CursorBlink {
+  blinkInterval: NodeJS.Timer;
+  cursorVisible: boolean = true;
+
+  constructor() {
+    this.blinkInterval = this.genInterval();
+  }
+
+  private genInterval = () => setInterval(this.blink, BLINK_INTERVAL);
+
+  restartTimer() {
+    clearInterval(this.blinkInterval);
+    this.cursorVisible = true;
+    this.setDOMCursorVisibility();
+
+    this.blinkInterval = this.genInterval();
+  }
+
+  private blink = () => {
+    this.cursorVisible = !this.cursorVisible;
+    this.setDOMCursorVisibility();
+  };
+
+  private setDOMCursorVisibility() {
+    const cursor = document.getElementById(CURSOR_NAME);
+
+    if (cursor) {
+      cursor.style.visibility = this.cursorVisible ? "visible" : "hidden";
+    }
+  }
+}
+
+export const cursorBlink = new CursorBlink();

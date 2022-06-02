@@ -218,6 +218,9 @@ export class Zocket {
   };
 
   renderTex = (cursor: Cursor): string => {
+    // return "\\frac{1}{2}";
+    return CURSOR_LATEX;
+
     const { parentOfCursorElement, nextCursorIndex, childRelativeCursor } =
       extractCursorInfo(cursor);
 

@@ -1,4 +1,4 @@
-import { Cursor, CursorMoveResponse } from "./cursor";
+import { Cursor, cursorBlink, CursorMoveResponse } from "./cursor";
 import { Zocket } from "./zocket";
 
 export class ZymbolController {
@@ -35,6 +35,8 @@ export class ZymbolController {
     } else if (key === "Enter") {
       //   this.createZymbol();
     }
+
+    cursorBlink.restartTimer();
   };
 
   handleKeyPress = (e: KeyboardEvent) => {
