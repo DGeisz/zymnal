@@ -8,6 +8,7 @@ import { ZymbolController } from "./lib/zymbol_controller";
 function App() {
   const { rerender } = useRerender();
 
+  /* Create the zymbol controller */
   const zymbolController = useMemo(() => new ZymbolController(rerender), []);
 
   return (

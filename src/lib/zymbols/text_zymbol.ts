@@ -1,11 +1,16 @@
-import { Cursor, CursorMoveResponse, extractCursorInfo } from "../cursor";
+import {
+  Cursor,
+  CursorMoveResponse,
+  extractCursorInfo,
+  FAILED_CURSOR_MOVE_RESPONSE,
+} from "../cursor";
 import { create_tex_text, text_with_cursor } from "../utils/latex_utils";
-import { Zymbol } from "../zymbol";
+import { DeleteBehavior, Zymbol } from "../zymbol";
 
 export const TEXT_ZYMBOL_NAME = "text";
 
 export class TextZymbol extends Zymbol {
-  characters: string[] = [];
+  private characters: string[] = [];
 
   getName = () => TEXT_ZYMBOL_NAME;
   getCharacters = () => this.characters;
@@ -94,6 +99,8 @@ export class TextZymbol extends Zymbol {
   };
 
   renderTex = (cursor: Cursor) => {
+    console.log("renderTex", cursor);
+
     const { parentOfCursorElement, nextCursorIndex } =
       extractCursorInfo(cursor);
 
@@ -101,6 +108,28 @@ export class TextZymbol extends Zymbol {
       return text_with_cursor(this.characters.join(""), nextCursorIndex);
     } else {
       return create_tex_text(this.characters.join(""));
+    }
+  };
+
+  getDeleteBehavior = () => DeleteBehavior.ABSORB;
+
+  delete = (cursor: Cursor) => {
+    const { parentOfCursorElement, nextCursorIndex } =
+      extractCursorInfo(cursor);
+
+    if (parentOfCursorElement) {
+      if (nextCursorIndex === 0) {
+        return FAILED_CURSOR_MOVE_RESPONSE;
+      }
+
+      this.characters.splice(nextCursorIndex - 1, 1);
+
+      return {
+        success: true,
+        newRelativeCursor: [nextCursorIndex - 1],
+      };
+    } else {
+      return FAILED_CURSOR_MOVE_RESPONSE;
     }
   };
 }

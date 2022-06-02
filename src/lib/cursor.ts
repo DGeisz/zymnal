@@ -19,6 +19,11 @@ export interface CursorMoveResponse {
   newRelativeCursor: Cursor;
 }
 
+export const FAILED_CURSOR_MOVE_RESPONSE: CursorMoveResponse = {
+  success: false,
+  newRelativeCursor: [],
+};
+
 export function extractCursorInfo(cursor: Cursor): CursorInfo {
   if (cursor.length === 1) {
     return {
@@ -32,6 +37,20 @@ export function extractCursorInfo(cursor: Cursor): CursorInfo {
       nextCursorIndex: cursor.length > 0 ? cursor[0] : -1,
       childRelativeCursor: cursor.slice(1),
     };
+  }
+}
+
+export function wrapChildCursorResponse(
+  res: CursorMoveResponse,
+  cursorIndex: CursorIndex
+): CursorMoveResponse {
+  if (res.success) {
+    return {
+      success: true,
+      newRelativeCursor: [cursorIndex, ...res.newRelativeCursor],
+    };
+  } else {
+    return FAILED_CURSOR_MOVE_RESPONSE;
   }
 }
 

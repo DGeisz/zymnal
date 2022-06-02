@@ -3,13 +3,19 @@ import {
   CursorIndex,
   CursorMoveResponse,
   extractCursorInfo,
+  FAILED_CURSOR_MOVE_RESPONSE,
+  wrapChildCursorResponse,
 } from "./cursor";
 import { CURSOR_LATEX } from "./utils/latex_utils";
-import { Zymbol } from "./zymbol";
+import { DeleteBehavior, Zymbol } from "./zymbol";
 import { TextZymbol, TEXT_ZYMBOL_NAME } from "./zymbols/text_zymbol";
 
 export class Zocket {
-  zymbols: Zymbol[] = [];
+  private zymbols: Zymbol[] = [];
+
+  /* USED ONLY FOR TESTS */
+  __getZymbols = () => this.zymbols;
+  __setZymbols = (zymbols: Zymbol[]) => (this.zymbols = zymbols);
 
   moveCursorLeft = (cursor: Cursor): CursorMoveResponse => {
     const { parentOfCursorElement, nextCursorIndex, childRelativeCursor } =
@@ -86,6 +92,62 @@ export class Zocket {
     }
   };
 
+  delete = (cursor: Cursor): CursorMoveResponse => {
+    const { parentOfCursorElement, nextCursorIndex, childRelativeCursor } =
+      extractCursorInfo(cursor);
+
+    if (parentOfCursorElement) {
+      if (nextCursorIndex === 0) {
+        return FAILED_CURSOR_MOVE_RESPONSE;
+      }
+
+      const zymbol = this.zymbols[nextCursorIndex - 1];
+
+      const deleteBehavior = zymbol.getDeleteBehavior();
+
+      const deleteZymbol = () => {
+        this.zymbols.slice(nextCursorIndex - 1, 1);
+      };
+
+      switch (deleteBehavior) {
+        case DeleteBehavior.ABSORB: {
+          const relCursor = zymbol.takeCursorFromRight();
+
+          if (relCursor.success) {
+            return wrapChildCursorResponse(
+              zymbol.delete(relCursor.newRelativeCursor),
+              nextCursorIndex - 1
+            );
+          } else {
+            return FAILED_CURSOR_MOVE_RESPONSE;
+          }
+        }
+        case DeleteBehavior.ALLOWED: {
+          deleteZymbol();
+          break;
+        }
+        case DeleteBehavior.FORBIDDEN: {
+          break;
+        }
+        case DeleteBehavior.UNPRIMED: {
+          zymbol.primeDelete();
+          break;
+        }
+        case DeleteBehavior.PRIMED: {
+          deleteZymbol();
+          break;
+        }
+      }
+    } else {
+      return wrapChildCursorResponse(
+        this.zymbols[nextCursorIndex].delete(childRelativeCursor),
+        nextCursorIndex
+      );
+    }
+
+    return FAILED_CURSOR_MOVE_RESPONSE;
+  };
+
   addCharacter = (character: string, cursor: Cursor): CursorMoveResponse => {
     const { parentOfCursorElement, nextCursorIndex, childRelativeCursor } =
       extractCursorInfo(cursor);
@@ -109,6 +171,9 @@ export class Zocket {
     }
   };
 
+  __mergeTextZymbols = (currentCursor: [CursorIndex, CursorIndex]) =>
+    this.mergeTextZymbols(currentCursor);
+
   private mergeTextZymbols = (
     currentCursor: [CursorIndex, CursorIndex]
   ): CursorMoveResponse => {
@@ -120,15 +185,15 @@ export class Zocket {
       if (currentZymbolIndex >= this.zymbols.length - 1) {
         break;
       } else if (
-        this.zymbols[currentZymbolIndex + 1].getName() !== TEXT_ZYMBOL_NAME
+        this.zymbols[currentZymbolIndex].getName() !== TEXT_ZYMBOL_NAME
       ) {
         currentZymbolIndex++;
       } else {
         /* Now we've found the beginning of the list of text zymbols, so we want to find where the list ends */
-        let endOfTextZymbols = currentZymbolIndex;
+        let endOfTextZymbols = currentZymbolIndex + 1;
 
         while (true) {
-          if (endOfTextZymbols > this.zymbols.length - 1) {
+          if (endOfTextZymbols >= this.zymbols.length) {
             break;
           } else if (
             this.zymbols[endOfTextZymbols].getName() === TEXT_ZYMBOL_NAME
@@ -141,14 +206,14 @@ export class Zocket {
 
         /* Ok, so now current zymbol index is at the beginning of the text zymbols, 
         and the end of text zymbols is at the end */
-        if (endOfTextZymbols !== currentZymbolIndex) {
+        if (endOfTextZymbols !== currentZymbolIndex + 1) {
           /* For now, we're going to handle in two separate cases the cursor  */
 
           if (cursor0 >= currentZymbolIndex && cursor0 < endOfTextZymbols) {
             let newCursor1PreSize = 0;
             let newCharacters: string[] = [];
 
-            for (let i = currentZymbolIndex; i <= endOfTextZymbols; i++) {
+            for (let i = currentZymbolIndex; i < endOfTextZymbols; i++) {
               const iChars = (this.zymbols[i] as TextZymbol).getCharacters();
 
               if (i < cursor0) {
@@ -168,12 +233,14 @@ export class Zocket {
 
             this.zymbols.splice(
               currentZymbolIndex + 1,
-              endOfTextZymbols - currentZymbolIndex
+              endOfTextZymbols - currentZymbolIndex - 1
             );
+
+            cursor0 = currentZymbolIndex;
           } else {
             let newCharacters: string[] = [];
 
-            for (let i = currentZymbolIndex; i <= endOfTextZymbols; i++) {
+            for (let i = currentZymbolIndex; i < endOfTextZymbols; i++) {
               newCharacters = newCharacters.concat(
                 (this.zymbols[i] as TextZymbol).getCharacters()
               );
@@ -185,12 +252,16 @@ export class Zocket {
 
             this.zymbols.splice(
               currentZymbolIndex + 1,
-              endOfTextZymbols - currentZymbolIndex
+              endOfTextZymbols - currentZymbolIndex - 1
             );
-          }
 
-          cursor0 -= endOfTextZymbols - currentZymbolIndex;
+            if (cursor0 > currentZymbolIndex) {
+              cursor0 -= endOfTextZymbols - currentZymbolIndex - 1;
+            }
+          }
         }
+
+        currentZymbolIndex++;
       }
     }
 
@@ -218,9 +289,6 @@ export class Zocket {
   };
 
   renderTex = (cursor: Cursor): string => {
-    // return "\\frac{1}{2}";
-    return CURSOR_LATEX;
-
     const { parentOfCursorElement, nextCursorIndex, childRelativeCursor } =
       extractCursorInfo(cursor);
 
