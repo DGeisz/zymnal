@@ -54,6 +54,15 @@ export function wrapChildCursorResponse(
   }
 }
 
+export function successfulMoveResponse(
+  cursorIndex: CursorIndex
+): CursorMoveResponse {
+  return {
+    success: true,
+    newRelativeCursor: [cursorIndex],
+  };
+}
+
 class CursorBlink {
   blinkInterval: NodeJS.Timer;
   cursorVisible: boolean = true;

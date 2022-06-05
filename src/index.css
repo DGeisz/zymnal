@@ -16,8 +16,8 @@ code {
     monospace;
 }
 
-#cursor span {
+/* #cursor span {
   display: inline-block;
   width: 0 !important;
-  transform: translateX(-2px) translateY(-1px) scaleY(1.1);
-}
+  transform: translateX(-1px) translateY(-1px) scaleY(1.1);
+} */

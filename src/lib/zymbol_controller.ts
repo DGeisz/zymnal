@@ -68,8 +68,6 @@ export class ZymbolController {
 
     const char = e.key === " " ? e.key : e.key.trim();
 
-    console.trace("keypress: ", char);
-
     this.addCharacter(char);
 
     this.handleKeyUnlock(KeyLock.KEYPRESS);
@@ -100,6 +98,8 @@ export class ZymbolController {
     if (cursorResponse.success) {
       this.cursor = cursorResponse.newRelativeCursor;
     }
+
+    console.log("Cursor", this.cursor);
   };
 
   renderTex = (): string => {

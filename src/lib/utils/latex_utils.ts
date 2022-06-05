@@ -39,8 +39,10 @@ export const LATEX_EMPTY_SOCKET = "□";
 export const LATEX_NAME = "\\LaTeX";
 
 export const CURSOR_NAME = "cursor";
-export const CURSOR_LATEX: string =
-  "\\htmlId{cursor}{\\color{black}{\\boldsymbol{|}}}";
+// export const CURSOR_LATEX: string =
+//   "\\htmlId{cursor}{\\color{black}{\\boldsymbol{|}}}";
+
+export const CURSOR_LATEX: string = "\\htmlId{cursor}{\\boldsymbol{|}}";
 
 export const INVALID_TEX = add_color_box(
   add_latex_color(create_tex_text("Invalid TeX"), palette.danger),
