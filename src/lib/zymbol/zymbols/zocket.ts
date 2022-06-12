@@ -11,7 +11,6 @@ import {
 import { CURSOR_LATEX } from "../../utils/latex_utils";
 import {
   deflectDeleteBehavior,
-  DeleteBehavior,
   DeleteBehaviorType,
   normalDeleteBehavior,
 } from "../delete_behavior";
@@ -126,7 +125,9 @@ export class Zocket extends Zymbol {
       const deleteBehavior = zymbol.getDeleteBehavior();
 
       const deleteZymbol = () => {
-        this.zymbols.slice(nextCursorIndex - 1, 1);
+        this.zymbols.splice(nextCursorIndex - 1, 1);
+
+        return successfulMoveResponse(nextCursorIndex - 1);
       };
 
       switch (deleteBehavior.type) {
@@ -143,8 +144,7 @@ export class Zocket extends Zymbol {
           }
         }
         case DeleteBehaviorType.ALLOWED: {
-          deleteZymbol();
-          break;
+          return deleteZymbol();
         }
         case DeleteBehaviorType.FORBIDDEN: {
           break;
@@ -154,8 +154,7 @@ export class Zocket extends Zymbol {
           break;
         }
         case DeleteBehaviorType.PRIMED: {
-          deleteZymbol();
-          break;
+          return deleteZymbol();
         }
         case DeleteBehaviorType.DEFLECT: {
           const success = zymbol.deflectDelete();

@@ -3,6 +3,7 @@ import {
   CursorMoveResponse,
   extractCursorInfo,
   FAILED_CURSOR_MOVE_RESPONSE,
+  successfulMoveResponse,
 } from "../../cursor";
 import { create_tex_text, text_with_cursor } from "../../utils/latex_utils";
 import { Zymbol } from "../zymbol";
@@ -10,7 +11,11 @@ import {
   BasicZymbolEvent,
   zymbolEventHandler,
 } from "../../zymbol_event_handler/zymbol_event_handler";
-import { DeleteBehavior } from "../delete_behavior";
+import {
+  deflectDeleteBehavior,
+  DeleteBehaviorType,
+  normalDeleteBehavior,
+} from "../delete_behavior";
 
 export const TEXT_ZYMBOL_NAME = "text";
 
@@ -28,7 +33,7 @@ export class TextZymbol extends Zymbol {
       extractCursorInfo(cursor);
 
     if (parentOfCursorElement) {
-      if (nextCursorIndex > 0) {
+      if (nextCursorIndex > 1) {
         return {
           success: true,
           newRelativeCursor: [nextCursorIndex - 1],
@@ -52,7 +57,7 @@ export class TextZymbol extends Zymbol {
       extractCursorInfo(cursor);
 
     if (parentOfCursorElement) {
-      if (nextCursorIndex < this.characters.length) {
+      if (nextCursorIndex < this.characters.length - 1) {
         return {
           success: true,
           newRelativeCursor: [nextCursorIndex + 1],
@@ -72,17 +77,19 @@ export class TextZymbol extends Zymbol {
   };
 
   takeCursorFromLeft = (): CursorMoveResponse => {
-    return {
-      success: true,
-      newRelativeCursor: [0],
-    };
+    if (this.characters.length > 1) {
+      return successfulMoveResponse(1);
+    } else {
+      return FAILED_CURSOR_MOVE_RESPONSE;
+    }
   };
 
   takeCursorFromRight = (): CursorMoveResponse => {
-    return {
-      success: true,
-      newRelativeCursor: [this.characters.length],
-    };
+    if (this.characters.length > 1) {
+      return successfulMoveResponse(this.characters.length - 1);
+    } else {
+      return FAILED_CURSOR_MOVE_RESPONSE;
+    }
   };
 
   addCharacter = (character: string, cursor: Cursor) => {
@@ -94,7 +101,7 @@ export class TextZymbol extends Zymbol {
 
       zymbolEventHandler.triggerEvent(
         BasicZymbolEvent.ZOCKET_CONTENT_ADDED,
-        this.parentZocket
+        this.parentZymbol
       );
 
       return {
@@ -122,7 +129,14 @@ export class TextZymbol extends Zymbol {
     }
   };
 
-  getDeleteBehavior = () => DeleteBehavior.ABSORB;
+  getDeleteBehavior = () => {
+    if (this.characters.length > 1) {
+      return deflectDeleteBehavior(
+        normalDeleteBehavior(DeleteBehaviorType.ALLOWED)
+      );
+    }
+    return normalDeleteBehavior(DeleteBehaviorType.ALLOWED);
+  };
 
   delete = (cursor: Cursor) => {
     const { parentOfCursorElement, nextCursorIndex } =
@@ -135,10 +149,7 @@ export class TextZymbol extends Zymbol {
 
       this.characters.splice(nextCursorIndex - 1, 1);
 
-      return {
-        success: true,
-        newRelativeCursor: [nextCursorIndex - 1],
-      };
+      return successfulMoveResponse(nextCursorIndex - 1);
     } else {
       return FAILED_CURSOR_MOVE_RESPONSE;
     }

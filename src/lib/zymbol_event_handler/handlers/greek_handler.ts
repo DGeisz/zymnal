@@ -1,8 +1,7 @@
 import { capitalizeFirstLetter } from "../../../global_utils/text_utils";
-import { Zocket } from "../../zocket";
-import { SymbolZymbol } from "../../zymbols/symbol_zymbol";
-import { TextZymbol, TEXT_ZYMBOL_NAME } from "../../zymbols/text_zymbol";
-import { BasicZymbolEvent, zymbolEventHandler } from "../zymbol_event_handler";
+import { Zocket } from "../../zymbol/zymbols/zocket";
+import { SymbolZymbol } from "../../zymbol/zymbols/symbol_zymbol";
+import { TextZymbol, TEXT_ZYMBOL_NAME } from "../../zymbol/zymbols/text_zymbol";
 
 const lower: string[] = [
   "alpha",
@@ -56,10 +55,15 @@ export function greekify(zocket: Zocket) {
         }
       }
     }
+
+    const final = zymbols.filter(
+      (z) =>
+        !(
+          z.getName() === TEXT_ZYMBOL_NAME &&
+          (z as TextZymbol).getCharacters().length === 0
+        )
+    );
+
+    zocket.setZymbols(final);
   }
 }
-
-// zymbolEventHandler.registerHandler(
-//   BasicZymbolEvent.ZOCKET_CONTENT_ADDED,
-//   greekify
-// );

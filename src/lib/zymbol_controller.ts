@@ -1,5 +1,5 @@
 import { Cursor, cursorBlink, CursorMoveResponse } from "./cursor";
-import { Zocket } from "./zocket";
+import { Zocket } from "./zymbol/zymbols/zocket";
 
 enum KeyLock {
   NONE,
