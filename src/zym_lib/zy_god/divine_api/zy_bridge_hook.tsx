@@ -1,6 +1,5 @@
 import React, { useEffect } from "react";
-import { useZymponent } from "../../zym/zym_hooks";
-import { Zyact } from "../../zym/zym_types";
+import { Zyact } from "../../zym/zymplementations/zyact/zyact";
 import { ZyMaster } from "../../zym/zy_master";
 import { zyGod } from "../zy_god";
 

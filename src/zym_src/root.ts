@@ -1,5 +1,5 @@
-import { Zyact } from "../zym_lib/zym/zym_types";
-import { Zage } from "./zage/zage";
+import { Zyact } from "../zym_lib/zym/zymplementations/zyact/zyact";
+import { Zage } from "./zyms/zage/zage";
 
 const root = new Zage();
 

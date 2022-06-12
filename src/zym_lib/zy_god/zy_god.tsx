@@ -1,4 +1,4 @@
-import { Zyact } from "../zym/zym_types";
+import { Zyact } from "../zym/zymplementations/zyact/zyact";
 import { ZyMaster } from "../zym/zy_master";
 import { ZyId } from "../zy_types/basic_types";
 
