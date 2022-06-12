@@ -5,6 +5,9 @@
     "Zyact",
     "zymbol",
     "zymbols",
-    "zymplementations"
-  ]
+    "zymplementations",
+    "Zymponent",
+    "zyms"
+  ],
+  "editor.tabSize": 2
 }
