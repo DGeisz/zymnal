@@ -2,8 +2,8 @@ import React, { useEffect } from "react";
 import { useRerender } from "../../../../global_utils/useRerender";
 import { Zyact } from "./zyact";
 
-export function withZyactComponent<T extends object>(
-  zyact: Zyact,
+export function withZyactComponent<P, T extends object>(
+  zyact: Zyact<P, T>,
   Component: React.FC<T>
 ): React.FC<T> {
   return (props) => {

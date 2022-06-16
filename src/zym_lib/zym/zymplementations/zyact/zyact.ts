@@ -4,7 +4,7 @@ import { withZyactComponent } from "./hoc";
 
 export abstract class Zyact<
   Persist = any,
-  Props extends object = any
+  Props extends object = {}
 > extends Zym<React.FC<Props>, Persist> {
   rerender: () => void = () => {};
 
@@ -14,7 +14,7 @@ export abstract class Zyact<
     this.rerender();
   }
 
-  getRenderContent = (): React.FC<any> => {
+  getRenderContent = (): React.FC<Props> => {
     return withZyactComponent(this, this.component);
   };
 

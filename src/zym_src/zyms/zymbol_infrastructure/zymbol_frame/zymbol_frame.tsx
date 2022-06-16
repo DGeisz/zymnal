@@ -6,13 +6,19 @@ import {
   ZymKeyPress,
   KeyPressContext,
 } from "../../../../zym_lib/zy_god/types/basic_types";
-import { ZYMBOL_PROGRESSION_ID } from "./zp_master";
-import { ZymbolProgressionPersist } from "./zp_persist";
+import { ZYMBOL_FRAME_ID } from "./zf_master";
+import { ZymbolFramePersist } from "./zf_persist";
 
-export class ZymbolProgression extends Zyact<ZymbolProgressionPersist> {
-  component: FC = () => <div>What's up?</div>;
+export class ZymbolFrame extends Zyact<ZymbolFramePersist> {
+  component: FC = (props) => <div />;
+
+  getZyMasterId(): string {
+    return ZYMBOL_FRAME_ID;
+  }
 
   getInitialCursor(): Cursor {
+    /* We'll basically want to get the initial cursor 
+    from the the bottom zocket that holds everything */
     throw new Error("Method not implemented.");
   }
 
@@ -23,13 +29,9 @@ export class ZymbolProgression extends Zyact<ZymbolProgressionPersist> {
     throw new Error("Method not implemented.");
   }
 
-  persist() {
+  persist(): ZymbolFramePersist {
     return {};
   }
 
-  hydrate(_persisted: any): void {}
-
-  getZyMasterId(): string {
-    return ZYMBOL_PROGRESSION_ID;
-  }
+  hydrate(_persisted: ZymbolFramePersist): void {}
 }

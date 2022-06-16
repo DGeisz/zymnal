@@ -1,25 +1,32 @@
-import { Cursor } from "../zy_god/cursor";
+import { Cursor, CursorIndex, extendParentCursor } from "../zy_god/cursor";
 import { KeyPressContext, ZymKeyPress } from "../zy_god/types/basic_types";
 import { ZyId } from "../zy_types/basic_types";
 import { KeyPressResponse } from "./zym_types";
 
 export abstract class Zym<T, P = any> {
-  constructor(persisted?: P) {
+  private cursorIndex: CursorIndex;
+  private parent?: Zym<any, any>;
+
+  constructor(
+    cursorIndex: CursorIndex,
+    parent: Zym<any, any> | undefined,
+    persisted?: P
+  ) {
+    this.cursorIndex = cursorIndex;
+    this.parent = parent;
+
     if (persisted) {
       this.hydrate(persisted);
     }
   }
 
-  abstract getZyMasterId(): ZyId;
-
-  /* ===== CURSOR METHODS / KEY HANDLERS ===== */
-
-  abstract getInitialCursor(): Cursor;
-
-  abstract handleKeyPress(
-    keyPress: ZymKeyPress,
-    ctx: KeyPressContext
-  ): KeyPressResponse;
+  getFullCursor = (): Cursor => {
+    if (this.parent) {
+      return extendParentCursor(this.cursorIndex, this.parent.getFullCursor());
+    } else {
+      return [this.cursorIndex];
+    }
+  };
 
   /* ===== MAIN RENDER METHODS ===== */
 
@@ -42,9 +49,20 @@ export abstract class Zym<T, P = any> {
 
   /* ===== PERSISTENCE METHODS ===== */
 
+  /* ===== CURSOR METHODS / KEY HANDLERS ===== */
+
+  abstract getInitialCursor(): Cursor;
+
+  abstract handleKeyPress(
+    keyPress: ZymKeyPress,
+    ctx: KeyPressContext
+  ): KeyPressResponse;
+
   /* Persists the zym */
   abstract persist(): P;
 
   /* Hydrates the zym from persisted data */
   abstract hydrate(persisted: P): void;
+
+  abstract getZyMasterId(): ZyId;
 }

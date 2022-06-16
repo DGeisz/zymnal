@@ -3,6 +3,20 @@ import { CURSOR_NAME } from "../../global_utils/latex_utils";
 export type CursorIndex = number;
 export type Cursor = CursorIndex[];
 
+export function extendChildCursor(
+  newCursorIndex: CursorIndex,
+  oldCursor: Cursor
+): Cursor {
+  return [newCursorIndex, ...oldCursor];
+}
+
+export function extendParentCursor(
+  childCursorIndex: CursorIndex,
+  parentCursor: Cursor
+): Cursor {
+  return [...parentCursor, childCursorIndex];
+}
+
 const BLINK_INTERVAL = 530;
 
 interface CursorInfo {
