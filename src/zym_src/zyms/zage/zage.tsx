@@ -8,7 +8,7 @@ import {
   KeyPressContext,
 } from "../../../zym_lib/zy_god/types/basic_types";
 import { ZymbolContext } from "../zymbol_infrastructure/zymbol_context/zymbol_context";
-import { ZAGE_ID } from "./zage_master";
+import { zageMaster } from "./zage_master";
 import { ZagePersist, ZAGE_PERSIST_FIELDS } from "./zage_persist";
 
 /* For the time being, a zage will just hold a central context */
@@ -47,6 +47,6 @@ export class Zage extends Zyact<ZagePersist> {
   }
 
   getZyMasterId(): string {
-    return ZAGE_ID;
+    return zageMaster.zyId;
   }
 }

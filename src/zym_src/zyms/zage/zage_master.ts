@@ -1,11 +1,7 @@
 import { ZyMaster } from "../../../zym_lib/zym/zy_master";
 
-export const ZAGE_ID = "zage";
-
 class ZageMaster extends ZyMaster {
-  getZyId(): string {
-    return ZAGE_ID;
-  }
+  zyId = "zage";
 }
 
 export const zageMaster = new ZageMaster();

@@ -24,7 +24,7 @@ class ZyGod {
 
   registerMasters(masters: ZyMaster[]) {
     for (const master of masters) {
-      this.masterRegistry.set(master.getZyId(), master);
+      this.masterRegistry.set(master.zyId, master);
     }
   }
 

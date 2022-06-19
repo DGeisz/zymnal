@@ -8,7 +8,7 @@ import {
   KeyPressContext,
 } from "../../../../zym_lib/zy_god/types/basic_types";
 import { ZymbolProgression } from "../zymbol_progression/zymbol_progression";
-import { ZYMBOL_CONTEXT_ID } from "./zc_master";
+import { zymbolContextMaster } from "./zc_master";
 import { ZCP_FIELDS, ZymbolContextPersist } from "./zc_persist";
 
 export class ZymbolContext extends Zyact<ZymbolContextPersist> {
@@ -42,6 +42,6 @@ export class ZymbolContext extends Zyact<ZymbolContextPersist> {
   }
 
   getZyMasterId(): string {
-    return ZYMBOL_CONTEXT_ID;
+    return zymbolContextMaster.zyId;
   }
 }

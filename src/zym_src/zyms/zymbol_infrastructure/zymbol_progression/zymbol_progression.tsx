@@ -6,7 +6,7 @@ import {
   ZymKeyPress,
   KeyPressContext,
 } from "../../../../zym_lib/zy_god/types/basic_types";
-import { ZYMBOL_PROGRESSION_ID } from "./zp_master";
+import { zymbolProgressionMaster } from "./zp_master";
 import { ZymbolProgressionPersist } from "./zp_persist";
 
 export class ZymbolProgression extends Zyact<ZymbolProgressionPersist> {
@@ -30,6 +30,6 @@ export class ZymbolProgression extends Zyact<ZymbolProgressionPersist> {
   hydrate(_persisted: any): void {}
 
   getZyMasterId(): string {
-    return ZYMBOL_PROGRESSION_ID;
+    return zymbolProgressionMaster.zyId;
   }
 }

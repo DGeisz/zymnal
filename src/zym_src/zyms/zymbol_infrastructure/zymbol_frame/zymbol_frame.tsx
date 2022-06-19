@@ -6,14 +6,14 @@ import {
   ZymKeyPress,
   KeyPressContext,
 } from "../../../../zym_lib/zy_god/types/basic_types";
-import { ZYMBOL_FRAME_ID } from "./zf_master";
+import { zymbolFrameMaster } from "./zf_master";
 import { ZymbolFramePersist } from "./zf_persist";
 
 export class ZymbolFrame extends Zyact<ZymbolFramePersist> {
   component: FC = (props) => <div />;
 
   getZyMasterId(): string {
-    return ZYMBOL_FRAME_ID;
+    return zymbolFrameMaster.zyId;
   }
 
   getInitialCursor(): Cursor {
