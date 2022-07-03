@@ -1,4 +1,5 @@
 import { last } from "../../../../../global_utils/array_utils";
+import { CURSOR_LATEX } from "../../../../../global_utils/latex_utils";
 import { Zym } from "../../../../../zym_lib/zym/zym";
 import {
   FAILED_KEY_PRESS_RESPONSE,
@@ -9,7 +10,7 @@ import { Cursor, CursorIndex } from "../../../../../zym_lib/zy_god/cursor";
 import {
   extractCursorInfoFromContext,
   KeyPressContext,
-} from "../../../../../zym_lib/zy_god/types/basic_types";
+} from "../../../../../zym_lib/zy_god/types/context_types";
 import { ZymbolFrame } from "../../../zymbol_infrastructure/zymbol_frame/zymbol_frame";
 import {
   deflectDeleteBehavior,
@@ -22,6 +23,24 @@ import { Zymbol } from "../../zymbol";
 export const ZOCKET_MASTER_ID = "zocket";
 
 export class Zocket extends Zymbol<{}> {
+  children: Zymbol[] = [];
+
+  getInitialCursor(): Cursor {
+    throw new Error("Method not implemented.");
+  }
+
+  persist(): {} {
+    throw new Error("Method not implemented.");
+  }
+
+  hydrate(persisted: {}): void {
+    throw new Error("Method not implemented.");
+  }
+
+  getZyMasterId(): string {
+    throw new Error("Method not implemented.");
+  }
+
   private zymbols: Zymbol[] = [];
 
   /* Indicates whether this is the zocket that's directly connected to the main controller, ie
@@ -40,8 +59,8 @@ export class Zocket extends Zymbol<{}> {
   }
 
   /* USED ONLY FOR TESTS */
-  getZymbols = () => this.zymbols;
-  setZymbols = (zymbols: Zymbol[]) => (this.zymbols = zymbols);
+  getZymbols = () => this.children;
+  setZymbols = (zymbols: Zymbol[]) => (this.children = zymbols);
 
   moveCursorLeft = (ctx: KeyPressContext): KeyPressResponse => {
     const { parentOfCursorElement, nextCursorIndex, newChildContext } =
@@ -54,7 +73,7 @@ export class Zocket extends Zymbol<{}> {
     if (parentOfCursorElement) {
       const {
         cursorMoveResponse: { moved, newRelativeCursor },
-      } = this.zymbols[nextCursorIndex - 1].takeCursorFromRight();
+      } = this.children[nextCursorIndex - 1].takeCursorFromRight();
 
       if (moved) {
         return {
@@ -74,7 +93,7 @@ export class Zocket extends Zymbol<{}> {
     } else {
       const {
         cursorMoveResponse: { moved, newRelativeCursor },
-      } = this.zymbols[nextCursorIndex].moveCursorLeft(newChildContext);
+      } = this.children[nextCursorIndex].moveCursorLeft(newChildContext);
 
       if (moved) {
         return {
@@ -163,7 +182,11 @@ export class Zocket extends Zymbol<{}> {
     }
   };
 
-  addCharacter: (character: string, ctx: KeyPressContext) => KeyPressResponse;
+  addCharacter  = (character: string, ctx: KeyPressContext): KeyPressResponse => {
+    /* TODO: Add this in! */
+    return FAILED_KEY_PRESS_RESPONSE;
+  };
+
   getDeleteBehavior: () => DeleteBehavior = () => {
     if (this.zymbols.length > 0) {
       return deflectDeleteBehavior(last(this.zymbols).getDeleteBehavior());
@@ -172,9 +195,10 @@ export class Zocket extends Zymbol<{}> {
     }
   };
 
+  // TODO: Figure out how to determine which component has the cursor... 
   renderTex = () => {
     const { parentOfCursorElement, nextCursorIndex, childRelativeCursor } =
-      extractCursorInfo(cursor);
+      extractCursorInfoFromContext(cursor);
 
     let finalTex = "";
 

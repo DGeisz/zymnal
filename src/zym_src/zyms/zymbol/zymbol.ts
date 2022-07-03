@@ -9,7 +9,7 @@ import {
   KeyPressComplexType,
   KeyPressContext,
   ZymKeyPress,
-} from "../../../zym_lib/zy_god/types/basic_types";
+} from "../../../zym_lib/zy_god/types/context_types";
 import { ZymbolFrame } from "../zymbol_infrastructure/zymbol_frame/zymbol_frame";
 import { DeleteBehavior } from "./delete_behavior";
 import { TeX } from "./zymbol_types";

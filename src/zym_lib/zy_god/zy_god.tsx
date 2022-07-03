@@ -1,9 +1,11 @@
 import { Zyact } from "../zym/zymplementations/zyact/zyact";
 import { ZyMaster } from "../zym/zy_master";
 import { ZyId } from "../zy_types/basic_types";
-import { Cursor } from "./cursor";
+import { Cursor, getInitialCursor } from "./cursor";
 import { docEventHandler } from "./event_handler/document_event_handler";
-import { ZymKeyPress } from "./types/basic_types";
+import { ZymKeyPress } from "./types/context_types";
+
+export const ZyGodId: ZyId = "zyGod";
 
 class ZyGod {
   private masterRegistry: Map<ZyId, ZyMaster> = new Map();
@@ -30,8 +32,7 @@ class ZyGod {
 
   setRoot(root: Zyact) {
     this.root = root;
-
-    this.cursor = this.root!.getInitialCursor();
+    this.cursor = getInitialCursor(this.root);
   }
 }
 

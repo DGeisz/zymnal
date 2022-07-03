@@ -1,4 +1,3 @@
-import { TeX } from "../../zym_src/zyms/zymbol/zymbol_types";
 import {
   Cursor,
   CursorMoveResponse,
@@ -30,9 +29,6 @@ export abstract class Zymbol {
 
   primeDelete = () => {};
 
-  abstract getTex: () => TeX;
-
-  getRenderContent = this.getTex;
   /* This needs to be overloaded for any more complex zymbol */
   delete = (_cursor: Cursor) => FAILED_CURSOR_MOVE_RESPONSE;
 
