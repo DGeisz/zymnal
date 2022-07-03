@@ -1,7 +1,7 @@
 import { useZymponent } from "../../../zym_lib/zym/zymplementations/zyact/hooks";
 import { Zyact } from "../../../zym_lib/zym/zymplementations/zyact/zyact";
 import { KeyPressResponse } from "../../../zym_lib/zym/zym_types";
-import {} from "../../../zym_lib/zy_god/cursor";
+import {} from "../../../zym_lib/zy_god/cursor/cursor";
 import {
   ZymKeyPress,
   KeyPressContext,
@@ -42,9 +42,5 @@ export class Zage extends Zyact<ZagePersist> {
 
   hydrate(persisted: ZagePersist): void {
     this.baseZymbolContext.hydrate(persisted[ZAGE_PERSIST_FIELDS.CONTEXT]);
-  }
-
-  getZyMasterId(): string {
-    return zageMaster.zyId;
   }
 }

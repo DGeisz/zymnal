@@ -2,7 +2,7 @@ import { FC } from "react";
 import { Zym } from "../../../../zym_lib/zym/zym";
 import { Zyact } from "../../../../zym_lib/zym/zymplementations/zyact/zyact";
 import { KeyPressResponse } from "../../../../zym_lib/zym/zym_types";
-import { Cursor } from "../../../../zym_lib/zy_god/cursor";
+import { Cursor } from "../../../../zym_lib/zy_god/cursor/cursor";
 import {
   ZymKeyPress,
   KeyPressContext,
@@ -14,10 +14,6 @@ export class ZymbolFrame extends Zyact<ZymbolFramePersist> {
   component: FC = () => <div />;
   /* TODO: Need to add the the base zocket */
   children: Zym<any, any>[] = [];
-
-  getZyMasterId(): string {
-    return zymbolFrameMaster.zyId;
-  }
 
   getInitialCursor(): Cursor {
     /* We'll basically want to get the initial cursor 

@@ -3,6 +3,7 @@ import {
   ZyCmdArgs,
   ZyCmdHandler,
   ZyCmdPath,
+  ZyCommandRegistration,
   ZyResult,
 } from "../../zy_commands/zy_command_types";
 
@@ -19,8 +20,9 @@ export function globalCmd<T>(
 }
 
 export function registerGlobalCmd(
-  path: ZyCmdPath,
-  handler: ZyCmdHandler<any>
+  registration: ZyCommandRegistration<any>
 ): boolean {
   throw new Error("uminp");
 }
+
+/* ======= Include the global commands here ====  */

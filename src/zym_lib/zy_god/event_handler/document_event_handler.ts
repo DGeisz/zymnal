@@ -1,4 +1,4 @@
-import { cursorBlink } from "../cursor";
+import { cursorBlink } from "../cursor/cursor";
 import {
   KeyPressBasicType,
   KeyPressComplexType,

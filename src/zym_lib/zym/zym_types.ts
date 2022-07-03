@@ -1,4 +1,4 @@
-import { Cursor } from "../zy_god/cursor";
+import { Cursor } from "../zy_god/cursor/cursor";
 import { ZyId } from "../zy_types/basic_types";
 
 interface CursorMoveResponse {
@@ -26,19 +26,20 @@ export function keyPressResponseFromCursorMoveResponse(
 }
 
 /* Zym tree messages passing */
-type TreeMessageType = string;
+type TreeCommandType = string;
 
-export interface TreeMessage {
+export interface TreeCommand {
   /* Used for identifying source of message */
   zyMasterId: ZyId;
-  type: TreeMessageType;
+  type: TreeCommandType;
   content: any;
 }
 
 /* Zym commands */
 export interface ZymCommand {
   zyMasterId: ZyId;
-  type: TreeMessageType;
+  type: TreeCommandType;
+  content: any;
 }
 
 export type ZymCommandResponse = any;

@@ -1,4 +1,4 @@
-import { Cursor, CursorIndex, extractCursorInfo } from "../cursor";
+import { Cursor, CursorIndex, extractCursorInfo } from "../cursor/cursor";
 
 export interface KeyPressContext {
   cursor: Cursor;

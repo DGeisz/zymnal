@@ -1,7 +1,7 @@
 import { Zyact } from "../zym/zymplementations/zyact/zyact";
 import { ZyMaster } from "../zym/zy_master";
 import { ZyId } from "../zy_types/basic_types";
-import { Cursor, getInitialCursor } from "./cursor";
+import { Cursor, getInitialCursor } from "./cursor/cursor";
 import { docEventHandler } from "./event_handler/document_event_handler";
 import { ZymKeyPress } from "./types/context_types";
 

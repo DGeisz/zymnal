@@ -1,4 +1,5 @@
 import {
+  UNIMPLEMENTED,
   ZyCmdArgs,
   ZyCmdPath,
   ZyResult,
@@ -8,7 +9,11 @@ import {
   CursorIndex,
   extendParentCursor,
   extractCursorInfo,
-} from "../zy_god/cursor";
+} from "../zy_god/cursor/cursor";
+import {
+  checkGlobalImplementation,
+  globalCmd,
+} from "../zy_god/divine_api/zy_global_cmds";
 import { KeyPressContext, ZymKeyPress } from "../zy_god/types/context_types";
 import { RenderOptions } from "../zy_god/types/render_types";
 import { ZyId } from "../zy_types/basic_types";
@@ -96,9 +101,22 @@ export abstract class Zym<T = any, P = any> {
   abstract hydrate(persisted: P): void;
 
   /* ===== COMMANDS ===== */
-  cmd<T>(path: ZyCmdPath, args?: ZyCmdArgs): ZyResult<T> {}
+  cmd = <T>(path: ZyCmdPath, args?: ZyCmdArgs): ZyResult<T> => {
+    /* First look if we have this function globally... */
+    const global = globalCmd<T>(this, path, args);
 
-  checkCmdImplemented(path: ZyCmdPath): boolean {}
+    if (global.ok) return global;
+
+    /* Now we look inside our master */
+    const local = this.zyMaster.cmd<T>(this, path, args);
+
+    if (local.ok) return local;
+
+    return UNIMPLEMENTED;
+  };
+
+  checkCmdImplemented = (path: ZyCmdPath): boolean =>
+    checkGlobalImplementation(path) || this.zyMaster.checkCmd(path);
 
   /* ===== KEY HANDLERS ===== */
   abstract handleKeyPress(

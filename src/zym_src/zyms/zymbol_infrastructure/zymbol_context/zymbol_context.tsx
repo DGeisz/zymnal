@@ -6,7 +6,7 @@ import {
   KeyPressResponse,
   ZymCommand,
 } from "../../../../zym_lib/zym/zym_types";
-import { Cursor } from "../../../../zym_lib/zy_god/cursor";
+import { Cursor } from "../../../../zym_lib/zy_god/cursor/cursor";
 import {
   ZymKeyPress,
   KeyPressContext,
@@ -40,9 +40,5 @@ export class ZymbolContext extends Zyact<ZymbolContextPersist> {
 
   hydrate(persisted: ZymbolContextPersist): void {
     this.progression.hydrate(persisted[ZCP_FIELDS.PROGRESSION]);
-  }
-
-  getZyMasterId(): string {
-    return zymbolContextMaster.zyId;
   }
 }

@@ -6,7 +6,7 @@ import {
   KeyPressResponse,
   keyPressResponseFromCursorMoveResponse,
 } from "../../../../../zym_lib/zym/zym_types";
-import { Cursor, CursorIndex } from "../../../../../zym_lib/zy_god/cursor";
+import { Cursor, CursorIndex } from "../../../../../zym_lib/zy_god/cursor/cursor";
 import {
   extractCursorInfoFromContext,
   KeyPressContext,
@@ -37,9 +37,6 @@ export class Zocket extends Zymbol<{}> {
     throw new Error("Method not implemented.");
   }
 
-  getZyMasterId(): string {
-    throw new Error("Method not implemented.");
-  }
 
   private zymbols: Zymbol[] = [];
 

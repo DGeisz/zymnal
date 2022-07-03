@@ -2,7 +2,7 @@ import { FC } from "react";
 import { Zym } from "../../../../zym_lib/zym/zym";
 import { Zyact } from "../../../../zym_lib/zym/zymplementations/zyact/zyact";
 import { KeyPressResponse } from "../../../../zym_lib/zym/zym_types";
-import { Cursor } from "../../../../zym_lib/zy_god/cursor";
+import { Cursor } from "../../../../zym_lib/zy_god/cursor/cursor";
 import {
   ZymKeyPress,
   KeyPressContext,
@@ -33,8 +33,4 @@ export class ZymbolProgression extends Zyact<ZymbolProgressionPersist> {
   }
 
   hydrate(_persisted: any): void {}
-
-  getZyMasterId(): string {
-    return zymbolProgressionMaster.zyId;
-  }
 }
