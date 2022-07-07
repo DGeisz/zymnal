@@ -10,8 +10,12 @@ export type ZyGroupCmdPathNode = {
 export type ZyCmdPathNode = string | ZyGroupCmdPathNode;
 export type ZyCmdPath = ZyCmdPathNode[];
 
+export function groupPathFactory(groupId: string): (name: string) => ZyCmdPath {
+  return (name: string) => [{ groupId, name }];
+}
+
 function validatePathString(str: string): boolean {
-  return str.includes(":") || str.includes(";");
+  return !str.includes(":") && !str.includes(";");
 }
 
 export function validatePath(path: ZyCmdPath): boolean {
@@ -39,13 +43,13 @@ export function serializePath(path: ZyCmdPath): ZyCmdSerialPath {
 export type ZyCmdSerialPath = string;
 
 /* Arguments */
-export type ZyCmdArgs = any;
+export type ZyCmdArgs<A = any> = A;
 
-type ZyCall<T> = (zym: Zym, args: ZyCmdArgs) => T;
+type ZyCall<T = any> = (zym: Zym, args: ZyCmdArgs) => T;
 type ZyArgValidator = (args: ZyCmdArgs) => boolean;
 
 /* Cmd handlers */
-export interface ZyCmdHandler<T> {
+export interface ZyCmdHandler<T = any> {
   call: ZyCall<T>;
   validator?: ZyArgValidator;
 }
@@ -70,13 +74,77 @@ export interface ZyCommandGroupMember {
   validator?: ZyArgValidator;
 }
 
+export type ZyCmdPointer = ZyCommandGroupMember | ZyCmdPath;
+
+function isGroupMember(p: ZyCmdPointer): p is ZyCommandGroupMember {
+  return Object.hasOwn(p, "path");
+}
+
+export function pointerToPath(pointer: ZyCmdPointer): ZyCmdPath {
+  if (isGroupMember(pointer)) {
+    return pointer.path;
+  } else {
+    return pointer;
+  }
+}
+
 export function justPath(path: ZyCmdPath): ZyCommandGroupMember {
   return {
     path,
   };
 }
 
-export type ZyCommandGroup = { [key: string]: ZyCommandGroupMember };
+export type ZyCommandGroup<T extends object = any> = {
+  [key in keyof T]: ZyCommandGroupMember;
+};
+
+export function implementPartialCmdGroup<T extends object = any>(
+  group: ZyCommandGroup<T>,
+  calls: Partial<{ [key in keyof T]: ZyCall }>
+) {
+  const registrations: ZyCommandRegistration[] = [];
+
+  const keys = Object.keys(group) as (keyof T)[];
+
+  for (const memberKey of keys) {
+    const { path, validator } = group[memberKey];
+    const call = calls[memberKey];
+
+    if (call) {
+      registrations.push({
+        path,
+        handler: {
+          call,
+          validator,
+        },
+      });
+    }
+  }
+
+  return registrations;
+}
+
+export function implementTotalCmdGroup<T extends object = any>(
+  group: ZyCommandGroup<T>,
+  calls: { [key in keyof T]: ZyCall }
+) {
+  return implementPartialCmdGroup(group, calls);
+}
+
+export function memberToRegistration<T>(
+  member: ZyCommandGroupMember,
+  call: ZyCall<T>
+): ZyCommandRegistration<T> {
+  const { path, validator } = member;
+
+  return {
+    path,
+    handler: {
+      call,
+      validator,
+    },
+  };
+}
 
 export interface ZyCommandGroupRegistration {
   [key: string]: ZyCommandRegistration<any>;
@@ -94,7 +162,7 @@ export function toGroup(gReg: ZyCommandGroupRegistration): ZyCommandGroup {
 }
 
 /* Registration */
-export interface ZyCommandRegistration<T> {
+export interface ZyCommandRegistration<T = any> {
   handler: ZyCmdHandler<T>;
   path: ZyCmdPath;
 }
@@ -131,3 +199,24 @@ export function unwrap<T>(result: ZyResult<T>): T {
 }
 
 export const UNIMPLEMENTED: NegativeZyResult = { ok: false };
+
+/* OPTIONS */
+interface Some<T> {
+  some: true;
+  val: T;
+}
+
+export function some<T>(val: T): Some<T> {
+  return {
+    some: true,
+    val,
+  };
+}
+
+interface None {
+  some: false;
+}
+
+export const NONE: None = { some: false };
+
+export type ZyOption<T> = Some<T> | None;

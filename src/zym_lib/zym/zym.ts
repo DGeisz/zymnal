@@ -1,28 +1,19 @@
 import {
+  pointerToPath,
   UNIMPLEMENTED,
-  ZyCmdArgs,
-  ZyCmdPath,
+  ZyCmdPointer,
   ZyResult,
 } from "../zy_commands/zy_command_types";
 import {
   Cursor,
   CursorIndex,
   extendParentCursor,
-  extractCursorInfo,
 } from "../zy_god/cursor/cursor";
 import {
   checkGlobalImplementation,
   globalCmd,
 } from "../zy_god/divine_api/zy_global_cmds";
-import { KeyPressContext, ZymKeyPress } from "../zy_god/types/context_types";
 import { RenderOptions } from "../zy_god/types/render_types";
-import { ZyId } from "../zy_types/basic_types";
-import {
-  KeyPressResponse,
-  TreeCommand,
-  ZymCommand,
-  ZymCommandResponse,
-} from "./zym_types";
 import { ZyMaster } from "./zy_master";
 
 /**
@@ -69,7 +60,7 @@ export abstract class Zym<T = any, P = any> {
         this.parent.getFullCursorPointer()
       );
     } else {
-      return [this.cursorIndex];
+      return [];
     }
   };
 
@@ -101,26 +92,26 @@ export abstract class Zym<T = any, P = any> {
   abstract hydrate(persisted: P): void;
 
   /* ===== COMMANDS ===== */
-  cmd = <T>(path: ZyCmdPath, args?: ZyCmdArgs): ZyResult<T> => {
-    /* First look if we have this function globally... */
-    const global = globalCmd<T>(this, path, args);
+  cmd = <T, A = any>(pointer: ZyCmdPointer, args?: A): ZyResult<T> => {
+    const path = pointerToPath(pointer);
 
-    if (global.ok) return global;
-
-    /* Now we look inside our master */
+    /* Look for a local implementation */
     const local = this.zyMaster.cmd<T>(this, path, args);
 
     if (local.ok) return local;
 
+    /* Now look for a default implementation */
+    const global = globalCmd<T>(this, path, args);
+
+    if (global.ok) return global;
+
     return UNIMPLEMENTED;
   };
 
-  checkCmdImplemented = (path: ZyCmdPath): boolean =>
-    checkGlobalImplementation(path) || this.zyMaster.checkCmd(path);
+  checkCmdImplemented = (pointer: ZyCmdPointer): boolean => {
+    const path = pointerToPath(pointer);
+    return checkGlobalImplementation(path) || this.zyMaster.checkCmd(path);
+  };
 
-  /* ===== KEY HANDLERS ===== */
-  abstract handleKeyPress(
-    keyPress: ZymKeyPress,
-    ctx: KeyPressContext
-  ): KeyPressResponse;
+  getMasterId = () => this.zyMaster.zyId;
 }

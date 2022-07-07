@@ -3,7 +3,7 @@ import {
   KeyPressBasicType,
   KeyPressComplexType,
   ZymKeyPress,
-} from "../types/context_types";
+} from "./key_press";
 
 enum KeyLock {
   NONE,

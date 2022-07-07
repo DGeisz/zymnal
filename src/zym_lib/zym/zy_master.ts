@@ -3,10 +3,12 @@ import {
   ok,
   serializePath,
   UNIMPLEMENTED,
+  validatePath,
   ZyCmdArgs,
   ZyCmdHandler,
   ZyCmdPath,
   ZyCmdSerialPath,
+  ZyCommandRegistration,
   ZyResult,
 } from "../zy_commands/zy_command_types";
 import { ZyId } from "../zy_types/basic_types";
@@ -25,6 +27,26 @@ export abstract class ZyMaster {
     } else {
       return UNIMPLEMENTED;
     }
+  };
+
+  registerCmd = <T>(reg: ZyCommandRegistration<T>, override?: boolean) => {
+    const { path, handler } = reg;
+
+    if (validatePath(path)) {
+      const sPath = serializePath(path);
+
+      if (!this.cmdRegistry.has(sPath) || override) {
+        this.cmdRegistry.set(sPath, handler);
+      } else {
+        throw new Error(`${sPath} already implemented!`);
+      }
+    } else {
+      throw new Error("Invalid path!");
+    }
+  };
+
+  registerCmds = (regs: ZyCommandRegistration<any>[]) => {
+    regs.forEach((reg) => this.registerCmd(reg));
   };
 
   abstract readonly zyId: ZyId;

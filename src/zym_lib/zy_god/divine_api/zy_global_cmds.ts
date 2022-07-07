@@ -1,14 +1,14 @@
 import { Zym } from "../../zym/zym";
 import {
   ZyCmdArgs,
-  ZyCmdHandler,
   ZyCmdPath,
   ZyCommandRegistration,
   ZyResult,
 } from "../../zy_commands/zy_command_types";
+import { zyGod } from "../zy_god";
 
 export function checkGlobalImplementation(path: ZyCmdPath): boolean {
-  throw new Error("uminp");
+  return zyGod.checkCmd(path);
 }
 
 export function globalCmd<T>(
@@ -16,13 +16,13 @@ export function globalCmd<T>(
   path: ZyCmdPath,
   args: ZyCmdArgs
 ): ZyResult<T> {
-  throw new Error("uminp");
+  return zyGod.cmd(zym, path, args);
 }
 
-export function registerGlobalCmd(
-  registration: ZyCommandRegistration<any>
-): boolean {
-  throw new Error("uminp");
+export function registerGlobalCmd(registration: ZyCommandRegistration<any>) {
+  zyGod.registerCmd(registration);
 }
 
-/* ======= Include the global commands here ====  */
+export function registerGlobalCmds(regs: ZyCommandRegistration<any>[]) {
+  zyGod.registerCmds(regs);
+}

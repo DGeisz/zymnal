@@ -1,18 +1,23 @@
 import { CursorIndex } from "../../../lib/cursor";
 import { Zym } from "../../../zym_lib/zym/zym";
 import {
-  FAILED_KEY_PRESS_RESPONSE,
-  KeyPressResponse,
-} from "../../../zym_lib/zym/zym_types";
+  Cursor,
+  CursorMoveResponse,
+  FAILED_CURSOR_MOVE_RESPONSE,
+} from "../../../zym_lib/zy_god/cursor/cursor";
 import {
   KeyPressBasicType,
   KeyPressComplexType,
-  KeyPressContext,
   ZymKeyPress,
-} from "../../../zym_lib/zy_god/types/context_types";
+} from "../../../zym_lib/zy_god/event_handler/key_press";
+import { BasicContext } from "../../../zym_lib/zy_god/types/context_types";
 import { ZymbolFrame } from "../zymbol_infrastructure/zymbol_frame/zymbol_frame";
 import { DeleteBehavior } from "./delete_behavior";
 import { TeX } from "./zymbol_types";
+
+export interface ZymbolRenderArgs {
+  cursor: Cursor;
+}
 
 export abstract class Zymbol<P = any> extends Zym<TeX, P> {
   parentFrame: ZymbolFrame;
@@ -33,46 +38,54 @@ export abstract class Zymbol<P = any> extends Zym<TeX, P> {
 
   handleKeyPress = (
     keyPress: ZymKeyPress,
-    ctx: KeyPressContext
-  ): KeyPressResponse => {
+    cursor: Cursor,
+    ctx: BasicContext
+  ): CursorMoveResponse => {
     switch (keyPress.type) {
       case KeyPressBasicType.ArrowDown:
-        return this.moveCursorLeft(ctx);
+        return this.moveCursorLeft(cursor, ctx);
       case KeyPressBasicType.ArrowRight:
-        return this.moveCursorRight(ctx);
+        return this.moveCursorRight(cursor, ctx);
       case KeyPressBasicType.Delete:
-        return this.delete(ctx);
+        return this.delete(cursor, ctx);
       case KeyPressComplexType.Key: {
-        return this.addCharacter(keyPress.key, ctx);
+        return this.addCharacter(keyPress.key, cursor, ctx);
       }
       default:
-        return FAILED_KEY_PRESS_RESPONSE;
+        return FAILED_CURSOR_MOVE_RESPONSE;
     }
   };
 
-  abstract moveCursorLeft: (ctx: KeyPressContext) => KeyPressResponse;
-  abstract takeCursorFromLeft: () => KeyPressResponse;
+  abstract moveCursorLeft: (
+    cursor: Cursor,
+    ctx: BasicContext
+  ) => CursorMoveResponse;
+  abstract takeCursorFromLeft: () => CursorMoveResponse;
 
-  abstract moveCursorRight: (ctx: KeyPressContext) => KeyPressResponse;
-  abstract takeCursorFromRight: () => KeyPressResponse;
+  abstract moveCursorRight: (
+    cursor: Cursor,
+    ctx: BasicContext
+  ) => CursorMoveResponse;
+  abstract takeCursorFromRight: () => CursorMoveResponse;
 
   abstract addCharacter: (
     character: string,
-    ctx: KeyPressContext
-  ) => KeyPressResponse;
+    cursor: Cursor,
+    ctx: BasicContext
+  ) => CursorMoveResponse;
 
   abstract getDeleteBehavior: () => DeleteBehavior;
 
   primeDelete = () => {};
 
   /* This needs to be overloaded for any more complex zymbol */
-  delete = (_ctx: KeyPressContext) => FAILED_KEY_PRESS_RESPONSE;
+  delete = (_cursor: Cursor, _ctx: BasicContext) => FAILED_CURSOR_MOVE_RESPONSE;
 
   /* This needs to be overloaded if the zymbol allows deflect deletes.
   @return: Indicates whether the deflect delete was successful */
   deflectDelete = (): boolean => false;
 
-  abstract renderTex: () => TeX;
+  abstract renderTex: (opts: ZymbolRenderArgs) => TeX;
 
-  getRenderContent = () => this.renderTex();
+  getRenderContent = (opts: ZymbolRenderArgs) => this.renderTex(opts);
 }

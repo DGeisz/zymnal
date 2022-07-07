@@ -21,7 +21,7 @@ export function extendParentCursor(
 }
 
 export function getZymInitialCursor(zym: Zym): Cursor | undefined {
-  const r = zym.cmd<Cursor>(LocalCursorCommand.getInitialCursor.path);
+  const r = zym.cmd<Cursor>(LocalCursorCommand.getInitialCursor);
 
   return r.ok ? r.val : undefined;
 }
@@ -30,14 +30,14 @@ export function getInitialCursor(root: Zym): Cursor {
   const rootCursor = getZymInitialCursor(root);
 
   if (rootCursor) {
-    return extendChildCursor(0, rootCursor);
+    return rootCursor;
   } else if (root.children.length === 0) {
     return [];
   }
 
   const zymQueue: Zym[] = [root, root.children[0]];
 
-  while (zymQueue.length < 2) {
+  while (zymQueue.length > 1) {
     const curr = last(zymQueue);
 
     const currCursor = getZymInitialCursor(curr);
@@ -69,6 +69,7 @@ export function getInitialCursor(root: Zym): Cursor {
 
   return [];
 }
+
 const BLINK_INTERVAL = 530;
 
 interface CursorInfo {
@@ -89,6 +90,17 @@ export const FAILED_CURSOR_MOVE_RESPONSE: CursorMoveResponse = {
   success: false,
   newRelativeCursor: [],
 };
+
+export function chainMoveResponse(
+  moveResponse: CursorMoveResponse,
+  onSuccess: (newRelativeCursor: Cursor) => CursorMoveResponse
+) {
+  if (moveResponse.success) {
+    return onSuccess(moveResponse.newRelativeCursor);
+  } else {
+    return FAILED_CURSOR_MOVE_RESPONSE;
+  }
+}
 
 export function extractCursorInfo(cursor: Cursor): CursorInfo {
   if (cursor.length === 1) {
@@ -121,11 +133,12 @@ export function wrapChildCursorResponse(
 }
 
 export function successfulMoveResponse(
-  cursorIndex: CursorIndex
+  cursorIndex: CursorIndex | Cursor
 ): CursorMoveResponse {
   return {
     success: true,
-    newRelativeCursor: [cursorIndex],
+    newRelativeCursor:
+      typeof cursorIndex === "number" ? [cursorIndex] : cursorIndex,
   };
 }
 
