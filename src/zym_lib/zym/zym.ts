@@ -13,7 +13,6 @@ import {
   checkGlobalImplementation,
   globalCmd,
 } from "../zy_god/divine_api/zy_global_cmds";
-import { RenderOptions } from "../zy_god/types/render_types";
 import { ZyMaster } from "./zy_master";
 
 /**
@@ -27,7 +26,7 @@ import { ZyMaster } from "./zy_master";
  * while additional methods can always be added with small architecture costs by registering commands
  * with ZyGod or ZyMasters
  * */
-export abstract class Zym<T = any, P = any> {
+export abstract class Zym<T = any, P = any, RenderOptions = any> {
   /* Allows us to determine zym's position amongst it's siblings */
   private cursorIndex: CursorIndex;
 
@@ -52,6 +51,16 @@ export abstract class Zym<T = any, P = any> {
   }
 
   getCursorIndex = () => this.cursorIndex;
+
+  setCursorIndex = (cursorIndex: CursorIndex) => {
+    this.cursorIndex = cursorIndex;
+  };
+
+  reIndexChildren = () => {
+    for (let i = 0; i < this.children.length; i++) {
+      this.children[i].setCursorIndex(i);
+    }
+  };
 
   getFullCursorPointer = (): Cursor => {
     if (this.parent) {

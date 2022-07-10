@@ -1,4 +1,4 @@
-import { CursorIndex } from "../../../lib/cursor";
+import { CursorIndex, extractCursorInfo } from "../../../lib/cursor";
 import { Zym } from "../../../zym_lib/zym/zym";
 import {
   Cursor,
@@ -42,7 +42,7 @@ export abstract class Zymbol<P = any> extends Zym<TeX, P> {
     ctx: BasicContext
   ): CursorMoveResponse => {
     switch (keyPress.type) {
-      case KeyPressBasicType.ArrowDown:
+      case KeyPressBasicType.ArrowLeft:
         return this.moveCursorLeft(cursor, ctx);
       case KeyPressBasicType.ArrowRight:
         return this.moveCursorRight(cursor, ctx);

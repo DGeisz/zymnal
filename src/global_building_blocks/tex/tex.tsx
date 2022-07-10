@@ -23,4 +23,7 @@ const Tex: React.FC<TexProps> = (props) => {
   );
 };
 
-export default Tex;
+export default React.memo(
+  Tex,
+  (prevProps, nextProps) => prevProps.tex === nextProps.tex
+);

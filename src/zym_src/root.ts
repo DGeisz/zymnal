@@ -1,4 +1,5 @@
 import { Zyact } from "../zym_lib/zym/zymplementations/zyact/zyact";
+import { defaultCursorImpl } from "../zym_lib/zy_god/cursor/cursor_commands";
 import { registerGlobalCmds } from "../zym_lib/zy_god/divine_api/zy_global_cmds";
 import { defaultKeyPressImpl } from "../zym_lib/zy_god/event_handler/key_press";
 import { Zage } from "./zyms/zage/zage";
@@ -10,4 +11,4 @@ export function getZymTreeRoot(): Zyact {
 }
 
 /* ==== Add default cmd implementations ==== */
-registerGlobalCmds([...defaultKeyPressImpl]);
+registerGlobalCmds([...defaultKeyPressImpl, ...defaultCursorImpl]);

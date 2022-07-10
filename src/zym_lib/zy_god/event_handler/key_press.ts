@@ -3,7 +3,6 @@ import {
   groupPathFactory,
   implementTotalCmdGroup,
   justPath,
-  ok,
   unwrap,
   ZyCommandGroup,
 } from "../../zy_commands/zy_command_types";
@@ -46,7 +45,7 @@ export type ZymKeyPress = BasicKeyPress | ComplexKeyPress;
 
 /* ==== COMMANDS ===== */
 
-const KEY_PRESS_CMD_ID = "keypress-cmd-6a62d2c4";
+const KEY_PRESS_CMD_ID = "keypress-cmd-6a62";
 
 const kpc = groupPathFactory(KEY_PRESS_CMD_ID);
 

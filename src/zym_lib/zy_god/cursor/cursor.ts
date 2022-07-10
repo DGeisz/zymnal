@@ -1,7 +1,7 @@
 import { last } from "../../../global_utils/array_utils";
 import { CURSOR_NAME } from "../../../global_utils/latex_utils";
 import { Zym } from "../../zym/zym";
-import { LocalCursorCommand } from "./cursor_commands";
+import { CursorCommand } from "./cursor_commands";
 
 export type CursorIndex = number;
 export type Cursor = CursorIndex[];
@@ -18,56 +18,6 @@ export function extendParentCursor(
   parentCursor: Cursor
 ): Cursor {
   return [...parentCursor, childCursorIndex];
-}
-
-export function getZymInitialCursor(zym: Zym): Cursor | undefined {
-  const r = zym.cmd<Cursor>(LocalCursorCommand.getInitialCursor);
-
-  return r.ok ? r.val : undefined;
-}
-
-export function getInitialCursor(root: Zym): Cursor {
-  const rootCursor = getZymInitialCursor(root);
-
-  if (rootCursor) {
-    return rootCursor;
-  } else if (root.children.length === 0) {
-    return [];
-  }
-
-  const zymQueue: Zym[] = [root, root.children[0]];
-
-  while (zymQueue.length > 1) {
-    const curr = last(zymQueue);
-
-    const currCursor = getZymInitialCursor(curr);
-
-    if (currCursor) {
-      return [...curr.getFullCursorPointer(), ...currCursor];
-    }
-
-    if (curr.children.length > 0) {
-      zymQueue.push(curr.children[0]);
-    } else {
-      while (true) {
-        if (zymQueue.length < 2) {
-          return [];
-        }
-
-        const curr = zymQueue.pop();
-        const parent = last(zymQueue);
-
-        const newChild = parent.children[curr!.getCursorIndex() + 1];
-
-        if (newChild) {
-          zymQueue.push(newChild);
-          break;
-        }
-      }
-    }
-  }
-
-  return [];
 }
 
 const BLINK_INTERVAL = 530;

@@ -5,20 +5,20 @@ import { withZyactComponent } from "./hoc";
 export abstract class Zyact<
   Persist = any,
   Props extends object = {}
-> extends Zym<React.FC<Props>, Persist> {
-  rerender: () => void = () => {};
+> extends Zym<React.FC<Props>, Persist, Props> {
+  rerender: (opts?: Props) => void = () => {};
 
-  abstract component: React.FC<Props>;
+  abstract component: React.FC<Props & Props>;
 
-  render(): void {
-    this.rerender();
+  render(opts?: Props): void {
+    this.rerender(opts);
   }
 
   getRenderContent = (): React.FC<Props> => {
     return withZyactComponent(this, this.component);
   };
 
-  setRerender(rerender: () => void) {
+  setRerender(rerender: (opts?: Props) => void) {
     this.rerender = rerender;
   }
 }

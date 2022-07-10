@@ -11,6 +11,7 @@ import {
   extractCursorInfo,
   FAILED_CURSOR_MOVE_RESPONSE,
   successfulMoveResponse,
+  wrapChildCursorResponse,
 } from "../../../../../zym_lib/zy_god/cursor/cursor";
 import { BasicContext } from "../../../../../zym_lib/zy_god/types/context_types";
 import { ZymbolFrame } from "../../../zymbol_infrastructure/zymbol_frame/zymbol_frame";
@@ -21,7 +22,8 @@ import {
   normalDeleteBehavior,
 } from "../../delete_behavior";
 import { Zymbol, ZymbolRenderArgs } from "../../zymbol";
-import { extendZymbol, zymbolKeypressImpl } from "../../zymbol_cmd";
+import { extendZymbol } from "../../zymbol_cmd";
+import { TextZymbol, TEXT_ZYMBOL_NAME } from "../text_zymbol/text_zymbol";
 import { zocketCursorImpl } from "./cmd/zocket_cursor";
 
 export const ZOCKET_MASTER_ID = "zocket";
@@ -40,10 +42,6 @@ zocketMaster.registerCmds([...zocketCursorImpl]);
 export class Zocket extends Zymbol<{}> {
   zyMaster: ZyMaster = zocketMaster;
   children: Zymbol[] = [];
-
-  getInitialCursor(): Cursor {
-    throw new Error("Method not implemented.");
-  }
 
   private zymbols: Zymbol[] = [];
 
@@ -171,14 +169,6 @@ export class Zocket extends Zymbol<{}> {
     }
   };
 
-  // addCharacter = (
-  //   character: string,
-  //   ctx: KeyPressContext
-  // ): KeyPressResponse => {
-  //   /* TODO: Add this in! */
-  //   return FAILED_KEY_PRESS_RESPONSE;
-  // };
-
   addCharacter = (
     character: string,
     cursor: Cursor,
@@ -190,7 +180,8 @@ export class Zocket extends Zymbol<{}> {
     if (parentOfCursorElement) {
       /* If we're the parent, then we basically just add a new text symbol at the current index, 
       and then we make sure that we merge all of our text symbols */
-      const newZymbol = new TextZymbol(this);
+      // const newZymbol = new TextZymbol(this);
+      const newZymbol = new TextZymbol(this.parentFrame, nextCursorIndex, this);
       newZymbol.addCharacter(character, [0]);
 
       this.zymbols.splice(nextCursorIndex, 0, newZymbol);
@@ -203,7 +194,7 @@ export class Zocket extends Zymbol<{}> {
         nextZymbol.addCharacter(character, childRelativeCursor, ctx),
         (newRelCursor) =>
           successfulMoveResponse(
-            extendChildCursor(nextCursorIndex, childRelativeCursor)
+            extendChildCursor(nextCursorIndex, newRelCursor)
           )
       );
     }
@@ -303,10 +294,9 @@ export class Zocket extends Zymbol<{}> {
       }
     }
 
-    return {
-      success: true,
-      newRelativeCursor: [cursor0, cursor1],
-    };
+    this.reIndexChildren();
+
+    return successfulMoveResponse([cursor0, cursor1]);
   };
 
   getDeleteBehavior: () => DeleteBehavior = () => {
@@ -348,6 +338,71 @@ export class Zocket extends Zymbol<{}> {
     }
 
     return finalTex;
+  };
+
+  delete = (cursor: Cursor, ctx: BasicContext): CursorMoveResponse => {
+    const { parentOfCursorElement, nextCursorIndex, childRelativeCursor } =
+      extractCursorInfo(cursor);
+
+    if (parentOfCursorElement) {
+      if (nextCursorIndex === 0) {
+        return FAILED_CURSOR_MOVE_RESPONSE;
+      }
+
+      const zymbol = this.zymbols[nextCursorIndex - 1];
+
+      const deleteBehavior = zymbol.getDeleteBehavior();
+
+      const deleteZymbol = () => {
+        this.zymbols.splice(nextCursorIndex - 1, 1);
+
+        return successfulMoveResponse(nextCursorIndex - 1);
+      };
+
+      switch (deleteBehavior.type) {
+        case DeleteBehaviorType.ABSORB: {
+          const relCursor = zymbol.takeCursorFromRight();
+
+          if (relCursor.success) {
+            return wrapChildCursorResponse(
+              zymbol.delete(relCursor.newRelativeCursor, ctx),
+              nextCursorIndex - 1
+            );
+          } else {
+            return FAILED_CURSOR_MOVE_RESPONSE;
+          }
+        }
+        case DeleteBehaviorType.ALLOWED: {
+          return deleteZymbol();
+        }
+        case DeleteBehaviorType.FORBIDDEN: {
+          break;
+        }
+        case DeleteBehaviorType.UNPRIMED: {
+          zymbol.primeDelete();
+          break;
+        }
+        case DeleteBehaviorType.PRIMED: {
+          return deleteZymbol();
+        }
+        case DeleteBehaviorType.DEFLECT: {
+          const success = zymbol.deflectDelete();
+
+          if (success) {
+            return successfulMoveResponse(nextCursorIndex);
+          } else {
+            return FAILED_CURSOR_MOVE_RESPONSE;
+          }
+        }
+      }
+    } else {
+      return wrapChildCursorResponse(
+        this.zymbols[nextCursorIndex].delete(childRelativeCursor, ctx),
+        nextCursorIndex
+      );
+    }
+
+    return FAILED_CURSOR_MOVE_RESPONSE;
   };
 
   persist(): {} {

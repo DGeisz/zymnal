@@ -18,6 +18,10 @@ class DocumentEventHandler {
   keyLock: KeyLock = KeyLock.NONE;
   keyEventHandlers: Map<HandlerId, KeyPressHandler> = new Map();
 
+  constructor() {
+    this.setDocEventListeners();
+  }
+
   private setDocEventListeners = () => {
     document.addEventListener("keydown", this.handleKeyDown);
     document.addEventListener("keypress", this.handleKeyPress);

@@ -1,5 +1,6 @@
 import { FC } from "react";
 import { Zym } from "../../../../zym_lib/zym/zym";
+import { useZymponent } from "../../../../zym_lib/zym/zymplementations/zyact/hooks";
 import { Zyact } from "../../../../zym_lib/zym/zymplementations/zyact/zyact";
 import { ZyMaster } from "../../../../zym_lib/zym/zy_master";
 import { ZymbolFrame } from "../zymbol_frame/zymbol_frame";
@@ -11,7 +12,11 @@ export class ZymbolProgression extends Zyact<ZymbolProgressionPersist> {
   baseFrame: ZymbolFrame = new ZymbolFrame(0, this);
   children: Zym<any, any>[] = [this.baseFrame];
 
-  component: FC = () => <div>What's up?</div>;
+  component: FC = () => {
+    const ProgressionComponent = useZymponent(this.baseFrame);
+
+    return <ProgressionComponent />;
+  };
 
   persist() {
     return {};

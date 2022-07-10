@@ -7,12 +7,12 @@ export function withZyactComponent<P, T extends object>(
   Component: React.FC<T>
 ): React.FC<T> {
   return (props) => {
-    const { rerender } = useRerender();
+    const { rerender, opts } = useRerender<T>();
 
     useEffect(() => {
       zyact.setRerender(rerender);
     }, []);
 
-    return <Component {...props} />;
+    return <Component {...props} {...opts} />;
   };
 }

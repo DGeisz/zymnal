@@ -1,7 +1,16 @@
 import { useState } from "react";
 
-export function useRerender() {
+export function useRerender<T>() {
   const [_i, setI] = useState<number>(0);
+  const [opts, setOpts] = useState<T>();
 
-  return { rerender: () => setI((i) => i + 1) };
+  return {
+    rerender: (newOpts?: T) => {
+      setI((i) => i + 1);
+      if (newOpts) {
+        setOpts(newOpts);
+      }
+    },
+    opts,
+  };
 }
