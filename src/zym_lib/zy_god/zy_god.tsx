@@ -1,3 +1,4 @@
+import { Hermes } from "../hermes/hermes";
 import { Zyact } from "../zym/zymplementations/zyact/zyact";
 import { ZyMaster } from "../zym/zy_master";
 import { isSome, some, unwrap } from "../zy_commands/zy_command_types";
@@ -21,6 +22,10 @@ export const ZyGodId: ZyId = "zyGod";
 
 class ZyGod extends ZyMaster {
   zyId: string = ZyGodId;
+
+  /* ZyGod Creates and Manages Hermes */
+  private hermes: Hermes = new Hermes();
+
   private masterRegistry: Map<ZyId, ZyMaster> = new Map();
   private cursor: Cursor = [];
   private root?: Zyact;
@@ -66,6 +71,7 @@ class ZyGod extends ZyMaster {
   registerMasters(masters: ZyMaster[]) {
     for (const master of masters) {
       this.masterRegistry.set(master.zyId, master);
+      this.hermes.registerZentinel(master);
     }
   }
 

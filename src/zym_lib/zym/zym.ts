@@ -1,3 +1,4 @@
+import { HermesMessage } from "../hermes/hermes";
 import {
   pointerToPath,
   UNIMPLEMENTED,
@@ -123,4 +124,9 @@ export abstract class Zym<T = any, P = any, RenderOptions = any> {
   };
 
   getMasterId = () => this.zyMaster.zyId;
+
+  /* ===== HERMES CALL ======  */
+  callHermes = async <T>(msg: HermesMessage) => {
+    return this.zyMaster.callHermes<T>(msg);
+  };
 }

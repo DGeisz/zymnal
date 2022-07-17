@@ -12,6 +12,7 @@ import {
   CursorMoveResponse,
   extendChildCursor,
   extractCursorInfo,
+  FAILED_CURSOR_MOVE_RESPONSE,
   successfulMoveResponse,
 } from "../cursor/cursor";
 import { BasicContext } from "../types/context_types";
@@ -89,7 +90,7 @@ export const defaultKeyPressImpl = implementTotalCmdGroup(KeyPressCommand, {
         );
       });
     } else {
-      return [];
+      return FAILED_CURSOR_MOVE_RESPONSE;
     }
   },
 });

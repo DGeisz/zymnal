@@ -1,3 +1,4 @@
+import { Zentinel } from "../zentinel/zentinel";
 import {
   call,
   ok,
@@ -14,7 +15,7 @@ import {
 import { ZyId } from "../zy_types/basic_types";
 import { Zym } from "./zym";
 
-export abstract class ZyMaster {
+export abstract class ZyMaster extends Zentinel {
   private cmdRegistry: Map<ZyCmdSerialPath, ZyCmdHandler<any>> = new Map();
 
   checkCmd = (path: ZyCmdPath) => this.cmdRegistry.has(serializePath(path));
