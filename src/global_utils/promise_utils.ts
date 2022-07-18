@@ -2,8 +2,8 @@ import { EventEmitter } from "stream";
 import { threadId } from "worker_threads";
 
 export class ControlledAwaiter {
-  ee?: EventEmitter;
-  triggered = false;
+  private ee?: EventEmitter;
+  private triggered = false;
 
   trigger = () => {
     if (this.ee) {
@@ -21,7 +21,7 @@ export class ControlledAwaiter {
     if (this.triggered) {
       return;
     } else {
-      return new Promise((resolve) => this.ee?.once("trigger", resolve));
+      return new Promise((resolve) => this.ee!.once("trigger", resolve));
     }
   };
 

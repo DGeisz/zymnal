@@ -4,11 +4,15 @@ import { ZyId } from "../zy_types/basic_types";
 
 export interface ZentinelMessage<T = any> {
   message: string | number;
-  content: T;
+  content?: T;
 }
 
 export interface HermesMessage<T = any> extends ZentinelMessage<T> {
   zentinelId: ZyId;
+}
+
+export interface HermesMessageCreator {
+  [key: string]: (data: any) => HermesMessage;
 }
 
 /**
@@ -16,12 +20,21 @@ export interface HermesMessage<T = any> extends ZentinelMessage<T> {
  * architectural elements (specifically zentinels)
  */
 export class Hermes {
+  zentinelRegistry: Map<ZyId, Zentinel> = new Map();
+
   registerZentinel = (zentinel: Zentinel) => {
-    /* TODO: Impl */
+    this.zentinelRegistry.set(zentinel.zyId, zentinel);
   };
 
   handleMessage = async (msg: HermesMessage): Promise<ZyResult<any>> => {
-    /* TODO: IMPL */
-    return UNIMPLEMENTED;
+    const { zentinelId, content, message } = msg;
+
+    const zentinel = this.zentinelRegistry.get(zentinelId);
+
+    if (zentinel) {
+      return zentinel.handleMessage({ content, message });
+    } else {
+      return UNIMPLEMENTED;
+    }
   };
 }

@@ -33,14 +33,25 @@ export enum KeyPressBasicType {
   Delete,
 }
 
-export type BasicKeyPress = {
-  type: KeyPressBasicType;
-};
+export enum KeyPressModifier {
+  Shift,
+  Ctrl,
+  Cmd,
+  Option,
+}
 
-export type ComplexKeyPress = {
+interface ModifiedKeyPress {
+  modifiers?: KeyPressModifier[];
+}
+
+export interface BasicKeyPress extends ModifiedKeyPress {
+  type: KeyPressBasicType;
+}
+
+export interface ComplexKeyPress extends ModifiedKeyPress {
   type: KeyPressComplexType.Key;
   key: string;
-};
+}
 
 export type ZymKeyPress = BasicKeyPress | ComplexKeyPress;
 

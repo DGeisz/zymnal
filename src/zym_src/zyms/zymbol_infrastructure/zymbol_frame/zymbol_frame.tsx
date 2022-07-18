@@ -1,6 +1,7 @@
 import { FC } from "react";
 import { isInferTypeNode } from "typescript";
 import Tex from "../../../../global_building_blocks/tex/tex";
+import { ZentinelMessage } from "../../../../zym_lib/hermes/hermes";
 import { Zym } from "../../../../zym_lib/zym/zym";
 import { Zyact } from "../../../../zym_lib/zym/zymplementations/zyact/zyact";
 import { ZyMaster } from "../../../../zym_lib/zym/zy_master";
@@ -9,6 +10,7 @@ import {
   isSome,
   unwrap,
   ZyOption,
+  ZyResult,
 } from "../../../../zym_lib/zy_commands/zy_command_types";
 import {
   chainMoveResponse,
@@ -25,6 +27,11 @@ import {
   KeyPressCommand,
   KeyPressComplexType,
 } from "../../../../zym_lib/zy_god/event_handler/key_press";
+import {
+  CreateTransformerMessage,
+  ZymbolTransformer,
+  ZymbolTreeTransformation,
+} from "../../../zentinels/transformer/transformer";
 import { Zocket } from "../../zymbol/zymbols/zocket/zocket";
 import { frameCursorImpl } from "./cmd/zf_cursor";
 import { ZymbolFramePersist } from "./zf_persist";
@@ -58,6 +65,9 @@ export class ZymbolFrame extends Zyact<ZymbolFramePersist, FrameRenderProps> {
   baseZocket: Zocket = new Zocket(true, this, 0, this);
   children: Zym<any, any>[] = [this.baseZocket];
 
+  showTransformations = false;
+  transformations: ZymbolTreeTransformation[] = [];
+
   component: FC<FrameRenderProps> = (props) => {
     let cursorOpt;
 
@@ -88,14 +98,46 @@ export class ZymbolFrame extends Zyact<ZymbolFramePersist, FrameRenderProps> {
   and it indicates that we want to take the current zymbol tree and 
   transform it into a new desired form */
   prepareTransformation = (loc: TransformationCursorLocation) => {};
+
+  setTransformations = (transformations: ZymbolTreeTransformation[]) => {
+    if (transformations.length > 0) {
+      this.transformations = transformations;
+      this.showTransformations = true;
+    } else {
+      this.showTransformations = false;
+      this.transformations = [];
+    }
+  };
+
+  setTransformationsVisible = (show: boolean) => {
+    this.showTransformations = show;
+  };
+
+  private getTopTransformationSuggestion = () => {
+    if (this.transformations.length > 0) {
+      this.rankTransactions();
+
+      return this.transformations[0];
+    }
+  };
+
+  private rankTransactions = () => {
+    this.transformations.sort((a, b) => {
+      if (a.priority.rank === b.priority.rank) {
+        return b.priority.value - a.priority.value;
+      } else {
+        return b.priority.rank - a.priority.rank;
+      }
+    });
+  };
 }
 
 /* ==== CMD Implementations ==== */
 
 /* Key Press */
 const keyPressImpl = implementPartialCmdGroup(KeyPressCommand, {
-  handleKeyPress: (zym, args) => {
-    const zocket = zym as Zocket;
+  handleKeyPress: async (zym, args) => {
+    const frame = zym as ZymbolFrame;
     const { cursor, keyPressContext, keyPress } = args as KeyPressArgs;
 
     const { nextCursorIndex, childRelativeCursor } = extractCursorInfo(cursor);
@@ -128,8 +170,19 @@ const keyPressImpl = implementPartialCmdGroup(KeyPressCommand, {
       if (isInputKey) {
         /* Handle potential transformation */
         /* 1. Ask Hermes for the Transformer */
+        const transformer = unwrap(
+          await frame.callHermes(
+            CreateTransformerMessage.getTransformer(
+              frame.getFullCursorPointer()
+            )
+          )
+        ) as ZymbolTransformer;
+
         /* 2. Apply the transformer to get a list of potential transformations */
+        const transformations = transformer(frame.baseZocket);
+
         /* 3. Set setting that indicates that we have a transformation for the next render event */
+        frame.setTransformations(transformations);
       }
 
       return chainMoveResponse(childMove, (nextCursor) => {

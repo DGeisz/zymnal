@@ -3,8 +3,7 @@ import ReactDOM from "react-dom/client";
 import "./index.css";
 import reportWebVitals from "./reportWebVitals";
 import { ZyBridge } from "./zym_lib/zy_god/divine_api/zy_bridge_hook";
-import { zyMasterList } from "./zym_src/zy_master_registration/zy_master_list";
-import { getZymTreeRoot } from "./zym_src/root";
+import { getZymTreeRoot, zentinelList, zyMasterList } from "./zym_src/root";
 
 const root = ReactDOM.createRoot(
   document.getElementById("root") as HTMLElement
@@ -12,7 +11,11 @@ const root = ReactDOM.createRoot(
 
 root.render(
   <React.StrictMode>
-    <ZyBridge root={getZymTreeRoot()} zyMasters={zyMasterList} />
+    <ZyBridge
+      root={getZymTreeRoot()}
+      zyMasters={zyMasterList}
+      zentinels={zentinelList}
+    />
   </React.StrictMode>
 );
 

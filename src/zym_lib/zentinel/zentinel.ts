@@ -1,6 +1,6 @@
 import { ControlledAwaiter } from "../../global_utils/promise_utils";
-import { Hermes, HermesMessage } from "../hermes/hermes";
-import { ZyResult } from "../zy_commands/zy_command_types";
+import { Hermes, HermesMessage, ZentinelMessage } from "../hermes/hermes";
+import { UNIMPLEMENTED, ZyResult } from "../zy_commands/zy_command_types";
 import { ZyId } from "../zy_types/basic_types";
 
 /**
@@ -8,8 +8,8 @@ import { ZyId } from "../zy_types/basic_types";
  * through Hermes
  */
 export abstract class Zentinel {
-  abstract readonly id: ZyId;
-  hermes?: Hermes;
+  abstract readonly zyId: ZyId;
+  private hermes?: Hermes;
   hermesSetAwaiter = new ControlledAwaiter();
 
   fixHermes = (hermes: Hermes) => {
@@ -25,5 +25,9 @@ export abstract class Zentinel {
     return this.hermes!.handleMessage(msg);
   };
 
-  abstract handleMessage(msg: HermesMessage): Promise<ZyResult<any>>;
+  /* ==== NEEDS TO BE OVERRIDDEN ==== */
+  /* Only has default impl for basic zy masters that don't function as zentinels */
+  handleMessage = async (msg: ZentinelMessage): Promise<ZyResult<any>> => {
+    return UNIMPLEMENTED;
+  };
 }

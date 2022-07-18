@@ -1,7 +1,16 @@
-import { Hermes } from "../hermes/hermes";
+import { ControlledAwaiter } from "../../global_utils/promise_utils";
+import { Hermes, HermesMessage, ZentinelMessage } from "../hermes/hermes";
+import { Zentinel } from "../zentinel/zentinel";
 import { Zyact } from "../zym/zymplementations/zyact/zyact";
 import { ZyMaster } from "../zym/zy_master";
-import { isSome, some, unwrap } from "../zy_commands/zy_command_types";
+import {
+  isSome,
+  ok,
+  some,
+  UNIMPLEMENTED,
+  unwrap,
+  ZyResult,
+} from "../zy_commands/zy_command_types";
 import { ZyId } from "../zy_types/basic_types";
 import { Cursor, CursorMoveResponse } from "./cursor/cursor";
 import {
@@ -20,19 +29,36 @@ import { newContext } from "./types/context_types";
 
 export const ZyGodId: ZyId = "zyGod";
 
+enum ZyGodZentinelMessage {
+  GetZymRoot = "gzr",
+}
+
+export const GET_ZYM_ROOT: HermesMessage = {
+  zentinelId: ZyGodId,
+  message: ZyGodZentinelMessage.GetZymRoot,
+};
+
 class ZyGod extends ZyMaster {
   zyId: string = ZyGodId;
 
   /* ZyGod Creates and Manages Hermes */
-  private hermes: Hermes = new Hermes();
+  private zyGodHermes: Hermes = new Hermes();
 
   private masterRegistry: Map<ZyId, ZyMaster> = new Map();
   private cursor: Cursor = [];
   private root?: Zyact;
+  private rootAwaiter = new ControlledAwaiter();
 
   constructor() {
     super();
+
     docEventHandler.addKeyHandler(this.handleKeyPress);
+
+    /* 
+    We have to add this line because the zy god is both the 
+    carrier of hermes and also a zentinel
+    */
+    this.fixHermes(this.zyGodHermes);
   }
 
   private handleCursorChange = (newCursor: Cursor) => {
@@ -71,7 +97,13 @@ class ZyGod extends ZyMaster {
   registerMasters(masters: ZyMaster[]) {
     for (const master of masters) {
       this.masterRegistry.set(master.zyId, master);
-      this.hermes.registerZentinel(master);
+      this.zyGodHermes.registerZentinel(master);
+    }
+  }
+
+  registerZentinels(zentinels: Zentinel[]) {
+    for (const z of zentinels) {
+      this.zyGodHermes.registerZentinel(z);
     }
   }
 
@@ -87,6 +119,19 @@ class ZyGod extends ZyMaster {
 
     console.log("This is cursor", this.cursor);
   }
+
+  handleMessage = async (msg: ZentinelMessage): Promise<ZyResult<any>> => {
+    switch (msg.message) {
+      case ZyGodZentinelMessage.GetZymRoot: {
+        await this.rootAwaiter.awaitTrigger();
+
+        return ok(this.root);
+      }
+      default: {
+        return UNIMPLEMENTED;
+      }
+    }
+  };
 }
 
 export const zyGod = new ZyGod();
