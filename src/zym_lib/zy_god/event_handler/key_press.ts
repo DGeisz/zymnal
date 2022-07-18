@@ -1,4 +1,3 @@
-import { ZYMBOL_PROGRESSION_ID } from "../../../zym_src/zyms/zymbol_infrastructure/zymbol_progression/zp_master";
 import { Zym } from "../../zym/zym";
 import {
   groupPathFactory,
@@ -80,9 +79,9 @@ export interface KeyPressArgs {
 
 export const defaultKeyPressImpl = implementTotalCmdGroup(KeyPressCommand, {
   handleKeyPress: async (zym, args) => {
-    console.log("hi", zym.getCursorIndex(), zym.getMasterId());
-
     const { cursor, keyPressContext, keyPress } = args as KeyPressArgs;
+
+    console.log("key press", zym.getMasterId());
 
     const { nextCursorIndex, childRelativeCursor } = extractCursorInfo(cursor);
 
@@ -98,8 +97,6 @@ export const defaultKeyPressImpl = implementTotalCmdGroup(KeyPressCommand, {
         }
       );
 
-      console.log("Promise in child!", childMove);
-
       return chainMoveResponse(unwrap(childMove), (nextCursor) => {
         return successfulMoveResponse(
           extendChildCursor(nextCursorIndex, nextCursor)
@@ -110,71 +107,3 @@ export const defaultKeyPressImpl = implementTotalCmdGroup(KeyPressCommand, {
     }
   },
 });
-
-// enum KeyPressEnum {
-//   handleKeyPres,
-// }
-
-// export type LocalKeyPressType = typeof LocalKeyPressCommandsEnum;
-
-// export const KeyPressCommand: ZyCommandGroup<LocalKeyPressType> = {
-//   handleKeyPress: justPath(kpc("hkp")),
-// };
-
-// /* Local Types */
-// interface KeyPressArgs {
-//   keyPress: ZymKeyPress;
-// }
-
-// export type LocalKeyPressArgs = CmdArgs<KeyPressArgs>;
-// export type LocalKeyPressReturn = SingleCursorPropReturn<
-//   KeyPressResponse,
-//   KeyPressArgs
-// >;
-
-// /* ==== GLOBAL COMMANDS ====  */
-// export function zyTreeHandleKeyPress(root: Zym, cursor: Cursor) {
-//   runSingleCursorTreePropagator(root, {
-//     cursor,
-//     nodeCmd: KeyPressCommand.handleKeyPress,
-//     initialArgs: {},
-//   });
-// }
-
-// export function hanldle<R, A = any>(
-//   root: Zym,
-//   cursor: Cursor,
-//   keyPress: ZymKeyPress
-// ): CursorMoveResponse {
-//   // const { cursor, initialArgs, nodeCmd } = args;
-
-//   const path = pointerToPath(nodeCmd);
-
-//   let nodeArgs = initialArgs;
-//   let currZym = root;
-//   let cursorCopy = [...cursor];
-
-//   for (const index of cursor) {
-//     cursorCopy.shift();
-
-//     const r = currZym.cmd<SingleCursorPropReturn<CursorMoveResponse>, CmdArgs>(
-//       KeyPressCommand.handleKeyPress,
-//       {
-//         cursor: [...cursorCopy],
-//         args: nodeArgs,
-//       }
-//     );
-
-//     if (r.ok) {
-//       if (r.val.terminated) {
-//         return r.val;
-//       } else {
-//         nodeArgs = r.val.nextArgs;
-//       }
-//     }
-
-//     currZym = currZym.children[index];
-//   }
-
-//   return NONE;
-// }

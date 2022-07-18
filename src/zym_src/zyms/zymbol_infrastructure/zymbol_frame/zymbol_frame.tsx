@@ -89,8 +89,6 @@ export class ZymbolFrame extends Zyact<ZymbolFramePersist, FrameRenderProps> {
       cursor: relativeCursor,
     });
 
-    console.log("frame text", JSON.stringify(frameTex));
-
     return <Tex tex={frameTex} />;
   };
 
@@ -143,6 +141,7 @@ export class ZymbolFrame extends Zyact<ZymbolFramePersist, FrameRenderProps> {
 /* Key Press */
 const keyPressImpl = implementPartialCmdGroup(KeyPressCommand, {
   handleKeyPress: async (zym, args) => {
+    debugger;
     const frame = zym as ZymbolFrame;
     const { cursor, keyPressContext, keyPress } = args as KeyPressArgs;
 
@@ -184,8 +183,7 @@ const keyPressImpl = implementPartialCmdGroup(KeyPressCommand, {
           )
         ) as ZymbolTransformer;
 
-        console.log("before----");
-        console.log("transformer", await transformer);
+        debugger;
 
         /* 2. Apply the transformer to get a list of potential transformations */
         const transformations = transformer(frame.baseZocket, cursor);

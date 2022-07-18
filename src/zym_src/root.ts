@@ -5,6 +5,7 @@ import { defaultCursorImpl } from "../zym_lib/zy_god/cursor/cursor_commands";
 import { registerDefaultCmds } from "../zym_lib/zy_god/divine_api/zy_global_cmds";
 import { defaultKeyPressImpl } from "../zym_lib/zy_god/event_handler/key_press";
 import { zymbolTransformerZentinel } from "./zentinels/transformer/transformer";
+import { inPlaceSymbol } from "./zentinels/transformer/transformers/in_place_symbols";
 import { Zage } from "./zyms/zage/zage";
 import { zageMaster } from "./zyms/zage/zage_master";
 import { zymbolMasterList } from "./zyms/zymbol/zymbols/zymbol_list";
@@ -25,4 +26,7 @@ export const zyMasterList: ZyMaster[] = [
   ...zymbolMasterList,
 ];
 
-export const zentinelList: Zentinel[] = [zymbolTransformerZentinel];
+export const zentinelList: Zentinel[] = [
+  zymbolTransformerZentinel,
+  inPlaceSymbol,
+];

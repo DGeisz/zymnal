@@ -62,8 +62,6 @@ class ZyGod extends ZyMaster {
   }
 
   private handleCursorChange = (newCursor: Cursor) => {
-    console.log("change cursor", this.cursor, newCursor);
-
     this.root?.cmd<any, CursorRenderArgs>(CursorCommand.cursorRender, {
       oldCursor: some(this.cursor),
       newCursor: some(newCursor),
@@ -73,7 +71,6 @@ class ZyGod extends ZyMaster {
   };
 
   handleKeyPress = async (event: ZymKeyPress) => {
-    console.log("kp", event, KeyPressBasicType.Delete);
     if (this.root) {
       const moveResponse = unwrap(
         await this.root.cmd<CursorMoveResponse, KeyPressArgs>(

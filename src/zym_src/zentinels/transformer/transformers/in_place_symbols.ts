@@ -13,10 +13,6 @@ import {
   TextZymbol,
   TEXT_ZYMBOL_NAME,
 } from "../../../zyms/zymbol/zymbols/text_zymbol/text_zymbol";
-import {
-  Zocket,
-  ZOCKET_MASTER_ID,
-} from "../../../zyms/zymbol/zymbols/zocket/zocket";
 import { CreateTransformerMessage } from "../transformer";
 
 export const IN_PLACE_SYMBOL_TRANSFORM = "in-place-e8d29";
@@ -80,7 +76,7 @@ const greekSlashKeys = Object.keys(greekSlashMap);
 function greekifyHelper(
   zymbol: Zymbol,
   cursor: Cursor
-): { zymbol: Zymbol; changed: boolean } {
+): { zymbol: Zymbol; changed: boolean; cursor: Cursor } {
   const { nextCursorIndex, parentOfCursorElement, childRelativeCursor } =
     extractCursorInfo(cursor);
 
@@ -131,7 +127,7 @@ function greekifyHelper(
   };
 }
 
-export class InPlaceSymbol extends Zentinel {
+class InPlaceSymbol extends Zentinel {
   zyId: string = IN_PLACE_SYMBOL_TRANSFORM;
 
   onRegistration = async () => {
@@ -142,9 +138,12 @@ export class InPlaceSymbol extends Zentinel {
         source: IN_PLACE_SYMBOL_TRANSFORM,
         name: "in-place",
         transform: (root, cursor) => {
+          console.log("transorm!!");
           throw new Error("unimpl");
         },
       })
     );
   };
 }
+
+export const inPlaceSymbol = new InPlaceSymbol();

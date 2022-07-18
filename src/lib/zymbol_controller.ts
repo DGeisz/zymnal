@@ -98,8 +98,6 @@ export class ZymbolController {
     if (cursorResponse.success) {
       this.cursor = cursorResponse.newRelativeCursor;
     }
-
-    console.log("Cursor", this.cursor);
   };
 
   renderTex = (): string => {

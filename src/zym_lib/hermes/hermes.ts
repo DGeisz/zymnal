@@ -30,7 +30,6 @@ export class Hermes {
   pendingMessages: Map<ZyId, PendingHermesMessage[]> = new Map();
 
   registerZentinel = (zentinel: Zentinel) => {
-    console.log("regiestered zentinel:", zentinel.zyId);
     this.zentinelRegistry.set(zentinel.zyId, zentinel);
     zentinel.fixHermes(this);
 
@@ -53,7 +52,6 @@ export class Hermes {
   };
 
   handleMessage = async (msg: HermesMessage): Promise<ZyResult<any>> => {
-    console.log("got hermes msg", msg);
     const { zentinelId, content, message } = msg;
 
     const zentinel = this.zentinelRegistry.get(zentinelId);

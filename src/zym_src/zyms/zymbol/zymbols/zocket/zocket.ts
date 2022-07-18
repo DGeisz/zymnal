@@ -321,7 +321,6 @@ export class Zocket extends Zymbol<{}> {
   };
 
   renderTex = (opts: ZymbolRenderArgs) => {
-    console.log("render tex:::", opts);
     const { cursor } = opts;
 
     const { parentOfCursorElement, nextCursorIndex, childRelativeCursor } =

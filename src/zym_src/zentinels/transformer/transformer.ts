@@ -56,6 +56,7 @@ export interface ZymbolTreeTransformationPriority {
 
 export interface ZymbolTreeTransformation {
   newTreeRoot: Zymbol;
+  cursor: Cursor;
   priority: ZymbolTreeTransformationPriority;
 }
 
@@ -135,6 +136,8 @@ class ZymbolTransformerZentinel extends Zentinel {
     const transformers = _.flatten(
       this.transformerFactories.map((factory) => factory.factory(root, cursor))
     );
+
+    transformers.push(...this.transformers.map((t) => t.transform));
 
     return (zymbolRoot: Zymbol) => {
       return _.flatten(
