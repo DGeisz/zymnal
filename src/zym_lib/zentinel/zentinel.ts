@@ -13,7 +13,7 @@ export abstract class Zentinel {
   hermesSetAwaiter = new ControlledAwaiter();
 
   fixHermes = (hermes: Hermes) => {
-    if (!hermes) {
+    if (!this.hermes) {
       this.hermes = hermes;
       this.hermesSetAwaiter.trigger();
     }
@@ -25,9 +25,12 @@ export abstract class Zentinel {
     return this.hermes!.handleMessage(msg);
   };
 
-  /* ==== NEEDS TO BE OVERRIDDEN ==== */
+  /* ==== MESSAGE HANDLERS ==== */
   /* Only has default impl for basic zy masters that don't function as zentinels */
   handleMessage = async (msg: ZentinelMessage): Promise<ZyResult<any>> => {
     return UNIMPLEMENTED;
   };
+
+  /* ==== EVENT LISTENERS ====  */
+  onRegistration = async () => {};
 }

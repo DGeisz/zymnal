@@ -1,7 +1,5 @@
 import { FC } from "react";
-import { isInferTypeNode } from "typescript";
 import Tex from "../../../../global_building_blocks/tex/tex";
-import { ZentinelMessage } from "../../../../zym_lib/hermes/hermes";
 import { Zym } from "../../../../zym_lib/zym/zym";
 import { Zyact } from "../../../../zym_lib/zym/zymplementations/zyact/zyact";
 import { ZyMaster } from "../../../../zym_lib/zym/zy_master";
@@ -10,7 +8,6 @@ import {
   isSome,
   unwrap,
   ZyOption,
-  ZyResult,
 } from "../../../../zym_lib/zy_commands/zy_command_types";
 import {
   chainMoveResponse,
@@ -67,6 +64,15 @@ export class ZymbolFrame extends Zyact<ZymbolFramePersist, FrameRenderProps> {
 
   showTransformations = false;
   transformations: ZymbolTreeTransformation[] = [];
+
+  clone = () => {
+    const newFrame = new ZymbolFrame(this.getCursorIndex(), this.parent);
+
+    newFrame.baseZocket = this.baseZocket.clone() as Zocket;
+    newFrame.children = [newFrame.baseZocket];
+
+    return newFrame;
+  };
 
   component: FC<FrameRenderProps> = (props) => {
     let cursorOpt;
@@ -157,7 +163,7 @@ const keyPressImpl = implementPartialCmdGroup(KeyPressCommand, {
       const child: Zym = zym.children[nextCursorIndex];
 
       const childMove = unwrap(
-        child.cmd<CursorMoveResponse, KeyPressArgs>(
+        await child.cmd<CursorMoveResponse, KeyPressArgs>(
           KeyPressCommand.handleKeyPress,
           {
             cursor: childRelativeCursor,
@@ -178,8 +184,11 @@ const keyPressImpl = implementPartialCmdGroup(KeyPressCommand, {
           )
         ) as ZymbolTransformer;
 
+        console.log("before----");
+        console.log("transformer", await transformer);
+
         /* 2. Apply the transformer to get a list of potential transformations */
-        const transformations = transformer(frame.baseZocket);
+        const transformations = transformer(frame.baseZocket, cursor);
 
         /* 3. Set setting that indicates that we have a transformation for the next render event */
         frame.setTransformations(transformations);

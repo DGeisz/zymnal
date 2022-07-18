@@ -1,7 +1,4 @@
-import { last } from "../../../global_utils/array_utils";
 import { CURSOR_NAME } from "../../../global_utils/latex_utils";
-import { Zym } from "../../zym/zym";
-import { CursorCommand } from "./cursor_commands";
 
 export type CursorIndex = number;
 export type Cursor = CursorIndex[];

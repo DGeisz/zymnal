@@ -23,7 +23,7 @@ import {
 } from "../../delete_behavior";
 import { Zymbol, ZymbolRenderArgs } from "../../zymbol";
 import { extendZymbol } from "../../zymbol_cmd";
-import { TextZymbol, TEXT_ZYMBOL_NAME } from "../text_zymbol/text_zymbol";
+import { TEXT_ZYMBOL_NAME, TextZymbol } from "../text_zymbol/text_zymbol";
 import { zocketCursorImpl } from "./cmd/zocket_cursor";
 
 export const ZOCKET_MASTER_ID = "zocket";
@@ -59,6 +59,19 @@ export class Zocket extends Zymbol<{}> {
     super(parentFrame, cursorIndex, parent, persisted);
     this.isBaseZocket = isBaseZocket;
   }
+
+  clone = () => {
+    const newZocket = new Zocket(
+      this.isBaseZocket,
+      this.parentFrame,
+      this.getCursorIndex(),
+      this.parent
+    );
+
+    newZocket.children = this.cloneChildren() as Zymbol[];
+
+    return newZocket;
+  };
 
   /* USED ONLY FOR TESTS */
   getZymbols = () => this.children;
@@ -308,6 +321,7 @@ export class Zocket extends Zymbol<{}> {
   };
 
   renderTex = (opts: ZymbolRenderArgs) => {
+    console.log("render tex:::", opts);
     const { cursor } = opts;
 
     const { parentOfCursorElement, nextCursorIndex, childRelativeCursor } =

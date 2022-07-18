@@ -1,6 +1,7 @@
 import katex from "katex";
 import escape_latex from "escape-latex";
 import { palette } from "../global_styles/palette";
+import { TeX } from "../zym_src/zyms/zymbol/zymbol_types";
 
 const renderToString = katex.renderToString;
 
@@ -88,4 +89,8 @@ export function tex_renders_properly(tex: string): boolean {
   }
 
   return renders;
+}
+
+export function backslash(str: string): TeX {
+  return "\\" + str;
 }

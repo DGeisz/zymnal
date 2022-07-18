@@ -1,3 +1,4 @@
+import { ZYMBOL_PROGRESSION_ID } from "../../../zym_src/zyms/zymbol_infrastructure/zymbol_progression/zp_master";
 import { Zym } from "../../zym/zym";
 import {
   groupPathFactory,
@@ -78,7 +79,9 @@ export interface KeyPressArgs {
 }
 
 export const defaultKeyPressImpl = implementTotalCmdGroup(KeyPressCommand, {
-  handleKeyPress: (zym, args) => {
+  handleKeyPress: async (zym, args) => {
+    console.log("hi", zym.getCursorIndex(), zym.getMasterId());
+
     const { cursor, keyPressContext, keyPress } = args as KeyPressArgs;
 
     const { nextCursorIndex, childRelativeCursor } = extractCursorInfo(cursor);
@@ -86,7 +89,7 @@ export const defaultKeyPressImpl = implementTotalCmdGroup(KeyPressCommand, {
     if (nextCursorIndex >= 0) {
       const child: Zym = zym.children[nextCursorIndex];
 
-      const childMove = child.cmd<CursorMoveResponse, KeyPressArgs>(
+      const childMove = await child.cmd<CursorMoveResponse, KeyPressArgs>(
         KeyPressCommand.handleKeyPress,
         {
           cursor: childRelativeCursor,
@@ -94,6 +97,8 @@ export const defaultKeyPressImpl = implementTotalCmdGroup(KeyPressCommand, {
           keyPress,
         }
       );
+
+      console.log("Promise in child!", childMove);
 
       return chainMoveResponse(unwrap(childMove), (nextCursor) => {
         return successfulMoveResponse(

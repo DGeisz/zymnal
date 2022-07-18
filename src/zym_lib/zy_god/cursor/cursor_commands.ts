@@ -1,3 +1,4 @@
+import { zymbolFrameMaster } from "../../../zym_src/zyms/zymbol_infrastructure/zymbol_frame/zymbol_frame";
 import {
   groupPathFactory,
   implementPartialCmdGroup,
@@ -45,10 +46,10 @@ export const CursorCommand: ZyCommandGroup<CursorCommandType> = {
 
 /* ==== DEFAULT IMPL ====  */
 export const defaultCursorImpl = implementPartialCmdGroup(CursorCommand, {
-  getInitialCursor: (zym): ZyOption<Cursor> => {
+  getInitialCursor: async (zym): Promise<ZyOption<Cursor>> => {
     for (let i = 0; i < zym.children.length; i++) {
       const option = unwrap<ZyOption<Cursor>>(
-        zym.children[i].cmd(CursorCommand.getInitialCursor)
+        await zym.children[i].cmd(CursorCommand.getInitialCursor)
       );
 
       if (isSome(option)) {
@@ -58,12 +59,12 @@ export const defaultCursorImpl = implementPartialCmdGroup(CursorCommand, {
 
     return NONE;
   },
-  cursorRender: (zym, args: CursorRenderArgs) => {
+  cursorRender: async (zym, args: CursorRenderArgs) => {
     const { oldCursor, newCursor } = args;
 
     zym.render();
 
-    const canHandleChildren = zym.cmd<boolean>(
+    const canHandleChildren = await zym.cmd<boolean>(
       CursorCommand.canHandleCursorBranchRender
     );
 

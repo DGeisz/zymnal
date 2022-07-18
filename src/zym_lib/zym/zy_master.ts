@@ -20,11 +20,15 @@ export abstract class ZyMaster extends Zentinel {
 
   checkCmd = (path: ZyCmdPath) => this.cmdRegistry.has(serializePath(path));
 
-  cmd = <T>(zym: Zym, path: ZyCmdPath, args: ZyCmdArgs): ZyResult<T> => {
+  cmd = async <T>(
+    zym: Zym,
+    path: ZyCmdPath,
+    args: ZyCmdArgs
+  ): Promise<ZyResult<T>> => {
     const handler = this.cmdRegistry.get(serializePath(path));
 
     if (handler) {
-      return ok(call(handler, zym, args));
+      return ok(await call(handler, zym, args));
     } else {
       return UNIMPLEMENTED;
     }

@@ -58,7 +58,7 @@ class ZyGod extends ZyMaster {
     We have to add this line because the zy god is both the 
     carrier of hermes and also a zentinel
     */
-    this.fixHermes(this.zyGodHermes);
+    this.zyGodHermes.registerZentinel(this);
   }
 
   private handleCursorChange = (newCursor: Cursor) => {
@@ -72,11 +72,11 @@ class ZyGod extends ZyMaster {
     this.cursor = newCursor;
   };
 
-  handleKeyPress = (event: ZymKeyPress) => {
+  handleKeyPress = async (event: ZymKeyPress) => {
     console.log("kp", event, KeyPressBasicType.Delete);
     if (this.root) {
       const moveResponse = unwrap(
-        this.root.cmd<CursorMoveResponse, KeyPressArgs>(
+        await this.root.cmd<CursorMoveResponse, KeyPressArgs>(
           KeyPressCommand.handleKeyPress,
           {
             cursor: this.cursor,
@@ -107,17 +107,19 @@ class ZyGod extends ZyMaster {
     }
   }
 
-  setRoot(root: Zyact) {
+  async setRoot(root: Zyact) {
     this.root = root;
+    this.rootAwaiter.trigger();
+
     const cursorOpt = unwrap(
-      this.root.cmd<GetInitialCursorReturn>(CursorCommand.getInitialCursor)
+      await this.root.cmd<GetInitialCursorReturn>(
+        CursorCommand.getInitialCursor
+      )
     );
 
     if (isSome(cursorOpt)) {
       this.cursor = cursorOpt.val;
     }
-
-    console.log("This is cursor", this.cursor);
   }
 
   handleMessage = async (msg: ZentinelMessage): Promise<ZyResult<any>> => {

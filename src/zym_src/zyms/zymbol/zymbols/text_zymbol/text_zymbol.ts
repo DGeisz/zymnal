@@ -163,9 +163,25 @@ export class TextZymbol extends Zymbol<{}> {
     throw new Error("Method not implemented.");
   }
 
+  clone = () => {
+    const newText = new TextZymbol(
+      this.parentFrame,
+      this.getCursorIndex(),
+      this.parent
+    );
+
+    newText.setCharacters(this.characters);
+
+    return newText;
+  };
   /* Custom methods */
   getCharacters = () => this.characters;
   setCharacters = (characters: string[]) => {
     this.characters = characters;
+  };
+
+  getText = () => this.characters.join("");
+  setText = (text: string) => {
+    this.setCharacters(text.split(""));
   };
 }

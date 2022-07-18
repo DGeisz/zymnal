@@ -16,7 +16,7 @@ const lower: string[] = [
   "kappa",
   "lambda",
   "mu",
-  "mu",
+  "nu",
   "xi",
   "omicron",
   "pi",

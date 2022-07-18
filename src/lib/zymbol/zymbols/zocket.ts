@@ -177,6 +177,7 @@ export class Zocket extends Zymbol {
   };
 
   addCharacter = (character: string, cursor: Cursor): CursorMoveResponse => {
+    console.log("zicket add", character);
     const { parentOfCursorElement, nextCursorIndex, childRelativeCursor } =
       extractCursorInfo(cursor);
 

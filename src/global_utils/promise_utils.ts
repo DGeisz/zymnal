@@ -1,8 +1,7 @@
-import { EventEmitter } from "stream";
-import { threadId } from "worker_threads";
+import { EventEmitter } from "eventemitter3";
 
 export class ControlledAwaiter {
-  private ee?: EventEmitter;
+  private ee?: any;
   private triggered = false;
 
   trigger = () => {

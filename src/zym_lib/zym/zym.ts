@@ -12,7 +12,7 @@ import {
 } from "../zy_god/cursor/cursor";
 import {
   checkGlobalImplementation,
-  globalCmd,
+  defaultCmd,
 } from "../zy_god/divine_api/zy_global_cmds";
 import { ZyMaster } from "./zy_master";
 
@@ -32,7 +32,7 @@ export abstract class Zym<T = any, P = any, RenderOptions = any> {
   private cursorIndex: CursorIndex;
 
   /* Tree pointers */
-  private parent?: Zym<any, any>;
+  readonly parent?: Zym<any, any>;
   abstract children: Zym<any, any>[];
 
   /* Master */
@@ -101,17 +101,27 @@ export abstract class Zym<T = any, P = any, RenderOptions = any> {
   /* Hydrates the zym from persisted data */
   abstract hydrate(persisted: P): void;
 
+  /* ===== TREE METHODS ===== */
+  abstract clone(): Zym<T, P>;
+
+  cloneChildren = (): Zym[] => {
+    return this.children.map((c) => c.clone());
+  };
+
   /* ===== COMMANDS ===== */
-  cmd = <T, A = any>(pointer: ZyCmdPointer, args?: A): ZyResult<T> => {
+  cmd = async <T, A = any>(
+    pointer: ZyCmdPointer,
+    args?: A
+  ): Promise<ZyResult<T>> => {
     const path = pointerToPath(pointer);
 
     /* Look for a local implementation */
-    const local = this.zyMaster.cmd<T>(this, path, args);
+    const local = await this.zyMaster.cmd<T>(this, path, args);
 
     if (local.ok) return local;
 
     /* Now look for a default implementation */
-    const global = globalCmd<T>(this, path, args);
+    const global = await defaultCmd<T>(this, path, args);
 
     if (global.ok) return global;
 
@@ -126,7 +136,7 @@ export abstract class Zym<T = any, P = any, RenderOptions = any> {
   getMasterId = () => this.zyMaster.zyId;
 
   /* ===== HERMES CALL ======  */
-  callHermes = async <T>(msg: HermesMessage) => {
-    return this.zyMaster.callHermes<T>(msg);
+  callHermes = async (msg: HermesMessage) => {
+    return this.zyMaster.callHermes(msg);
   };
 }

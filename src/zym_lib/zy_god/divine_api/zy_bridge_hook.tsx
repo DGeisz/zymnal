@@ -15,11 +15,13 @@ export const ZyBridge: React.FC<ZyBridgeProps> = (props) => {
   const [ready, setReady] = useState<boolean>(false);
 
   useEffect(() => {
-    zyGod.registerMasters(props.zyMasters);
-    zyGod.registerZentinels(props.zentinels);
-    zyGod.setRoot(props.root);
+    (async () => {
+      zyGod.registerMasters(props.zyMasters);
+      zyGod.registerZentinels(props.zentinels);
+      await zyGod.setRoot(props.root);
 
-    setReady(true);
+      setReady(true);
+    })();
   }, []);
 
   const RootComp = useZymponent(props.root);

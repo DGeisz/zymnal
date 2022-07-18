@@ -30,4 +30,12 @@ export class Zage extends Zyact<ZagePersist> {
   hydrate(persisted: ZagePersist): void {
     this.baseZymbolContext.hydrate(persisted[ZAGE_PERSIST_FIELDS.CONTEXT]);
   }
+
+  clone = () => {
+    const newZage = new Zage(this.getCursorIndex(), this.parent);
+    newZage.baseZymbolContext = this.baseZymbolContext.clone() as ZymbolContext;
+    newZage.children = [newZage.baseZymbolContext];
+
+    return newZage;
+  };
 }

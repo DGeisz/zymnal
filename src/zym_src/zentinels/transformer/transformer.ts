@@ -14,16 +14,24 @@ import _ from "underscore";
 export const TransformerId = "transformer-59bcd";
 
 enum TransformerMessage {
+  RegisterTransformer = "rt",
   RegisterTransformerFactory = "rtf",
   GetTransformer = "gt",
 }
 
 export const CreateTransformerMessage = {
+  registerTransformer(transformer: SourcedTransformer): HermesMessage {
+    return {
+      zentinelId: TransformerId,
+      message: TransformerMessage.RegisterTransformer,
+      content: { transformer },
+    };
+  },
   registerTransformerFactory(factory: TransformerFactory): HermesMessage {
     return {
       zentinelId: TransformerId,
       message: TransformerMessage.RegisterTransformerFactory,
-      content: factory,
+      content: { factory },
     };
   },
   getTransformer(cursor: Cursor): HermesMessage {
@@ -52,8 +60,15 @@ export interface ZymbolTreeTransformation {
 }
 
 export type ZymbolTransformer = (
-  rootZymbol: Zymbol
+  rootZymbol: Zymbol,
+  cursor: Cursor
 ) => ZymbolTreeTransformation[];
+
+export interface SourcedTransformer {
+  source: string;
+  name: string;
+  transform: ZymbolTransformer;
+}
 
 export interface TransformerFactory {
   source: string;
@@ -65,24 +80,43 @@ class ZymbolTransformerZentinel extends Zentinel {
   zyId = TransformerId;
 
   transformerFactories: TransformerFactory[] = [];
+  transformers: SourcedTransformer[] = [];
 
   handleMessage = async (msg: ZentinelMessage) => {
     switch (msg.message) {
       case TransformerMessage.RegisterTransformerFactory: {
-        this.registerTransformerFactory(msg.content);
+        this.registerTransformerFactory(msg.content.factory);
+
+        return ok(true);
+      }
+      case TransformerMessage.RegisterTransformer: {
+        this.registerSourcedTransformer(msg.content.transformer);
 
         return ok(true);
       }
       case TransformerMessage.GetTransformer: {
         const { cursor } = msg.content as GetTransformerContent;
 
-        return ok(this.getZymbolTransformer(cursor));
+        return ok(await this.getZymbolTransformer(cursor));
       }
       default: {
         /* Zentinel defaults to unimplemented for unhandled messages */
         return UNIMPLEMENTED;
       }
     }
+  };
+
+  /*
+  --- NOTE ---
+  We allow overriding transformer implementations by default
+  */
+
+  registerSourcedTransformer = (trans: SourcedTransformer) => {
+    this.transformers = this.transformers.filter(
+      (f) => !(f.name === trans.name && f.source === trans.source)
+    );
+
+    this.transformers.push(trans);
   };
 
   registerTransformerFactory = (factory: TransformerFactory) => {
@@ -103,7 +137,9 @@ class ZymbolTransformerZentinel extends Zentinel {
     );
 
     return (zymbolRoot: Zymbol) => {
-      return _.flatten(transformers.map((t) => t(zymbolRoot)));
+      return _.flatten(
+        transformers.map((t) => t(zymbolRoot.clone() as Zymbol, cursor))
+      );
     };
   };
 }
