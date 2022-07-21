@@ -10,6 +10,8 @@ import { Cursor } from "../../../zym_lib/zy_god/cursor/cursor";
 import { GET_ZYM_ROOT } from "../../../zym_lib/zy_god/zy_god";
 import { Zymbol } from "../../zyms/zymbol/zymbol";
 import _ from "underscore";
+import { ZymKeyPress } from "../../../zym_lib/zy_god/event_handler/key_press";
+import { Zocket } from "../../zyms/zymbol/zymbols/zocket/zocket";
 
 export const TransformerId = "transformer-59bcd";
 
@@ -55,9 +57,10 @@ export interface ZymbolTreeTransformationPriority {
 }
 
 export interface ZymbolTreeTransformation {
-  newTreeRoot: Zymbol;
+  newTreeRoot: Zocket;
   cursor: Cursor;
   priority: ZymbolTreeTransformationPriority;
+  selector?: ZymKeyPress;
 }
 
 export type ZymbolTransformer = (
@@ -140,8 +143,6 @@ class ZymbolTransformerZentinel extends Zentinel {
     transformers.push(...this.transformers.map((t) => t.transform));
 
     return (zymbolRoot: Zymbol, zymbolCursor: Cursor) => {
-      console.log("root -- clone", zymbolRoot, zymbolRoot.clone());
-
       return _.flatten(
         transformers.map((t) => {
           return t(zymbolRoot.clone() as Zymbol, zymbolCursor);

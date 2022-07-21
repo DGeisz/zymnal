@@ -114,8 +114,6 @@ class ZyGod extends ZyMaster {
       )
     );
 
-    console.log("Init cursor", cursorOpt);
-
     if (isSome(cursorOpt)) {
       this.cursor = cursorOpt.val;
     }

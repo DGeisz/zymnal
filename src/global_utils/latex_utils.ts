@@ -22,15 +22,6 @@ export function create_tex_text(text: string) {
   return `{\\text{${escape_latex(text, { preserveFormatting: true })}}}`;
 }
 
-export function text_with_cursor(
-  text: string,
-  cursor_position: number
-): string {
-  return `${create_tex_text(
-    text.slice(0, cursor_position)
-  )}\\htmlId{${CURSOR_NAME}}{|}${create_tex_text(text.slice(cursor_position))}`;
-}
-
 export function wrap_html_id(tex: string, html_id: string) {
   return `\\htmlId{${html_id}}{${tex}}`;
 }
@@ -43,7 +34,21 @@ export const CURSOR_NAME = "cursor";
 // export const CURSOR_LATEX: string =
 //   "\\htmlId{cursor}{\\color{black}{\\boldsymbol{|}}}";
 
-export const CURSOR_LATEX: string = "\\htmlId{cursor}{\\boldsymbol{|}}";
+// export const CURSOR_LATEX: string = `\\htmlId{${CURSOR_NAME}}{\\boldsymbol{|}}`;
+export const CURSOR_LATEX: string = `\\htmlClass{${CURSOR_NAME}}{\\boldsymbol{|}}`;
+
+export function text_with_cursor(
+  text: string,
+  cursor_position: number
+): string {
+  // return `${create_tex_text(
+  //   text.slice(0, cursor_position)
+  // )}\\htmlId{${CURSOR_NAME}}{|}${create_tex_text(text.slice(cursor_position))}`;
+
+  return `${create_tex_text(
+    text.slice(0, cursor_position)
+  )}${CURSOR_LATEX}${create_tex_text(text.slice(cursor_position))}`;
+}
 
 export const INVALID_TEX = add_color_box(
   add_latex_color(create_tex_text("Invalid TeX"), palette.danger),

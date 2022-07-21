@@ -13,9 +13,13 @@ export class ZymbolProgression extends Zyact<ZymbolProgressionPersist> {
   children: Zym<any, any>[] = [this.baseFrame];
 
   component: FC = () => {
-    const ProgressionComponent = useZymponent(this.baseFrame);
+    const Frame = useZymponent(this.baseFrame);
 
-    return <ProgressionComponent />;
+    return (
+      <div className="w-full">
+        <Frame />
+      </div>
+    );
   };
 
   persist() {

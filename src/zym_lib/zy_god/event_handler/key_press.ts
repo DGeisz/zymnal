@@ -16,6 +16,7 @@ import {
   successfulMoveResponse,
 } from "../cursor/cursor";
 import { BasicContext } from "../types/context_types";
+import _ from "underscore";
 
 /* === Basic keypress types ===  */
 
@@ -40,6 +41,19 @@ export enum KeyPressModifier {
   Option,
 }
 
+export function keyPressModifierToSymbol(mod: KeyPressModifier): string {
+  switch (mod) {
+    case KeyPressModifier.Shift:
+      return "shift";
+    case KeyPressModifier.Ctrl:
+      return "ctrl";
+    case KeyPressModifier.Cmd:
+      return "cmd";
+    case KeyPressModifier.Option:
+      return "option";
+  }
+}
+
 interface ModifiedKeyPress {
   modifiers?: KeyPressModifier[];
 }
@@ -54,6 +68,38 @@ export interface ComplexKeyPress extends ModifiedKeyPress {
 }
 
 export type ZymKeyPress = BasicKeyPress | ComplexKeyPress;
+
+export function keyPressEqual(k1: ZymKeyPress, k2: ZymKeyPress): boolean {
+  const modsEqual = _.isEqual(
+    (k1.modifiers ?? []).sort(),
+    (k2.modifiers ?? []).sort()
+  );
+
+  if (modsEqual && k1.type === k2.type) {
+    if (
+      k1.type === KeyPressComplexType.Key &&
+      k2.type === KeyPressComplexType.Key
+    ) {
+      return k1.key === k2.key;
+    }
+
+    return true;
+  }
+
+  return false;
+}
+
+export const DEFAULT_SELECTOR: ZymKeyPress = {
+  type: KeyPressComplexType.Key,
+  modifiers: [KeyPressModifier.Shift],
+  key: " ",
+};
+
+export const SECONDARY_SELECTOR: ZymKeyPress = {
+  type: KeyPressComplexType.Key,
+  modifiers: [KeyPressModifier.Shift, KeyPressModifier.Ctrl],
+  key: " ",
+};
 
 /* ==== COMMANDS ===== */
 

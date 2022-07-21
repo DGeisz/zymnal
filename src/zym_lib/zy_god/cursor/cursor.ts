@@ -129,11 +129,17 @@ class CursorBlink {
   };
 
   private setDOMCursorVisibility() {
-    const cursor = document.getElementById(CURSOR_NAME);
+    const cursors = document.getElementsByClassName(CURSOR_NAME);
 
-    if (cursor) {
-      cursor.style.visibility = this.cursorVisible ? "visible" : "hidden";
+    for (const cursor of cursors) {
+      (cursor as HTMLDivElement).style.visibility = this.cursorVisible
+        ? "visible"
+        : "hidden";
     }
+
+    // if (cursor) {
+    //   cursor.style.visibility = this.cursorVisible ? "visible" : "hidden";
+    // }
   }
 }
 

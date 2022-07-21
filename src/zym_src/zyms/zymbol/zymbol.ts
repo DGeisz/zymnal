@@ -1,7 +1,7 @@
-import { CursorIndex, extractCursorInfo } from "../../../lib/cursor";
 import { Zym } from "../../../zym_lib/zym/zym";
 import {
   Cursor,
+  CursorIndex,
   CursorMoveResponse,
   FAILED_CURSOR_MOVE_RESPONSE,
 } from "../../../zym_lib/zy_god/cursor/cursor";
@@ -15,6 +15,7 @@ import { ZymbolFrame } from "../zymbol_infrastructure/zymbol_frame/zymbol_frame"
 import { DeleteBehavior } from "./delete_behavior";
 import { TeX } from "./zymbol_types";
 
+/* Help */
 export interface ZymbolRenderArgs {
   cursor: Cursor;
 }

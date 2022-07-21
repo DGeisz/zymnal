@@ -3,6 +3,10 @@ import { CURSOR_LATEX } from "../../../../../global_utils/latex_utils";
 import { Zym } from "../../../../../zym_lib/zym/zym";
 import { ZyMaster } from "../../../../../zym_lib/zym/zy_master";
 import {
+  implementPartialCmdGroup,
+  some,
+} from "../../../../../zym_lib/zy_commands/zy_command_types";
+import {
   chainMoveResponse,
   Cursor,
   CursorIndex,
@@ -13,6 +17,10 @@ import {
   successfulMoveResponse,
   wrapChildCursorResponse,
 } from "../../../../../zym_lib/zy_god/cursor/cursor";
+import {
+  CursorCommand,
+  GetInitialCursorReturn,
+} from "../../../../../zym_lib/zy_god/cursor/cursor_commands";
 import { BasicContext } from "../../../../../zym_lib/zy_god/types/context_types";
 import { ZymbolFrame } from "../../../zymbol_infrastructure/zymbol_frame/zymbol_frame";
 import {
@@ -24,7 +32,6 @@ import {
 import { Zymbol, ZymbolRenderArgs } from "../../zymbol";
 import { extendZymbol } from "../../zymbol_cmd";
 import { TEXT_ZYMBOL_NAME, TextZymbol } from "../text_zymbol/text_zymbol";
-import { zocketCursorImpl } from "./cmd/zocket_cursor";
 
 export const ZOCKET_MASTER_ID = "zocket";
 
@@ -36,8 +43,6 @@ export const zocketMaster = new ZocketMaster();
 
 /* Extensions */
 extendZymbol(zocketMaster);
-
-zocketMaster.registerCmds([...zocketCursorImpl]);
 
 export class Zocket extends Zymbol<{}> {
   zyMaster: ZyMaster = zocketMaster;
@@ -310,8 +315,8 @@ export class Zocket extends Zymbol<{}> {
     return successfulMoveResponse([cursor0, cursor1]);
   };
 
-  getDeleteBehavior: () => DeleteBehavior = () => {
-    if (this.children.length > 0) {
+  getDeleteBehavior = (): DeleteBehavior => {
+    if (this.children.length > 1) {
       return deflectDeleteBehavior(last(this.children).getDeleteBehavior());
     } else {
       return normalDeleteBehavior(DeleteBehaviorType.ALLOWED);
@@ -354,6 +359,8 @@ export class Zocket extends Zymbol<{}> {
   delete = (cursor: Cursor, ctx: BasicContext): CursorMoveResponse => {
     const { parentOfCursorElement, nextCursorIndex, childRelativeCursor } =
       extractCursorInfo(cursor);
+
+    /* Check if the immediate child is a text element */
 
     if (parentOfCursorElement) {
       if (nextCursorIndex === 0) {
@@ -422,3 +429,9 @@ export class Zocket extends Zymbol<{}> {
 
   hydrate(_persisted: {}): void {}
 }
+
+const zocketCursorImpl = implementPartialCmdGroup(CursorCommand, {
+  getInitialCursor: (): GetInitialCursorReturn => some([0]),
+});
+
+zocketMaster.registerCmds([...zocketCursorImpl]);

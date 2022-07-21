@@ -16,7 +16,7 @@ export class Zage extends Zyact<ZagePersist> {
     const BaseContextComponent = useZymponent(this.baseZymbolContext);
 
     return (
-      <div className="m-4">
+      <div className="m-16">
         <BaseContextComponent />
       </div>
     );

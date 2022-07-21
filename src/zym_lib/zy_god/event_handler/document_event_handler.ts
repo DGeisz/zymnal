@@ -2,6 +2,7 @@ import { cursorBlink } from "../cursor/cursor";
 import {
   KeyPressBasicType,
   KeyPressComplexType,
+  KeyPressModifier,
   ZymKeyPress,
 } from "./key_press";
 
@@ -57,10 +58,32 @@ class DocumentEventHandler {
     }
   };
 
+  private genKeyPressModifierList = (
+    event: KeyboardEvent
+  ): KeyPressModifier[] => {
+    const mods: KeyPressModifier[] = [];
+
+    if (event.altKey) {
+      mods.push(KeyPressModifier.Option);
+    }
+
+    if (event.shiftKey) {
+      mods.push(KeyPressModifier.Shift);
+    }
+
+    if (event.ctrlKey) {
+      mods.push(KeyPressModifier.Ctrl);
+    }
+
+    return mods;
+  };
+
   handleKeyDown = (event: KeyboardEvent) => {
     this.acquireKeyLock(KeyLock.KEYDOWN);
 
     const key = event.key;
+
+    const modifiers = this.genKeyPressModifierList(event);
 
     let keyPressType: KeyPressBasicType | undefined = undefined;
 
@@ -93,6 +116,7 @@ class DocumentEventHandler {
     if (keyPressType !== undefined) {
       this.invokeKeyEventHandlers({
         type: keyPressType,
+        modifiers,
       });
     }
 
@@ -103,11 +127,13 @@ class DocumentEventHandler {
     this.acquireKeyLock(KeyLock.KEYPRESS);
 
     const char = e.key === " " ? e.key : e.key.trim();
+    const modifiers = this.genKeyPressModifierList(e);
 
     if (char.length === 1) {
       this.invokeKeyEventHandlers({
         type: KeyPressComplexType.Key,
         key: char,
+        modifiers,
       });
     }
 

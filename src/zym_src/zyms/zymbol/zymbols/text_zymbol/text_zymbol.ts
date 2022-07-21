@@ -143,6 +143,16 @@ export class TextZymbol extends Zymbol<{}> {
     }
   };
 
+  deflectDelete = () => {
+    if (this.characters.length > 1) {
+      this.characters.pop();
+
+      return true;
+    }
+
+    return false;
+  };
+
   renderTex = (opts: ZymbolRenderArgs) => {
     const { parentOfCursorElement, nextCursorIndex } = extractCursorInfo(
       opts.cursor
