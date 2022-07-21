@@ -163,11 +163,11 @@ export class TextZymbol extends Zymbol<{}> {
     throw new Error("Method not implemented.");
   }
 
-  clone = () => {
+  clone = (newParent?: Zym) => {
     const newText = new TextZymbol(
       this.parentFrame,
       this.getCursorIndex(),
-      this.parent
+      newParent ?? this.parent
     );
 
     newText.setCharacters(this.characters);

@@ -28,8 +28,11 @@ export class ZymbolContext extends Zyact<ZymbolContextPersist> {
     this.progression.hydrate(persisted[ZCP_FIELDS.PROGRESSION]);
   }
 
-  clone = () => {
-    const newContext = new ZymbolContext(this.getCursorIndex(), this.parent);
+  clone = (newParent?: Zym) => {
+    const newContext = new ZymbolContext(
+      this.getCursorIndex(),
+      newParent ?? this.parent
+    );
     newContext.progression = this.progression.clone() as ZymbolProgression;
     newContext.children = [newContext.progression];
 

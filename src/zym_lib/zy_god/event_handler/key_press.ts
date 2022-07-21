@@ -81,8 +81,6 @@ export const defaultKeyPressImpl = implementTotalCmdGroup(KeyPressCommand, {
   handleKeyPress: async (zym, args) => {
     const { cursor, keyPressContext, keyPress } = args as KeyPressArgs;
 
-    console.log("key press", zym.getMasterId());
-
     const { nextCursorIndex, childRelativeCursor } = extractCursorInfo(cursor);
 
     if (nextCursorIndex >= 0) {

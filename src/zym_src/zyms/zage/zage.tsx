@@ -1,3 +1,4 @@
+import { Zym } from "../../../zym_lib/zym/zym";
 import { useZymponent } from "../../../zym_lib/zym/zymplementations/zyact/hooks";
 import { Zyact } from "../../../zym_lib/zym/zymplementations/zyact/zyact";
 import { ZyMaster } from "../../../zym_lib/zym/zy_master";
@@ -31,8 +32,8 @@ export class Zage extends Zyact<ZagePersist> {
     this.baseZymbolContext.hydrate(persisted[ZAGE_PERSIST_FIELDS.CONTEXT]);
   }
 
-  clone = () => {
-    const newZage = new Zage(this.getCursorIndex(), this.parent);
+  clone = (newParent?: Zym) => {
+    const newZage = new Zage(this.getCursorIndex(), newParent ?? this.parent);
     newZage.baseZymbolContext = this.baseZymbolContext.clone() as ZymbolContext;
     newZage.children = [newZage.baseZymbolContext];
 

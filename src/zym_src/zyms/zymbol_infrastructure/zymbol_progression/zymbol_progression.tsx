@@ -24,10 +24,10 @@ export class ZymbolProgression extends Zyact<ZymbolProgressionPersist> {
 
   hydrate(_persisted: any): void {}
 
-  clone = () => {
+  clone = (newParent?: Zym) => {
     const newProgression = new ZymbolProgression(
       this.getCursorIndex(),
-      this.parent
+      newParent ?? this.parent
     );
     newProgression.baseFrame = this.baseFrame.clone() as ZymbolFrame;
     newProgression.children = [newProgression.baseFrame];

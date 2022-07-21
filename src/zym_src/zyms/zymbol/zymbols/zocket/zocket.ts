@@ -43,8 +43,6 @@ export class Zocket extends Zymbol<{}> {
   zyMaster: ZyMaster = zocketMaster;
   children: Zymbol[] = [];
 
-  private zymbols: Zymbol[] = [];
-
   /* Indicates whether this is the zocket that's directly connected to the main controller, ie
   is at the base of the zymbol tree  */
   private isBaseZocket: boolean;
@@ -60,15 +58,15 @@ export class Zocket extends Zymbol<{}> {
     this.isBaseZocket = isBaseZocket;
   }
 
-  clone = () => {
+  clone = (newParent?: Zym) => {
     const newZocket = new Zocket(
       this.isBaseZocket,
       this.parentFrame,
       this.getCursorIndex(),
-      this.parent
+      newParent ?? this.parent
     );
 
-    newZocket.children = this.cloneChildren() as Zymbol[];
+    newZocket.children = this.cloneChildren(newZocket) as Zymbol[];
 
     return newZocket;
   };
@@ -90,7 +88,7 @@ export class Zocket extends Zymbol<{}> {
 
     if (parentOfCursorElement) {
       const { success, newRelativeCursor } =
-        this.zymbols[nextCursorIndex - 1].takeCursorFromRight();
+        this.children[nextCursorIndex - 1].takeCursorFromRight();
 
       if (success) {
         return successfulMoveResponse([
@@ -101,7 +99,7 @@ export class Zocket extends Zymbol<{}> {
         return successfulMoveResponse([nextCursorIndex - 1]);
       }
     } else {
-      const { success, newRelativeCursor } = this.zymbols[
+      const { success, newRelativeCursor } = this.children[
         nextCursorIndex
       ].moveCursorLeft(childRelativeCursor, ctx);
 
@@ -121,7 +119,7 @@ export class Zocket extends Zymbol<{}> {
         newRelativeCursor: [0],
       };
     } else {
-      if (this.zymbols.length > 1) {
+      if (this.children.length > 1) {
         return {
           success: true,
           newRelativeCursor: [1],
@@ -137,14 +135,14 @@ export class Zocket extends Zymbol<{}> {
       extractCursorInfo(cursor);
 
     /* If we're at the end of the list, we automatically return lack of success */
-    if (parentOfCursorElement && nextCursorIndex === this.zymbols.length) {
+    if (parentOfCursorElement && nextCursorIndex === this.children.length) {
       return {
         success: false,
         newRelativeCursor: [],
       };
     }
 
-    const cursorZymbol = this.zymbols[nextCursorIndex];
+    const cursorZymbol = this.children[nextCursorIndex];
 
     const { success, newRelativeCursor } = parentOfCursorElement
       ? cursorZymbol.takeCursorFromLeft()
@@ -168,13 +166,13 @@ export class Zocket extends Zymbol<{}> {
     if (this.isBaseZocket) {
       return {
         success: true,
-        newRelativeCursor: [this.zymbols.length],
+        newRelativeCursor: [this.children.length],
       };
     } else {
-      if (this.zymbols.length > 1) {
+      if (this.children.length > 1) {
         return {
           success: true,
-          newRelativeCursor: [this.zymbols.length - 1],
+          newRelativeCursor: [this.children.length - 1],
         };
       } else {
         return FAILED_CURSOR_MOVE_RESPONSE;
@@ -197,11 +195,11 @@ export class Zocket extends Zymbol<{}> {
       const newZymbol = new TextZymbol(this.parentFrame, nextCursorIndex, this);
       newZymbol.addCharacter(character, [0]);
 
-      this.zymbols.splice(nextCursorIndex, 0, newZymbol);
+      this.children.splice(nextCursorIndex, 0, newZymbol);
 
       return this.mergeTextZymbols([nextCursorIndex, 1]);
     } else {
-      const nextZymbol = this.zymbols[nextCursorIndex] as Zymbol;
+      const nextZymbol = this.children[nextCursorIndex] as Zymbol;
 
       return chainMoveResponse(
         nextZymbol.addCharacter(character, childRelativeCursor, ctx),
@@ -224,10 +222,10 @@ export class Zocket extends Zymbol<{}> {
 
     while (true) {
       /* First find the next text zymbol or the end of the list */
-      if (currentZymbolIndex >= this.zymbols.length - 1) {
+      if (currentZymbolIndex >= this.children.length - 1) {
         break;
       } else if (
-        this.zymbols[currentZymbolIndex].getMasterId() !== TEXT_ZYMBOL_NAME
+        this.children[currentZymbolIndex].getMasterId() !== TEXT_ZYMBOL_NAME
       ) {
         currentZymbolIndex++;
       } else {
@@ -235,10 +233,10 @@ export class Zocket extends Zymbol<{}> {
         let endOfTextZymbols = currentZymbolIndex + 1;
 
         while (true) {
-          if (endOfTextZymbols >= this.zymbols.length) {
+          if (endOfTextZymbols >= this.children.length) {
             break;
           } else if (
-            this.zymbols[endOfTextZymbols].getMasterId() === TEXT_ZYMBOL_NAME
+            this.children[endOfTextZymbols].getMasterId() === TEXT_ZYMBOL_NAME
           ) {
             endOfTextZymbols++;
           } else {
@@ -256,24 +254,24 @@ export class Zocket extends Zymbol<{}> {
             let newCharacters: string[] = [];
 
             for (let i = currentZymbolIndex; i < endOfTextZymbols; i++) {
-              const iChars = (this.zymbols[i] as TextZymbol).getCharacters();
+              const iChars = (this.children[i] as TextZymbol).getCharacters();
 
               if (i < cursor0) {
                 newCursor1PreSize += iChars.length;
               }
 
               newCharacters = newCharacters.concat(
-                (this.zymbols[i] as TextZymbol).getCharacters()
+                (this.children[i] as TextZymbol).getCharacters()
               );
             }
 
             cursor1 += newCursor1PreSize;
 
-            (this.zymbols[currentZymbolIndex] as TextZymbol).setCharacters(
+            (this.children[currentZymbolIndex] as TextZymbol).setCharacters(
               newCharacters
             );
 
-            this.zymbols.splice(
+            this.children.splice(
               currentZymbolIndex + 1,
               endOfTextZymbols - currentZymbolIndex - 1
             );
@@ -284,15 +282,15 @@ export class Zocket extends Zymbol<{}> {
 
             for (let i = currentZymbolIndex; i < endOfTextZymbols; i++) {
               newCharacters = newCharacters.concat(
-                (this.zymbols[i] as TextZymbol).getCharacters()
+                (this.children[i] as TextZymbol).getCharacters()
               );
             }
 
-            (this.zymbols[currentZymbolIndex] as TextZymbol).setCharacters(
+            (this.children[currentZymbolIndex] as TextZymbol).setCharacters(
               newCharacters
             );
 
-            this.zymbols.splice(
+            this.children.splice(
               currentZymbolIndex + 1,
               endOfTextZymbols - currentZymbolIndex - 1
             );
@@ -313,8 +311,8 @@ export class Zocket extends Zymbol<{}> {
   };
 
   getDeleteBehavior: () => DeleteBehavior = () => {
-    if (this.zymbols.length > 0) {
-      return deflectDeleteBehavior(last(this.zymbols).getDeleteBehavior());
+    if (this.children.length > 0) {
+      return deflectDeleteBehavior(last(this.children).getDeleteBehavior());
     } else {
       return normalDeleteBehavior(DeleteBehaviorType.ALLOWED);
     }
@@ -328,25 +326,25 @@ export class Zocket extends Zymbol<{}> {
 
     let finalTex = "";
 
-    if (parentOfCursorElement && this.zymbols.length === 0) {
+    if (parentOfCursorElement && this.children.length === 0) {
       return CURSOR_LATEX;
     }
 
-    for (let i = 0; i < this.zymbols.length; i++) {
+    for (let i = 0; i < this.children.length; i++) {
       if (parentOfCursorElement) {
         if (i === nextCursorIndex) {
           finalTex += CURSOR_LATEX;
         }
 
-        finalTex += this.zymbols[i].renderTex({ cursor: [] });
+        finalTex += this.children[i].renderTex({ cursor: [] });
       } else {
-        finalTex += this.zymbols[i].renderTex({
+        finalTex += this.children[i].renderTex({
           cursor: i === nextCursorIndex ? childRelativeCursor : [],
         });
       }
     }
 
-    if (parentOfCursorElement && nextCursorIndex === this.zymbols.length) {
+    if (parentOfCursorElement && nextCursorIndex === this.children.length) {
       finalTex += CURSOR_LATEX;
     }
 
@@ -362,12 +360,12 @@ export class Zocket extends Zymbol<{}> {
         return FAILED_CURSOR_MOVE_RESPONSE;
       }
 
-      const zymbol = this.zymbols[nextCursorIndex - 1];
+      const zymbol = this.children[nextCursorIndex - 1];
 
       const deleteBehavior = zymbol.getDeleteBehavior();
 
       const deleteZymbol = () => {
-        this.zymbols.splice(nextCursorIndex - 1, 1);
+        this.children.splice(nextCursorIndex - 1, 1);
 
         return successfulMoveResponse(nextCursorIndex - 1);
       };
@@ -410,7 +408,7 @@ export class Zocket extends Zymbol<{}> {
       }
     } else {
       return wrapChildCursorResponse(
-        this.zymbols[nextCursorIndex].delete(childRelativeCursor, ctx),
+        this.children[nextCursorIndex].delete(childRelativeCursor, ctx),
         nextCursorIndex
       );
     }

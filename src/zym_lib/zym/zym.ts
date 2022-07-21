@@ -38,6 +38,8 @@ export abstract class Zym<T = any, P = any, RenderOptions = any> {
   /* Master */
   abstract readonly zyMaster: ZyMaster;
 
+  bid = Math.random();
+
   constructor(
     cursorIndex: CursorIndex,
     parent: Zym<any, any> | undefined,
@@ -102,10 +104,10 @@ export abstract class Zym<T = any, P = any, RenderOptions = any> {
   abstract hydrate(persisted: P): void;
 
   /* ===== TREE METHODS ===== */
-  abstract clone(): Zym<T, P>;
+  abstract clone(newParent?: Zym): Zym<T, P>;
 
-  cloneChildren = (): Zym[] => {
-    return this.children.map((c) => c.clone());
+  cloneChildren = (newParent?: Zym): Zym[] => {
+    return this.children.map((c) => c.clone(newParent));
   };
 
   /* ===== COMMANDS ===== */

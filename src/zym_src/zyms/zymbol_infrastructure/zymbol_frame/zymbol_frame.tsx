@@ -65,8 +65,11 @@ export class ZymbolFrame extends Zyact<ZymbolFramePersist, FrameRenderProps> {
   showTransformations = false;
   transformations: ZymbolTreeTransformation[] = [];
 
-  clone = () => {
-    const newFrame = new ZymbolFrame(this.getCursorIndex(), this.parent);
+  clone = (newParent?: Zym) => {
+    const newFrame = new ZymbolFrame(
+      this.getCursorIndex(),
+      newParent ?? this.parent
+    );
 
     newFrame.baseZocket = this.baseZocket.clone() as Zocket;
     newFrame.children = [newFrame.baseZocket];
@@ -89,7 +92,18 @@ export class ZymbolFrame extends Zyact<ZymbolFramePersist, FrameRenderProps> {
       cursor: relativeCursor,
     });
 
-    return <Tex tex={frameTex} />;
+    const topTrans = this.getTopTransformation();
+
+    if (topTrans) {
+      return (
+        <div>
+          <Tex tex={topTrans.newTreeRoot.renderTex({ cursor: [] })} />
+          <Tex tex={frameTex} />
+        </div>
+      );
+    } else {
+      return <Tex tex={frameTex} />;
+    }
   };
 
   persist(): ZymbolFramePersist {
@@ -117,7 +131,7 @@ export class ZymbolFrame extends Zyact<ZymbolFramePersist, FrameRenderProps> {
     this.showTransformations = show;
   };
 
-  private getTopTransformationSuggestion = () => {
+  getTopTransformation = () => {
     if (this.transformations.length > 0) {
       this.rankTransactions();
 
@@ -141,11 +155,12 @@ export class ZymbolFrame extends Zyact<ZymbolFramePersist, FrameRenderProps> {
 /* Key Press */
 const keyPressImpl = implementPartialCmdGroup(KeyPressCommand, {
   handleKeyPress: async (zym, args) => {
-    debugger;
     const frame = zym as ZymbolFrame;
     const { cursor, keyPressContext, keyPress } = args as KeyPressArgs;
 
     const { nextCursorIndex, childRelativeCursor } = extractCursorInfo(cursor);
+
+    console.log("handle key!", cursor);
 
     /* We only have one child */
     if (nextCursorIndex === 0) {
@@ -156,6 +171,8 @@ const keyPressImpl = implementPartialCmdGroup(KeyPressCommand, {
         /* TODO: Implement this */
         isInputKey = true;
       }
+
+      frame.setTransformations([]);
 
       /* Otherwise, we handle everything as normal */
 
@@ -183,10 +200,15 @@ const keyPressImpl = implementPartialCmdGroup(KeyPressCommand, {
           )
         ) as ZymbolTransformer;
 
-        debugger;
-
         /* 2. Apply the transformer to get a list of potential transformations */
-        const transformations = transformer(frame.baseZocket, cursor);
+        const transformations = transformer(
+          frame.baseZocket,
+          childMove.newRelativeCursor
+        );
+
+        if (transformations.length > 0) {
+          console.log("trans!", frame.baseZocket, transformations[0]);
+        }
 
         /* 3. Set setting that indicates that we have a transformation for the next render event */
         frame.setTransformations(transformations);

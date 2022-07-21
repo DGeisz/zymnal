@@ -1,4 +1,6 @@
 import { CURSOR_NAME } from "../../../global_utils/latex_utils";
+import { Zym } from "../../zym/zym";
+import { NONE, some, ZyOption } from "../../zy_commands/zy_command_types";
 
 export type CursorIndex = number;
 export type Cursor = CursorIndex[];
@@ -15,6 +17,20 @@ export function extendParentCursor(
   parentCursor: Cursor
 ): Cursor {
   return [...parentCursor, childCursorIndex];
+}
+
+export function getZymAtCursor(root: Zym, cursor: Cursor): ZyOption<Zym> {
+  let curr = root;
+
+  for (const i of cursor) {
+    curr = curr.children[i];
+
+    if (!curr) {
+      return NONE;
+    }
+  }
+
+  return some(curr);
 }
 
 const BLINK_INTERVAL = 530;

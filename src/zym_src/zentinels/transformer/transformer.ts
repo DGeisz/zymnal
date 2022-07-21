@@ -139,9 +139,13 @@ class ZymbolTransformerZentinel extends Zentinel {
 
     transformers.push(...this.transformers.map((t) => t.transform));
 
-    return (zymbolRoot: Zymbol) => {
+    return (zymbolRoot: Zymbol, zymbolCursor: Cursor) => {
+      console.log("root -- clone", zymbolRoot, zymbolRoot.clone());
+
       return _.flatten(
-        transformers.map((t) => t(zymbolRoot.clone() as Zymbol, cursor))
+        transformers.map((t) => {
+          return t(zymbolRoot.clone() as Zymbol, zymbolCursor);
+        })
       );
     };
   };

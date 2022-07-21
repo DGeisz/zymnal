@@ -1,23 +1,29 @@
+import { last } from "../../../../global_utils/array_utils";
 import { backslash } from "../../../../global_utils/latex_utils";
 import {
   capitalizeFirstLetter,
   splitCursorStringAtLastWord,
 } from "../../../../global_utils/text_utils";
 import { Zentinel } from "../../../../zym_lib/zentinel/zentinel";
-import {
-  Cursor,
-  extractCursorInfo,
-} from "../../../../zym_lib/zy_god/cursor/cursor";
+import { extendParentCursor } from "../../../../zym_lib/zy_god/cursor/cursor";
 import { Zymbol } from "../../../zyms/zymbol/zymbol";
+import { SymbolZymbol } from "../../../zyms/zymbol/zymbols/symbol_zymbol/symbol_zymbol";
 import {
   TextZymbol,
   TEXT_ZYMBOL_NAME,
 } from "../../../zyms/zymbol/zymbols/text_zymbol/text_zymbol";
+import { Zocket } from "../../../zyms/zymbol/zymbols/zocket/zocket";
 import { CreateTransformerMessage } from "../transformer";
 
 export const IN_PLACE_SYMBOL_TRANSFORM = "in-place-e8d29";
 
-const lower: string[] = [
+type SlashMap = { [key: string]: string };
+
+const slash = "/";
+
+/* +++ GREEK!! +++ */
+
+const lowerGreek: string[] = [
   "alpha",
   "beta",
   "gamma",
@@ -44,10 +50,10 @@ const lower: string[] = [
   "omega",
 ];
 
-const caps = lower.map(capitalizeFirstLetter);
-const greekLetters = lower.concat(caps);
+const greekCaps = lowerGreek.map(capitalizeFirstLetter);
+const greekLetters = lowerGreek.concat(greekCaps);
 
-const lowerSlashMap: { [key: string]: string } = {
+const lowerGreekSlashMap: SlashMap = {
   a: "alpha",
   b: "beta",
   g: "gamma",
@@ -55,7 +61,7 @@ const lowerSlashMap: { [key: string]: string } = {
   ep: "epsilon",
   z: "zeta",
   th: "theta",
-  i: "iota",
+  i: "aleph",
   k: "kappa",
   l: "lambda",
   oc: "omicron",
@@ -64,68 +70,35 @@ const lowerSlashMap: { [key: string]: string } = {
   om: "omega",
 };
 
-let upperSlashMap: { [key: string]: string } = {};
+let upperGreekSlashMap: { [key: string]: string } = {};
 
-for (const [key, value] of Object.entries(lowerSlashMap)) {
-  upperSlashMap[key.toUpperCase()] = capitalizeFirstLetter(value);
+for (const [key, value] of Object.entries(lowerGreekSlashMap)) {
+  upperGreekSlashMap[key.toUpperCase()] = capitalizeFirstLetter(value);
+  upperGreekSlashMap[capitalizeFirstLetter(key)] = capitalizeFirstLetter(value);
 }
 
-const greekSlashMap = { ...lowerSlashMap, ...upperSlashMap };
-const greekSlashKeys = Object.keys(greekSlashMap);
+const greekSlashMap: SlashMap = {
+  ...lowerGreekSlashMap,
+  ...upperGreekSlashMap,
+};
 
-function greekifyHelper(
-  zymbol: Zymbol,
-  cursor: Cursor
-): { zymbol: Zymbol; changed: boolean; cursor: Cursor } {
-  const { nextCursorIndex, parentOfCursorElement, childRelativeCursor } =
-    extractCursorInfo(cursor);
+/* +++ PHYSICS! +++ */
 
-  if (parentOfCursorElement) {
-    if (zymbol.getMasterId() === TEXT_ZYMBOL_NAME) {
-      const text = zymbol as TextZymbol;
+const physWords = ["hbar"];
 
-      const { word, before, after } = splitCursorStringAtLastWord(
-        text.getText(),
-        nextCursorIndex
-      );
+const physSlash: SlashMap = {
+  hb: "hbar",
+};
 
-      let changed = false;
-      let symbol = "";
+/* +++ HEBREW? +++ */
+const hebrewWords = ["aleph"];
 
-      /* First check for lowercase/uppercase */
-      if (greekLetters.includes(word)) {
-        changed = true;
-        symbol = backslash(word);
-      } else if (word.startsWith("\\")) {
-        const key = word.slice(1);
+/* Full word matches */
+const fullWords: string[] = [...greekLetters, ...physWords, ...hebrewWords];
 
-        if (greekSlashKeys.includes(key)) {
-          changed = true;
-          symbol = backslash(greekSlashMap[key]);
-        }
-      }
-
-      /* Now we change the parent zocket to properly include this */
-    }
-  } else {
-    const newChild = greekifyHelper(
-      zymbol.children[nextCursorIndex] as Zymbol,
-      childRelativeCursor
-    );
-
-    zymbol.children.splice(nextCursorIndex, 1, newChild.zymbol);
-
-    return {
-      zymbol,
-      changed: newChild.changed,
-    };
-  }
-
-  return {
-    zymbol,
-    changed: false,
-  };
-}
+/* Slash matches */
+const slashMap = { ...greekSlashMap, ...physSlash };
+const slashKeys = Object.keys(slashMap);
 
 class InPlaceSymbol extends Zentinel {
   zyId: string = IN_PLACE_SYMBOL_TRANSFORM;
@@ -138,8 +111,102 @@ class InPlaceSymbol extends Zentinel {
         source: IN_PLACE_SYMBOL_TRANSFORM,
         name: "in-place",
         transform: (root, cursor) => {
-          console.log("transorm!!");
-          throw new Error("unimpl");
+          const cursorCopy = [...cursor];
+
+          /* First we want to get to the parent */
+          let currZymbol = root;
+
+          for (let i = 0; i < cursorCopy.length - 1; i++) {
+            currZymbol = currZymbol.children[cursorCopy[i]] as Zymbol;
+
+            if (!currZymbol) {
+              return [];
+            }
+          }
+
+          if (currZymbol.getMasterId() === TEXT_ZYMBOL_NAME) {
+            const i = last(cursorCopy);
+            const text = currZymbol as TextZymbol;
+
+            const { word, before, after } = splitCursorStringAtLastWord(
+              text.getText(),
+              i
+            );
+
+            let changed = false;
+            let symbol = "";
+
+            /* First check for lowercase/uppercase */
+            if (fullWords.includes(word)) {
+              changed = true;
+              symbol = backslash(word);
+            } else if (word.startsWith(slash)) {
+              const key = word.slice(1);
+
+              if (slashKeys.includes(key)) {
+                changed = true;
+                symbol = backslash(slashMap[key]);
+              }
+            }
+
+            if (changed) {
+              cursorCopy.pop();
+              const textPointer = cursorCopy.pop()!;
+              const parentZocket = text.parent as Zocket;
+
+              const newZym = [];
+
+              if (before) {
+                const txt1 = new TextZymbol(
+                  parentZocket.parentFrame,
+                  textPointer,
+                  parentZocket
+                );
+
+                txt1.setText(before);
+
+                newZym.push(txt1);
+              }
+
+              const sym = new SymbolZymbol(
+                symbol,
+                parentZocket.parentFrame,
+                textPointer + 1,
+                parentZocket
+              );
+
+              newZym.push(sym);
+
+              if (after) {
+                const txt2 = new TextZymbol(
+                  parentZocket.parentFrame,
+                  textPointer + 2,
+                  parentZocket
+                );
+
+                txt2.setText(after);
+
+                newZym.push(txt2);
+              }
+
+              parentZocket.children.splice(textPointer, 1, ...newZym);
+
+              console.log("New tree root::!", parentZocket, root);
+
+              return [
+                {
+                  newTreeRoot: root,
+                  cursor: extendParentCursor(textPointer + 1, cursorCopy),
+                  priority: {
+                    rank: 1,
+                    value: 100,
+                  },
+                },
+              ];
+            }
+          }
+
+          return [];
         },
       })
     );
@@ -147,3 +214,57 @@ class InPlaceSymbol extends Zentinel {
 }
 
 export const inPlaceSymbol = new InPlaceSymbol();
+
+// function greekifyHelper(
+//   zymbol: Zymbol,
+//   cursor: Cursor
+// ): { zymbol: Zymbol; changed: boolean; cursor: Cursor } {
+//   const { nextCursorIndex, parentOfCursorElement, childRelativeCursor } =
+//     extractCursorInfo(cursor);
+
+//   if (parentOfCursorElement) {
+//     if (zymbol.getMasterId() === TEXT_ZYMBOL_NAME) {
+//       const text = zymbol as TextZymbol;
+
+//       const { word, before, after } = splitCursorStringAtLastWord(
+//         text.getText(),
+//         nextCursorIndex
+//       );
+
+//       let changed = false;
+//       let symbol = "";
+
+//       /* First check for lowercase/uppercase */
+//       if (greekLetters.includes(word)) {
+//         changed = true;
+//         symbol = backslash(word);
+//       } else if (word.startsWith("\\")) {
+//         const key = word.slice(1);
+
+//         if (greekSlashKeys.includes(key)) {
+//           changed = true;
+//           symbol = backslash(greekSlashMap[key]);
+//         }
+//       }
+
+//       /* Now we change the parent zocket to properly include this */
+//     }
+//   } else {
+//     const newChild = greekifyHelper(
+//       zymbol.children[nextCursorIndex] as Zymbol,
+//       childRelativeCursor
+//     );
+
+//     zymbol.children.splice(nextCursorIndex, 1, newChild.zymbol);
+
+//     return {
+//       zymbol,
+//       changed: newChild.changed,
+//     };
+//   }
+
+//   return {
+//     zymbol,
+//     changed: false,
+//   };
+// }
