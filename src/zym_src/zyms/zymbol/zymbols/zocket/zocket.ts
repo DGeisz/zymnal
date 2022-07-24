@@ -12,6 +12,7 @@ import {
   CursorIndex,
   CursorMoveResponse,
   extendChildCursor,
+  extendParentCursor,
   extractCursorInfo,
   FAILED_CURSOR_MOVE_RESPONSE,
   successfulMoveResponse,
@@ -219,11 +220,13 @@ export class Zocket extends Zymbol<{}> {
   __mergeTextZymbols = (currentCursor: [CursorIndex, CursorIndex]) =>
     this.mergeTextZymbols(currentCursor);
 
-  private mergeTextZymbols = (
-    currentCursor: [CursorIndex, CursorIndex]
-  ): CursorMoveResponse => {
+  private mergeTextZymbols = (cursor: Cursor): CursorMoveResponse => {
     let currentZymbolIndex = 0;
-    let [cursor0, cursor1] = currentCursor;
+    let [cursor0, cursor1] = cursor;
+
+    const { childRelativeCursor } = extractCursorInfo(cursor);
+
+    let modifiedCursor1 = false;
 
     while (true) {
       /* First find the next text zymbol or the end of the list */
@@ -270,6 +273,9 @@ export class Zocket extends Zymbol<{}> {
               );
             }
 
+            modifiedCursor1 = true;
+            if (cursor1 === undefined) cursor1 = 0;
+
             cursor1 += newCursor1PreSize;
 
             (this.children[currentZymbolIndex] as TextZymbol).setCharacters(
@@ -312,7 +318,11 @@ export class Zocket extends Zymbol<{}> {
 
     this.reIndexChildren();
 
-    return successfulMoveResponse([cursor0, cursor1]);
+    return successfulMoveResponse(
+      modifiedCursor1
+        ? [cursor0, cursor1]
+        : extendChildCursor(cursor0, childRelativeCursor)
+    );
   };
 
   getDeleteBehavior = (): DeleteBehavior => {
@@ -374,7 +384,9 @@ export class Zocket extends Zymbol<{}> {
       const deleteZymbol = () => {
         this.children.splice(nextCursorIndex - 1, 1);
 
-        return successfulMoveResponse(nextCursorIndex - 1);
+        return this.mergeTextZymbols([nextCursorIndex - 1]);
+
+        // return successfulMoveResponse(nextCursorIndex - 1);
       };
 
       switch (deleteBehavior.type) {
@@ -414,9 +426,43 @@ export class Zocket extends Zymbol<{}> {
         }
       }
     } else {
-      return wrapChildCursorResponse(
-        this.children[nextCursorIndex].delete(childRelativeCursor, ctx),
-        nextCursorIndex
+      const child = this.children[nextCursorIndex];
+
+      return chainMoveResponse(
+        child.delete(childRelativeCursor, ctx),
+        (newRelativeCursor) => {
+          /* We need to clean text zymbols up */
+          let nextChildPointer = nextCursorIndex;
+
+          /* First check if we're pointing to an empty text zymbol */
+          if (
+            child.getMasterId() === TEXT_ZYMBOL_NAME &&
+            (child as TextZymbol).getCharacters().length === 0
+          ) {
+            /* Simply ensure that it isn't pointing inside the child */
+            newRelativeCursor = [];
+          }
+
+          /* Now we're going to get rid of the empty text zymbols */
+          for (let i = 0; i < this.children.length; i++) {
+            const c = this.children[i];
+
+            if (
+              c.getMasterId() === TEXT_ZYMBOL_NAME &&
+              (c as TextZymbol).getCharacters().length === 0
+            ) {
+              this.children.splice(i, 1);
+
+              if (i < nextChildPointer) {
+                nextChildPointer--;
+              }
+            }
+          }
+
+          return this.mergeTextZymbols(
+            extendChildCursor(nextChildPointer, newRelativeCursor)
+          );
+        }
       );
     }
 

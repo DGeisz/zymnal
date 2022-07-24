@@ -5,8 +5,10 @@ import { TeX } from "../zym_src/zyms/zymbol/zymbol_types";
 
 const renderToString = katex.renderToString;
 
-export function add_latex_color(tex: string, color: string) {
-  return `{\\color{${color}}{${tex}}}`;
+export function add_latex_color(tex: string | (() => string), color: string) {
+  let final = typeof tex === "string" ? tex : tex();
+
+  return `{\\color{${color}}{${final}}}`;
 }
 
 export function add_color_box(tex: string, color: string) {
@@ -31,20 +33,12 @@ export const LATEX_EMPTY_SOCKET = "□";
 export const LATEX_NAME = "\\LaTeX";
 
 export const CURSOR_NAME = "cursor";
-// export const CURSOR_LATEX: string =
-//   "\\htmlId{cursor}{\\color{black}{\\boldsymbol{|}}}";
-
-// export const CURSOR_LATEX: string = `\\htmlId{${CURSOR_NAME}}{\\boldsymbol{|}}`;
 export const CURSOR_LATEX: string = `\\htmlClass{${CURSOR_NAME}}{\\boldsymbol{|}}`;
 
 export function text_with_cursor(
   text: string,
   cursor_position: number
 ): string {
-  // return `${create_tex_text(
-  //   text.slice(0, cursor_position)
-  // )}\\htmlId{${CURSOR_NAME}}{|}${create_tex_text(text.slice(cursor_position))}`;
-
   return `${create_tex_text(
     text.slice(0, cursor_position)
   )}${CURSOR_LATEX}${create_tex_text(text.slice(cursor_position))}`;

@@ -341,8 +341,6 @@ const keyPressImpl = implementPartialCmdGroup(KeyPressCommand, {
         )
       );
 
-      console.log("childMove", childMove.newRelativeCursor);
-
       if (isInputKey) {
         /* Handle potential transformation */
         /* 1. Ask Hermes for the Transformer */
@@ -363,6 +361,8 @@ const keyPressImpl = implementPartialCmdGroup(KeyPressCommand, {
         /* 3. Set setting that indicates that we have a transformation for the next render event */
         frame.setTransformations(transformations);
       }
+
+      console.log("xymbs", frame.baseZocket.children);
 
       return chainMoveResponse(childMove, (nextCursor) => {
         return successfulMoveResponse(

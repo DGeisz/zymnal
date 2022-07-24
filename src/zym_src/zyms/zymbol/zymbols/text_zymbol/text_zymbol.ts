@@ -1,4 +1,6 @@
+import { palette } from "../../../../../global_styles/palette";
 import {
+  add_latex_color,
   create_tex_text,
   text_with_cursor,
 } from "../../../../../global_utils/latex_utils";
@@ -158,11 +160,13 @@ export class TextZymbol extends Zymbol<{}> {
       opts.cursor
     );
 
-    if (parentOfCursorElement) {
-      return text_with_cursor(this.characters.join(""), nextCursorIndex);
-    } else {
-      return create_tex_text(this.characters.join(""));
-    }
+    return add_latex_color(() => {
+      if (parentOfCursorElement) {
+        return text_with_cursor(this.characters.join(""), nextCursorIndex);
+      } else {
+        return create_tex_text(this.characters.join(""));
+      }
+    }, palette.deepBlue);
   };
 
   persist(): {} {

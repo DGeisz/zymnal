@@ -61,13 +61,14 @@ const lowerGreekSlashMap: SlashMap = {
   ep: "epsilon",
   z: "zeta",
   th: "theta",
-  i: "aleph",
+  i: "iota",
   k: "kappa",
   l: "lambda",
   oc: "omicron",
   s: "sigma",
   u: "upsilon",
   om: "omega",
+  w: "omega",
 };
 
 let upperGreekSlashMap: { [key: string]: string } = {};
