@@ -7,7 +7,6 @@ import {
 } from "../../../../../zym_lib/zy_god/cursor/cursor";
 import { ZymbolFrame } from "../../../zymbol_infrastructure/zymbol_frame/zymbol_frame";
 import {
-  DeleteBehavior,
   DeleteBehaviorType,
   normalDeleteBehavior,
 } from "../../delete_behavior";

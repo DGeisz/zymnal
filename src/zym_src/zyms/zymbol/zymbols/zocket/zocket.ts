@@ -12,7 +12,6 @@ import {
   CursorIndex,
   CursorMoveResponse,
   extendChildCursor,
-  extendParentCursor,
   extractCursorInfo,
   FAILED_CURSOR_MOVE_RESPONSE,
   successfulMoveResponse,
@@ -385,8 +384,6 @@ export class Zocket extends Zymbol<{}> {
         this.children.splice(nextCursorIndex - 1, 1);
 
         return this.mergeTextZymbols([nextCursorIndex - 1]);
-
-        // return successfulMoveResponse(nextCursorIndex - 1);
       };
 
       switch (deleteBehavior.type) {

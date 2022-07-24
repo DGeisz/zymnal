@@ -282,45 +282,45 @@ const keyPressImpl = implementPartialCmdGroup(KeyPressCommand, {
       /* Start out by checking if this is a key, and if we need to handle a special condition based on a potential transform */
       if (keyPress.type === KeyPressComplexType.Key) {
         isInputKey = true;
+      }
 
-        /* Check if we have active transformations */
-        if (frame.transformations.length > 0) {
-          const topTrans = frame.getTopTransformation()!;
-          const defaultSelector = getDefaultSelector(topTrans.selector);
-          let selectTrans = false;
+      /* Check if we have active transformations */
+      if (frame.transformations.length > 0) {
+        const topTrans = frame.getTopTransformation()!;
+        const defaultSelector = getDefaultSelector(topTrans.selector);
+        let selectTrans = false;
 
-          if (topTrans.selector) {
-            if (keyPressEqual(keyPress, topTrans.selector)) {
-              selectTrans = true;
-            } else if (keyPressEqual(defaultSelector, keyPress)) {
-              frame.setTransformations([]);
-              return successfulMoveResponse(cursor);
-            } else {
-              /* If it doesn't match either, then we fail */
-              return FAILED_CURSOR_MOVE_RESPONSE;
-            }
+        if (topTrans.selector) {
+          if (keyPressEqual(keyPress, topTrans.selector)) {
+            selectTrans = true;
+          } else if (keyPressEqual(defaultSelector, keyPress)) {
+            frame.setTransformations([]);
+            return successfulMoveResponse(cursor);
           } else {
-            /* Check if we've selected any key or the default selector */
-            if (keyPressEqual(keyPress, defaultSelector)) {
-              frame.setTransformations([]);
-              return successfulMoveResponse(cursor);
-            } else {
-              selectTrans = true;
-            }
+            /* If it doesn't match either, then we fail */
+            return FAILED_CURSOR_MOVE_RESPONSE;
           }
-
-          if (selectTrans) {
-            frame.setBaseZocket(topTrans.newTreeRoot);
-
-            cursor = [0, ...topTrans.cursor];
-
-            const { nextCursorIndex: n, childRelativeCursor: c } =
-              extractCursorInfo(cursor);
-
-            /* Reset mutable vars */
-            nextCursorIndex = n;
-            childRelativeCursor = c;
+        } else {
+          /* Check if we've selected any key or the default selector */
+          if (keyPressEqual(keyPress, defaultSelector)) {
+            frame.setTransformations([]);
+            return successfulMoveResponse(cursor);
+          } else {
+            selectTrans = true;
           }
+        }
+
+        if (selectTrans) {
+          frame.setBaseZocket(topTrans.newTreeRoot);
+
+          cursor = [0, ...topTrans.cursor];
+
+          const { nextCursorIndex: n, childRelativeCursor: c } =
+            extractCursorInfo(cursor);
+
+          /* Reset mutable vars */
+          nextCursorIndex = n;
+          childRelativeCursor = c;
         }
       }
 
@@ -361,8 +361,6 @@ const keyPressImpl = implementPartialCmdGroup(KeyPressCommand, {
         /* 3. Set setting that indicates that we have a transformation for the next render event */
         frame.setTransformations(transformations);
       }
-
-      console.log("xymbs", frame.baseZocket.children);
 
       return chainMoveResponse(childMove, (nextCursor) => {
         return successfulMoveResponse(
