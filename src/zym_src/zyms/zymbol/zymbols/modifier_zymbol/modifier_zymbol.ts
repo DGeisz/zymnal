@@ -35,7 +35,7 @@ interface ZymbolModifier {
   post: TeX;
 }
 
-enum BasicModifierId {
+export enum BasicModifierId {
   Vec = "v",
   Hat = "h",
   Dot = "d",
@@ -91,7 +91,11 @@ export class ModifierZymbol extends Zymbol<{}> {
     this.modZocket = new Zocket(false, parentFrame, 0, this);
   }
 
-  takeCursorAction = <T extends Array<any>>(
+  addModifier = (mod: ZymbolModifier) => {
+    this.modifiers.push(mod);
+  };
+
+  takeCursorAction = (
     action: (cursor: Cursor, ctx: BasicContext) => CursorMoveResponse,
     cursor: Cursor,
     ctx: BasicContext
@@ -132,7 +136,18 @@ export class ModifierZymbol extends Zymbol<{}> {
   };
 
   getDeleteBehavior = () => this.modZocket.getDeleteBehavior();
-  renderTex: (opts: ZymbolRenderArgs) => string;
+
+  renderTex = (opts: ZymbolRenderArgs) => {
+    const { childRelativeCursor } = extractCursorInfo(opts.cursor);
+
+    let finalTex = this.modZocket.renderTex({ cursor: childRelativeCursor });
+
+    for (const mod of this.modifiers) {
+      finalTex = `${mod.pre}${finalTex}${mod.post}`;
+    }
+
+    return finalTex;
+  };
 
   persist(): {} {
     throw new Error("Method not implemented.");

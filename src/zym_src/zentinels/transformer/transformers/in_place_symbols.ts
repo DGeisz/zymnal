@@ -105,8 +105,6 @@ class InPlaceSymbol extends Zentinel {
   zyId: string = IN_PLACE_SYMBOL_TRANSFORM;
 
   onRegistration = async () => {
-    /* Register the greekify transformer 
-    with the transformer zentinel */
     this.callHermes(
       CreateTransformerMessage.registerTransformer({
         source: IN_PLACE_SYMBOL_TRANSFORM,
