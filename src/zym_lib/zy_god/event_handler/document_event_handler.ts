@@ -89,6 +89,7 @@ class DocumentEventHandler {
 
     switch (key) {
       case "ArrowUp": {
+        keyPressType = KeyPressBasicType.ArrowUp;
         break;
       }
       case "ArrowDown": {
@@ -108,7 +109,7 @@ class DocumentEventHandler {
         break;
       }
       case "Enter": {
-        keyPressType = KeyPressBasicType.ArrowUp;
+        keyPressType = KeyPressBasicType.Enter;
         break;
       }
     }

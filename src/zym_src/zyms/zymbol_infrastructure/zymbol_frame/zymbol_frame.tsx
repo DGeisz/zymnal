@@ -36,6 +36,7 @@ import {
 import {
   CreateTransformerMessage,
   ZymbolTransformer,
+  ZymbolTransformRank,
   ZymbolTreeTransformation,
 } from "../../../zentinels/transformer/transformer";
 import { Zocket } from "../../zymbol/zymbols/zocket/zocket";
@@ -70,20 +71,9 @@ const Styles = {
   SelectionKey:
     "bg-green-200 rounded-md px-2 py-1 text-sm font-semibold text-green-600 shadow-sm shadow-gray",
   MainFrameContainer: "m-4 mt-0",
+  TransContainer: "p-2 border-b ",
+  SelectedTransContainer: "bg-gray-200 rounded-md",
 };
-
-/* Helper Utils */
-function getDefaultSelector(mainSelector?: ZymKeyPress): ZymKeyPress {
-  if (mainSelector) {
-    if (keyPressEqual(mainSelector, DEFAULT_SELECTOR)) {
-      return SECONDARY_SELECTOR;
-    } else {
-      return DEFAULT_SELECTOR;
-    }
-  } else {
-    return DEFAULT_SELECTOR;
-  }
-}
 
 /* Helper components */
 interface TexTransformProps {
@@ -148,8 +138,8 @@ export class ZymbolFrame extends Zyact<ZymbolFramePersist, FrameRenderProps> {
   baseZocket: Zocket = new Zocket(true, this, 0, this);
   children: Zym<any, any>[] = [this.baseZocket];
 
-  showTransformations = false;
   transformations: ZymbolTreeTransformation[] = [];
+  transformIndex = -1;
 
   setBaseZocket = (baseZocket: Zocket) => {
     this.baseZocket = baseZocket;
@@ -171,8 +161,6 @@ export class ZymbolFrame extends Zyact<ZymbolFramePersist, FrameRenderProps> {
   component: FC<FrameRenderProps> = (props) => {
     let cursorOpt;
 
-    // console.log("comp", this);
-
     if (props.relativeCursor) {
       cursorOpt = props.relativeCursor;
     } else {
@@ -185,26 +173,58 @@ export class ZymbolFrame extends Zyact<ZymbolFramePersist, FrameRenderProps> {
       cursor: relativeCursor,
     });
 
-    const topTrans = this.getTopTransformation();
+    if (this.transformations.length > 0) {
+      let selectedTex: string;
 
-    if (topTrans) {
-      const defaultSelector = getDefaultSelector(topTrans.selector);
+      if (
+        this.transformIndex > -1 &&
+        this.transformIndex < this.transformations.length
+      ) {
+        const selectedTrans = this.transformations[this.transformIndex];
+        selectedTex = selectedTrans.newTreeRoot.renderTex({
+          cursor: selectedTrans.cursor,
+        });
+      } else {
+        selectedTex = frameTex;
+      }
+
+      const allTex = this.transformations.map((t) =>
+        t.newTreeRoot.renderTex({ cursor: t.cursor })
+      );
+      allTex.unshift(frameTex);
 
       return (
         <div className={Styles.FrameContainer}>
           <div className={Styles.MainFrameContainer}>
-            <TexTransform
-              tex={topTrans.newTreeRoot.renderTex({ cursor: topTrans.cursor })}
-              showSelector
-              selector={topTrans.selector}
-            />
+            <TexTransform tex={selectedTex} showSelector />
           </div>
-          <div className="shadow-lg shadow-gray-400 p-4 rounded-lg bg-gray-100">
-            <TexTransform
-              tex={frameTex}
-              showSelector
-              selector={defaultSelector}
-            />
+          <div className="shadow-lg shadow-gray-400 py-4 px-2 rounded-lg bg-gray-100">
+            {allTex.map((t, i) => (
+              <div
+                className={
+                  "p-2" +
+                  " " +
+                  (this.transformIndex + 1 === i
+                    ? Styles.SelectedTransContainer
+                    : "") +
+                  " " +
+                  (!(
+                    this.transformIndex + 1 === i ||
+                    this.transformIndex === i ||
+                    i === allTex.length - 1
+                  )
+                    ? "border-b"
+                    : "")
+                }
+                key={`tt::${i}`}
+              >
+                <TexTransform
+                  tex={t}
+                  showSelector={i === 0}
+                  selector={i === 0 ? DEFAULT_SELECTOR : undefined}
+                />
+              </div>
+            ))}
           </div>
         </div>
       );
@@ -225,23 +245,17 @@ export class ZymbolFrame extends Zyact<ZymbolFramePersist, FrameRenderProps> {
 
   hydrate(_persisted: ZymbolFramePersist): void {}
 
-  /* This is called typically after a character has been added, 
-  and it indicates that we want to take the current zymbol tree and 
-  transform it into a new desired form */
-  prepareTransformation = (loc: TransformationCursorLocation) => {};
+  setNewTransformations = (transformations: ZymbolTreeTransformation[]) => {
+    this.transformations = transformations;
 
-  setTransformations = (transformations: ZymbolTreeTransformation[]) => {
-    if (transformations.length > 0) {
-      this.transformations = transformations;
-      this.showTransformations = true;
+    this.rankTransactions();
+    const topTrans = this.transformations[0];
+
+    if (topTrans && topTrans.priority.rank === ZymbolTransformRank.Suggest) {
+      this.transformIndex = 0;
     } else {
-      this.showTransformations = false;
-      this.transformations = [];
+      this.transformIndex = -1;
     }
-  };
-
-  setTransformationsVisible = (show: boolean) => {
-    this.showTransformations = show;
   };
 
   getTopTransformation = () => {
@@ -255,9 +269,9 @@ export class ZymbolFrame extends Zyact<ZymbolFramePersist, FrameRenderProps> {
   private rankTransactions = () => {
     this.transformations.sort((a, b) => {
       if (a.priority.rank === b.priority.rank) {
-        return b.priority.value - a.priority.value;
+        return a.priority.cost - b.priority.cost;
       } else {
-        return b.priority.rank - a.priority.rank;
+        return a.priority.rank - b.priority.rank;
       }
     });
   };
@@ -286,45 +300,47 @@ const keyPressImpl = implementPartialCmdGroup(KeyPressCommand, {
 
       /* Check if we have active transformations */
       if (frame.transformations.length > 0) {
-        const topTrans = frame.getTopTransformation()!;
-        const defaultSelector = getDefaultSelector(topTrans.selector);
-        let selectTrans = false;
+        if (
+          keyPress.type === KeyPressBasicType.ArrowDown ||
+          keyPress.type === KeyPressBasicType.ArrowUp
+        ) {
+          frame.transformIndex =
+            ((frame.transformIndex +
+              1 +
+              (keyPress.type === KeyPressBasicType.ArrowDown ? 1 : -1) +
+              frame.transformations.length +
+              1) %
+              (frame.transformations.length + 1)) -
+            1;
 
-        if (topTrans.selector) {
-          if (keyPressEqual(keyPress, topTrans.selector)) {
-            selectTrans = true;
-          } else if (keyPressEqual(defaultSelector, keyPress)) {
-            frame.setTransformations([]);
-            return successfulMoveResponse(cursor);
-          } else {
-            /* If it doesn't match either, then we fail */
-            return FAILED_CURSOR_MOVE_RESPONSE;
-          }
-        } else {
-          /* Check if we've selected any key or the default selector */
-          if (keyPressEqual(keyPress, defaultSelector)) {
-            frame.setTransformations([]);
-            return successfulMoveResponse(cursor);
-          } else {
-            selectTrans = true;
+          return successfulMoveResponse(cursor);
+        } else if (keyPressEqual(DEFAULT_SELECTOR, keyPress)) {
+          frame.setNewTransformations([]);
+          return successfulMoveResponse(cursor);
+        } else if (frame.transformIndex > -1) {
+          const trans = frame.transformations[frame.transformIndex];
+
+          if (trans) {
+            frame.setBaseZocket(trans.newTreeRoot);
+
+            cursor = [0, ...trans.cursor];
+
+            const { nextCursorIndex: n, childRelativeCursor: c } =
+              extractCursorInfo(cursor);
+
+            /* Reset mutable vars */
+            nextCursorIndex = n;
+            childRelativeCursor = c;
           }
         }
 
-        if (selectTrans) {
-          frame.setBaseZocket(topTrans.newTreeRoot);
-
-          cursor = [0, ...topTrans.cursor];
-
-          const { nextCursorIndex: n, childRelativeCursor: c } =
-            extractCursorInfo(cursor);
-
-          /* Reset mutable vars */
-          nextCursorIndex = n;
-          childRelativeCursor = c;
+        if (keyPress.type === KeyPressBasicType.Enter) {
+          frame.setNewTransformations([]);
+          return successfulMoveResponse(cursor);
         }
       }
 
-      frame.setTransformations([]);
+      frame.setNewTransformations([]);
 
       /* Otherwise, we handle everything as normal */
 
@@ -359,7 +375,7 @@ const keyPressImpl = implementPartialCmdGroup(KeyPressCommand, {
         );
 
         /* 3. Set setting that indicates that we have a transformation for the next render event */
-        frame.setTransformations(transformations);
+        frame.setNewTransformations(transformations);
       }
 
       return chainMoveResponse(childMove, (nextCursor) => {

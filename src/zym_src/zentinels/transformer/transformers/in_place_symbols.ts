@@ -1,5 +1,6 @@
+import _ from "underscore";
 import { last } from "../../../../global_utils/array_utils";
-import { backslash } from "../../../../global_utils/latex_utils";
+import { backslash, checkLatex } from "../../../../global_utils/latex_utils";
 import {
   capitalizeFirstLetter,
   splitCursorStringAtLastWord,
@@ -13,13 +14,18 @@ import {
   TEXT_ZYMBOL_NAME,
 } from "../../../zyms/zymbol/zymbols/text_zymbol/text_zymbol";
 import { Zocket } from "../../../zyms/zymbol/zymbols/zocket/zocket";
-import { CreateTransformerMessage } from "../transformer";
+import { TeX } from "../../../zyms/zymbol/zymbol_types";
+import { CreateTransformerMessage, ZymbolTransformRank } from "../transformer";
 
 export const IN_PLACE_SYMBOL_TRANSFORM = "in-place-e8d29";
 
 type SlashMap = { [key: string]: string };
 
 const slashes = ["\\", "/"];
+
+function checkSymbol(sym: TeX): boolean {
+  return checkLatex(`\\${sym}`);
+}
 
 /* +++ GREEK!! +++ */
 const lowerGreek: string[] = [
@@ -84,17 +90,12 @@ const greekSlashMap: SlashMap = {
 
 /* +++ PHYSICS! +++ */
 
-const physWords = ["hbar"];
-
 const physSlash: SlashMap = {
   hb: "hbar",
 };
 
-/* +++ HEBREW? +++ */
-const hebrewWords = ["aleph"];
-
 /* Full word matches */
-const fullWords: string[] = [...greekLetters, ...physWords, ...hebrewWords];
+const suggestedWords = _.uniq([...greekLetters, ...Object.values(physSlash)]);
 
 /* Slash matches */
 const slashMap = { ...greekSlashMap, ...physSlash };
@@ -133,9 +134,13 @@ class InPlaceSymbol extends Zentinel {
 
             let changed = false;
             let symbol = "";
+            let rank = ZymbolTransformRank.Include;
 
-            /* First check for lowercase/uppercase */
-            if (fullWords.includes(word)) {
+            if (suggestedWords.includes(word)) {
+              changed = true;
+              symbol = backslash(word);
+              rank = ZymbolTransformRank.Suggest;
+            } else if (/^[a-zA-Z]/.test(word) && checkSymbol(word)) {
               changed = true;
               symbol = backslash(word);
             } else if (slashes.some((s) => word.startsWith(s))) {
@@ -144,6 +149,7 @@ class InPlaceSymbol extends Zentinel {
               if (slashKeys.includes(key)) {
                 changed = true;
                 symbol = backslash(slashMap[key]);
+                rank = ZymbolTransformRank.Suggest;
               }
             }
 
@@ -196,8 +202,8 @@ class InPlaceSymbol extends Zentinel {
                   newTreeRoot: root as Zocket,
                   cursor: extendParentCursor(newTextPointer, cursorCopy),
                   priority: {
-                    rank: 1,
-                    value: 100,
+                    rank: rank,
+                    cost: 100,
                   },
                 },
               ];

@@ -93,3 +93,19 @@ export function tex_renders_properly(tex: string): boolean {
 export function backslash(str: string): TeX {
   return "\\" + str;
 }
+
+export function checkLatex(tex: TeX): boolean {
+  try {
+    katex.renderToString(tex, {
+      trust: true,
+      displayMode: true,
+      output: "html",
+      strict: false,
+      throwOnError: true,
+    });
+
+    return true;
+  } catch (_e) {
+    return false;
+  }
+}

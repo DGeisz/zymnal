@@ -1,5 +1,5 @@
-import katex from "katex";
 import { last } from "../../../../global_utils/array_utils";
+import { checkLatex } from "../../../../global_utils/latex_utils";
 import { Zentinel } from "../../../../zym_lib/zentinel/zentinel";
 import { Zymbol } from "../../../zyms/zymbol/zymbol";
 import {
@@ -11,7 +11,8 @@ import {
   TEXT_ZYMBOL_NAME,
 } from "../../../zyms/zymbol/zymbols/text_zymbol/text_zymbol";
 import { Zocket } from "../../../zyms/zymbol/zymbols/zocket/zocket";
-import { CreateTransformerMessage } from "../transformer";
+import { ZymbolContext } from "../../../zyms/zymbol_infrastructure/zymbol_context/zymbol_context";
+import { CreateTransformerMessage, ZymbolTransformRank } from "../transformer";
 
 export const DOT_MODIFIERS_TRANSFORM = "dot-modifiers-e1125";
 
@@ -26,22 +27,12 @@ const dotMap: { [key: string]: string } = {
   bd: "bold",
 };
 
+const suggestedMods = Object.values(dotMap);
+
 const dotKeys = Object.keys(dotMap);
 
 function checkMod(mod: string): boolean {
-  try {
-    katex.renderToString(`\\${mod}{a}`, {
-      trust: true,
-      displayMode: true,
-      output: "html",
-      strict: false,
-      throwOnError: true,
-    });
-
-    return true;
-  } catch (_e) {
-    return false;
-  }
+  return checkLatex(`\\${mod}{a}`) && !checkLatex(`\\${mod}`);
 }
 
 class DotModifiers extends Zentinel {
@@ -87,10 +78,17 @@ class DotModifiers extends Zentinel {
               let modWord = firstWord.slice(1);
 
               let allowed = false;
-              if (checkMod(modWord)) {
+              let rank = ZymbolTransformRank.Include;
+
+              if (dotKeys.includes(modWord)) {
                 allowed = true;
-              } else if (dotKeys.includes(modWord)) {
+                rank = ZymbolTransformRank.Suggest;
                 modWord = dotMap[modWord];
+              } else if (suggestedMods.includes(modWord)) {
+                allowed = true;
+                rank = ZymbolTransformRank.Suggest;
+              } else if (checkMod(modWord)) {
+                /* We default to suggested */
                 allowed = true;
               }
 
@@ -106,7 +104,6 @@ class DotModifiers extends Zentinel {
 
                 const remainingText = text.getText().slice(firstWord.length);
 
-                /* TODO: Add behavior where we can get rid of a modifier if it already exists */
                 if (prevZymbol.getMasterId() === MODIFIER_ZYMBOL_ID) {
                   (prevZymbol as ModifierZymbol).toggleModifier(mod);
                 } else {
@@ -132,8 +129,8 @@ class DotModifiers extends Zentinel {
                     newTreeRoot: root as Zocket,
                     cursor: cursorCopy,
                     priority: {
-                      rank: 1,
-                      value: 100,
+                      rank,
+                      cost: 100,
                     },
                   },
                 ];

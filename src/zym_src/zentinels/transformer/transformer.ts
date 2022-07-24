@@ -51,16 +51,25 @@ export interface GetTransformerContent {
   cursor: Cursor;
 }
 
+export enum ZymbolTransformRank {
+  /* Means that the transform is immediately used to transform the input, 
+  and the user has to change out in order to access something else */
+  Suggest = 0,
+  /* The transformation is included, but the user has to select the
+  transform in order to access it
+   */
+  Include = 1,
+}
+
 export interface ZymbolTreeTransformationPriority {
-  rank: number;
-  value: number;
+  rank: ZymbolTransformRank;
+  cost: number;
 }
 
 export interface ZymbolTreeTransformation {
   newTreeRoot: Zocket;
   cursor: Cursor;
   priority: ZymbolTreeTransformationPriority;
-  selector?: ZymKeyPress;
 }
 
 export type ZymbolTransformer = (
