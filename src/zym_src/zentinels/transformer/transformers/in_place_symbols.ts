@@ -22,7 +22,6 @@ type SlashMap = { [key: string]: string };
 const slashes = ["\\", "/"];
 
 /* +++ GREEK!! +++ */
-
 const lowerGreek: string[] = [
   "alpha",
   "beta",

@@ -26,7 +26,7 @@ export const modifierZymbolMaster = new ModifierZymbolMaster();
 /* Extensions */
 extendZymbol(modifierZymbolMaster);
 
-interface ZymbolModifier {
+export interface ZymbolModifier {
   id: {
     group: string;
     item: string | number;
@@ -91,8 +91,26 @@ export class ModifierZymbol extends Zymbol<{}> {
     this.modZocket = new Zocket(false, parentFrame, 0, this);
   }
 
+  toggleModifier = (mod: ZymbolModifier) => {
+    const hasMod = this.modifiers.some(
+      (m) => m.id.group === mod.id.group && m.id.item === mod.id.item
+    );
+
+    if (hasMod) {
+      this.removeModifier(mod);
+    } else {
+      this.addModifier(mod);
+    }
+  };
+
   addModifier = (mod: ZymbolModifier) => {
     this.modifiers.push(mod);
+  };
+
+  removeModifier = (mod: ZymbolModifier) => {
+    this.modifiers = this.modifiers.filter(
+      (m) => !(m.id.group === mod.id.group && m.id.item === mod.id.item)
+    );
   };
 
   takeCursorAction = (
@@ -149,13 +167,23 @@ export class ModifierZymbol extends Zymbol<{}> {
     return finalTex;
   };
 
+  clone(newParent?: Zym<any, any, any> | undefined): Zym<string, {}, any> {
+    const newMod = new ModifierZymbol(
+      this.parentFrame,
+      this.getCursorIndex(),
+      newParent ?? this.parent
+    );
+
+    newMod.modZocket = this.modZocket.clone(newMod);
+    newMod.modifiers = [...this.modifiers];
+
+    return newMod;
+  }
+
   persist(): {} {
     throw new Error("Method not implemented.");
   }
   hydrate(persisted: {}): void {
-    throw new Error("Method not implemented.");
-  }
-  clone(newParent?: Zym<any, any, any> | undefined): Zym<string, {}, any> {
     throw new Error("Method not implemented.");
   }
 }

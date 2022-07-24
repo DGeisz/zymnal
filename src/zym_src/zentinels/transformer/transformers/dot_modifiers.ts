@@ -1,9 +1,8 @@
+import katex from "katex";
 import { last } from "../../../../global_utils/array_utils";
 import { Zentinel } from "../../../../zym_lib/zentinel/zentinel";
 import { Zymbol } from "../../../zyms/zymbol/zymbol";
 import {
-  BasicModifierId,
-  BasicZymbolModifiers,
   ModifierZymbol,
   MODIFIER_ZYMBOL_ID,
 } from "../../../zyms/zymbol/zymbols/modifier_zymbol/modifier_zymbol";
@@ -11,28 +10,39 @@ import {
   TextZymbol,
   TEXT_ZYMBOL_NAME,
 } from "../../../zyms/zymbol/zymbols/text_zymbol/text_zymbol";
+import { Zocket } from "../../../zyms/zymbol/zymbols/zocket/zocket";
 import { CreateTransformerMessage } from "../transformer";
 
 export const DOT_MODIFIERS_TRANSFORM = "dot-modifiers-e1125";
 
 const dot = ".";
 
-const dotMap: { [key: string]: BasicModifierId } = {
-  vec: BasicModifierId.Vec,
-  vc: BasicModifierId.Vec,
-  hat: BasicModifierId.Hat,
-  ht: BasicModifierId.Hat,
-  dot: BasicModifierId.Dot,
-  dt: BasicModifierId.Dot,
-  ddot: BasicModifierId.DDot,
-  ddt: BasicModifierId.DDot,
-  underline: BasicModifierId.Underline,
-  ul: BasicModifierId.Underline,
-  bold: BasicModifierId.Bold,
-  bd: BasicModifierId.Bold,
+const dotMap: { [key: string]: string } = {
+  vc: "vec",
+  ht: "hat",
+  dt: "dot",
+  ddt: "ddot",
+  ul: "underline",
+  bd: "bold",
 };
 
 const dotKeys = Object.keys(dotMap);
+
+function checkMod(mod: string): boolean {
+  try {
+    katex.renderToString(`\\${mod}{a}`, {
+      trust: true,
+      displayMode: true,
+      output: "html",
+      strict: false,
+      throwOnError: true,
+    });
+
+    return true;
+  } catch (_e) {
+    return false;
+  }
+}
 
 class DotModifiers extends Zentinel {
   zyId: string = DOT_MODIFIERS_TRANSFORM;
@@ -58,7 +68,7 @@ class DotModifiers extends Zentinel {
             }
           }
 
-          const zymbolIndex = last(cursorCopy, 2);
+          const zymbolIndex: number = last(cursorCopy, 2);
 
           if (
             zymbolIndex > 0 &&
@@ -73,33 +83,61 @@ class DotModifiers extends Zentinel {
               .split(/\s+/)
               .filter((t) => !!t)[0];
 
-            if (
-              firstWord &&
-              firstWord.startsWith(dot) &&
-              dotKeys.includes(firstWord.slice(1))
-            ) {
-              const mod = BasicZymbolModifiers[dotMap[firstWord.slice(1)]];
+            if (firstWord && firstWord.startsWith(dot)) {
+              let modWord = firstWord.slice(1);
 
-              const remainingText = text.getText().slice(firstWord.length);
-
-              /* TODO: Add behavior where we can get rid of a modifier if it already exists */
-              if (prevZymbol.getMasterId() === MODIFIER_ZYMBOL_ID) {
-                (prevZymbol as ModifierZymbol).addModifier(mod);
-              } else {
-                const modZym = new ModifierZymbol(
-                  text.parentFrame,
-                  zymbolIndex - 1,
-                  parent
-                );
-
-                modZym.modZocket.children = [prevZymbol];
-                modZym.modZocket.reIndexChildren();
-                modZym.addModifier(mod);
-
-                parent.children[zymbolIndex - 1] = modZym;
+              let allowed = false;
+              if (checkMod(modWord)) {
+                allowed = true;
+              } else if (dotKeys.includes(modWord)) {
+                modWord = dotMap[modWord];
+                allowed = true;
               }
 
-              text.setText(remainingText);
+              if (allowed) {
+                const mod = {
+                  id: {
+                    group: "basic",
+                    item: modWord,
+                  },
+                  pre: `\\${modWord}{`,
+                  post: "}",
+                };
+
+                const remainingText = text.getText().slice(firstWord.length);
+
+                /* TODO: Add behavior where we can get rid of a modifier if it already exists */
+                if (prevZymbol.getMasterId() === MODIFIER_ZYMBOL_ID) {
+                  (prevZymbol as ModifierZymbol).toggleModifier(mod);
+                } else {
+                  const modZym = new ModifierZymbol(
+                    text.parentFrame,
+                    zymbolIndex - 1,
+                    parent
+                  );
+
+                  modZym.modZocket.children = [prevZymbol];
+                  modZym.modZocket.reIndexChildren();
+                  modZym.toggleModifier(mod);
+
+                  parent.children[zymbolIndex - 1] = modZym;
+                }
+
+                text.setText(remainingText);
+
+                cursorCopy.pop();
+
+                return [
+                  {
+                    newTreeRoot: root as Zocket,
+                    cursor: cursorCopy,
+                    priority: {
+                      rank: 1,
+                      value: 100,
+                    },
+                  },
+                ];
+              }
             }
           }
 
@@ -109,3 +147,5 @@ class DotModifiers extends Zentinel {
     );
   };
 }
+
+export const dotModifiers = new DotModifiers();

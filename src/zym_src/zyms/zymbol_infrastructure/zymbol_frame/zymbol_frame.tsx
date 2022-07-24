@@ -125,13 +125,13 @@ const TexTransform: React.FC<TexTransformProps> = (props) => {
       {props.showSelector && (
         <div className="flex self-end">
           <span>
-            {(selector?.modifiers ?? []).map((m) => (
-              <>
+            {(selector?.modifiers ?? []).map((m, i) => (
+              <span key={i}>
                 <span className={Styles.SelectionKey}>
                   {keyPressModifierToSymbol(m)}
                 </span>
                 <span className="mx-1">+</span>
-              </>
+              </span>
             ))}
             <span className={Styles.SelectionKey}>{finalKey}</span>
           </span>

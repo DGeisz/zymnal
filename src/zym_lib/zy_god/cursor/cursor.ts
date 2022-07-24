@@ -57,7 +57,7 @@ export const FAILED_CURSOR_MOVE_RESPONSE: CursorMoveResponse = {
 export function chainMoveResponse(
   moveResponse: CursorMoveResponse,
   onSuccess: (newRelativeCursor: Cursor) => CursorMoveResponse
-) {
+): CursorMoveResponse {
   if (moveResponse.success) {
     return onSuccess(moveResponse.newRelativeCursor);
   } else {
