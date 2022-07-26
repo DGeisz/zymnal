@@ -54,10 +54,10 @@ export abstract class ZyMaster<P = {}> extends Zentinel {
     regs.forEach((reg) => this.registerCmd(reg));
   };
 
-  abstract newChild(): Zym;
+  abstract newBlankChild(): Zym;
 
   async hydrate(persistData: any): Promise<Zym<any, any, any>> {
-    const newZym = this.newChild();
+    const newZym = this.newBlankChild();
     await newZym.hydrate(persistData);
 
     return newZym;

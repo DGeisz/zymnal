@@ -7,8 +7,7 @@ import { defaultKeyPressImpl } from "../zym_lib/zy_god/event_handler/key_press";
 import { zymbolTransformerZentinel } from "./zentinels/transformer/transformer";
 import { dotModifiers } from "./zentinels/transformer/transformers/dot_modifiers";
 import { inPlaceSymbol } from "./zentinels/transformer/transformers/in_place_symbols";
-import { Zage } from "./zyms/zage/zage";
-import { zageMaster } from "./zyms/zage/zage_master";
+import { Zage, zageMaster } from "./zyms/zage/zage";
 import { zymbolMasterList } from "./zyms/zymbol/zymbols/zymbol_list";
 import { zymbolInfrastructureMasters } from "./zyms/zymbol_infrastructure/zymbol_infrastructure";
 

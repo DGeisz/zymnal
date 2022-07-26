@@ -1,6 +1,7 @@
 import { last } from "../../../../../global_utils/array_utils";
 import { CURSOR_LATEX } from "../../../../../global_utils/latex_utils";
-import { Zym } from "../../../../../zym_lib/zym/zym";
+import { hydrateChild } from "../../../../../zym_lib/zym/utils/hydrate";
+import { Zym, ZymPersist } from "../../../../../zym_lib/zym/zym";
 import { ZyMaster } from "../../../../../zym_lib/zym/zy_master";
 import {
   implementPartialCmdGroup,
@@ -22,7 +23,10 @@ import {
   GetInitialCursorReturn,
 } from "../../../../../zym_lib/zy_god/cursor/cursor_commands";
 import { BasicContext } from "../../../../../zym_lib/zy_god/types/context_types";
-import { ZymbolFrame } from "../../../zymbol_infrastructure/zymbol_frame/zymbol_frame";
+import {
+  DUMMY_FRAME,
+  ZymbolFrame,
+} from "../../../zymbol_infrastructure/zymbol_frame/zymbol_frame";
 import {
   deflectDeleteBehavior,
   DeleteBehavior,
@@ -33,10 +37,28 @@ import { Zymbol, ZymbolRenderArgs } from "../../zymbol";
 import { extendZymbol } from "../../zymbol_cmd";
 import { TEXT_ZYMBOL_NAME, TextZymbol } from "../text_zymbol/text_zymbol";
 
+/* === PERSIST === */
+const ZP_FIELDS: {
+  CHILDREN: "c";
+  BASE_ZOCKET: "b";
+} = {
+  CHILDREN: "c",
+  BASE_ZOCKET: "b",
+};
+
+export interface ZocketPersist {
+  [ZP_FIELDS.CHILDREN]: ZymPersist<any>[];
+  [ZP_FIELDS.BASE_ZOCKET]: boolean;
+}
+
 export const ZOCKET_MASTER_ID = "zocket";
 
 class ZocketMaster extends ZyMaster {
   zyId = ZOCKET_MASTER_ID;
+
+  newBlankChild(): Zym<any, any, any> {
+    return new Zocket(false, DUMMY_FRAME, 0, undefined);
+  }
 }
 
 export const zocketMaster = new ZocketMaster();
@@ -44,7 +66,7 @@ export const zocketMaster = new ZocketMaster();
 /* Extensions */
 extendZymbol(zocketMaster);
 
-export class Zocket extends Zymbol<{}> {
+export class Zocket extends Zymbol<ZocketPersist> {
   zyMaster: ZyMaster = zocketMaster;
   children: Zymbol[] = [];
 
@@ -61,19 +83,6 @@ export class Zocket extends Zymbol<{}> {
     super(parentFrame, cursorIndex, parent);
     this.isBaseZocket = isBaseZocket;
   }
-
-  clone = (newParent?: Zym) => {
-    const newZocket = new Zocket(
-      this.isBaseZocket,
-      this.parentFrame,
-      this.getCursorIndex(),
-      newParent ?? this.parent
-    );
-
-    newZocket.children = this.cloneChildren(newZocket) as Zymbol[];
-
-    return newZocket;
-  };
 
   /* USED ONLY FOR TESTS */
   getZymbols = () => this.children;
@@ -465,8 +474,20 @@ export class Zocket extends Zymbol<{}> {
     return FAILED_CURSOR_MOVE_RESPONSE;
   };
 
-  persistData(): {} {
-    return {};
+  persistData = (): ZocketPersist => {
+    return {
+      [ZP_FIELDS.BASE_ZOCKET]: this.isBaseZocket,
+      [ZP_FIELDS.CHILDREN]: this.children.map((c) => c.persist()),
+    };
+  };
+
+  async hydrate(p: ZocketPersist): Promise<void> {
+    this.children = (await Promise.all(
+      p[ZP_FIELDS.CHILDREN].map((c) => hydrateChild(this, c))
+    )) as Zymbol[];
+    this.isBaseZocket = p[ZP_FIELDS.BASE_ZOCKET];
+
+    this.reConnectParentChildren();
   }
 }
 

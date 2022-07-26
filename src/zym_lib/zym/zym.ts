@@ -131,16 +131,24 @@ export abstract class Zym<T = any, P = any, RenderOptions = any> {
   abstract hydrate(p: P): Promise<void>;
 
   /* ===== TREE METHODS ===== */
-  clone = async (newParent?: Zym): Promise<Zym<T, P>> => {
+  clone = async (copies = 1, newParent?: Zym): Promise<Zym<T, P>[]> => {
     const p = this.persist();
 
-    const newZym = unwrapOption(
-      unwrap(await this.callHermes(CreateZyGodMessage.hydrateZym(p)))
-    ) as Zym;
+    let finalCopies: Zym<T, P>[] = [];
 
-    if (newParent) newZym.parent = newParent;
+    for (let i = 0; i < copies; i++) {
+      finalCopies.push(
+        unwrapOption(
+          unwrap(await this.callHermes(CreateZyGodMessage.hydrateZym(p)))
+        ) as Zym
+      );
+    }
 
-    return newZym;
+    if (newParent) {
+      finalCopies.forEach((f) => (f.parent = newParent));
+    }
+
+    return finalCopies;
   };
 
   /* ===== COMMANDS ===== */

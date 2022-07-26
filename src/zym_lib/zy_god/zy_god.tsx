@@ -163,6 +163,10 @@ class ZyGod extends ZyMaster {
       "If you're hydrating the zym god, something's gone horribly wrong"
     );
   }
+
+  newBlankChild(): Zym<any, any, any> {
+    throw new Error("This god don't have no son bitches");
+  }
 }
 
 export const zyGod = new ZyGod();

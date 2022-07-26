@@ -52,6 +52,7 @@ export class ZymbolProgression extends Zyact<ZymbolProgressionPersist> {
       this,
       p[ZPP_FIELDS.BASE_FRAME]
     )) as ZymbolFrame;
+    this.children = [this.baseFrame];
 
     this.reConnectParentChildren();
   }

@@ -45,6 +45,8 @@ class DotModifiers extends Zentinel {
         transform: (root, cursor) => {
           const cursorCopy = [...cursor];
 
+          console.log("zrc pro", root);
+
           /* First we want to get to the parent */
           let currZymbol = root;
           let parent = root;
@@ -104,6 +106,9 @@ class DotModifiers extends Zentinel {
                 const remainingText = text.getText().slice(firstWord.length);
 
                 if (prevZymbol.getMasterId() === MODIFIER_ZYMBOL_ID) {
+                  if ((prevZymbol as ModifierZymbol).modifiers.length === 1) {
+                    // debugger;
+                  }
                   (prevZymbol as ModifierZymbol).toggleModifier(mod);
                 } else {
                   const modZym = new ModifierZymbol(
@@ -114,6 +119,7 @@ class DotModifiers extends Zentinel {
 
                   modZym.modZocket.children = [prevZymbol];
                   modZym.modZocket.reIndexChildren();
+
                   modZym.toggleModifier(mod);
 
                   parent.children[zymbolIndex - 1] = modZym;

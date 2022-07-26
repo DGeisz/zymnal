@@ -60,6 +60,7 @@ export class Zage extends Zyact<ZagePersist> {
       this,
       p[ZAGE_PERSIST_FIELDS.CONTEXT]
     )) as ZymbolContext;
+    this.children = [this.baseZymbolContext];
 
     this.reConnectParentChildren();
   }

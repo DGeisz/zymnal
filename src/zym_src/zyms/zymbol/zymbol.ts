@@ -88,4 +88,9 @@ export abstract class Zymbol<P = any> extends Zym<TeX, P> {
   abstract renderTex: (opts: ZymbolRenderArgs) => TeX;
 
   getRenderContent = (opts: ZymbolRenderArgs) => this.renderTex(opts);
+
+  setParentFrame = (frame: ZymbolFrame) => {
+    this.parentFrame = frame;
+    this.children.forEach((c) => (c as Zymbol).setParentFrame(frame));
+  };
 }

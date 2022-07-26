@@ -1,7 +1,7 @@
-/* TODO: Finish the persistence JIHAD!! */
 import React, { FC } from "react";
 import Tex from "../../../../global_building_blocks/tex/tex";
-import { Zym } from "../../../../zym_lib/zym/zym";
+import { hydrateChild } from "../../../../zym_lib/zym/utils/hydrate";
+import { Zym, ZymPersist } from "../../../../zym_lib/zym/zym";
 import { Zyact } from "../../../../zym_lib/zym/zymplementations/zyact/zyact";
 import { ZyMaster } from "../../../../zym_lib/zym/zy_master";
 import {
@@ -37,30 +37,35 @@ import {
   ZymbolTransformRank,
   ZymbolTreeTransformation,
 } from "../../../zentinels/transformer/transformer";
+import { MODIFIER_ZYMBOL_ID } from "../../zymbol/zymbols/modifier_zymbol/modifier_zymbol";
 import { Zocket } from "../../zymbol/zymbols/zocket/zocket";
 import { TeX } from "../../zymbol/zymbol_types";
-import { ZymbolFramePersist } from "./zf_persist";
+
+const ZFP_FIELDS: {
+  BASE_ZOCKET: "b";
+} = {
+  BASE_ZOCKET: "b",
+};
+
+export interface ZymbolFramePersist {
+  /* TODO: Add base zocket */
+  [ZFP_FIELDS.BASE_ZOCKET]: ZymPersist<any>;
+}
 
 /* === MASTER ===  */
 
-class ZymbolFrameMaster extends ZyMaster {
+class ZymbolFrameMaster extends ZyMaster<ZymbolFramePersist> {
   zyId = "zymbol_frame";
+
+  newBlankChild(): Zym<any, any, any> {
+    return new ZymbolFrame(0, undefined);
+  }
 }
 
 export const zymbolFrameMaster = new ZymbolFrameMaster();
 
 interface FrameRenderProps {
   relativeCursor?: ZyOption<Cursor>;
-}
-
-enum TransformationCursorLocationType {
-  Exact,
-  End,
-}
-
-interface TransformationCursorLocation {
-  cursor: Cursor;
-  location: TransformationCursorLocationType;
 }
 
 /* Helper class */
@@ -141,19 +146,8 @@ export class ZymbolFrame extends Zyact<ZymbolFramePersist, FrameRenderProps> {
 
   setBaseZocket = (baseZocket: Zocket) => {
     this.baseZocket = baseZocket;
+    this.baseZocket.parent = this;
     this.children = [this.baseZocket];
-  };
-
-  clone = (newParent?: Zym) => {
-    const newFrame = new ZymbolFrame(
-      this.getCursorIndex(),
-      newParent ?? this.parent
-    );
-
-    newFrame.baseZocket = this.baseZocket.clone() as Zocket;
-    newFrame.children = [newFrame.baseZocket];
-
-    return newFrame;
   };
 
   component: FC<FrameRenderProps> = (props) => {
@@ -237,8 +231,10 @@ export class ZymbolFrame extends Zyact<ZymbolFramePersist, FrameRenderProps> {
     }
   };
 
-  persistData(): ZymbolFramePersist {
-    return {};
+  persistData() {
+    return {
+      [ZFP_FIELDS.BASE_ZOCKET]: this.baseZocket.persist(),
+    };
   }
 
   setNewTransformations = (transformations: ZymbolTreeTransformation[]) => {
@@ -270,6 +266,18 @@ export class ZymbolFrame extends Zyact<ZymbolFramePersist, FrameRenderProps> {
         return a.priority.rank - b.priority.rank;
       }
     });
+  };
+
+  hydrate = async (p: ZymbolFramePersist): Promise<void> => {
+    this.baseZocket = (await hydrateChild(
+      this,
+      p[ZFP_FIELDS.BASE_ZOCKET]
+    )) as Zocket;
+    this.children = [this.baseZocket];
+
+    this.baseZocket.setParentFrame(this);
+
+    this.reConnectParentChildren();
   };
 }
 
@@ -364,11 +372,21 @@ const keyPressImpl = implementPartialCmdGroup(KeyPressCommand, {
           )
         ) as ZymbolTransformer;
 
+        // if (
+        //   frame.baseZocket.children[0]?.getMasterId() === MODIFIER_ZYMBOL_ID
+        // ) {
+        //   debugger;
+        // }
+
         /* 2. Apply the transformer to get a list of potential transformations */
-        const transformations = transformer(
+        const transformations = await transformer(
           frame.baseZocket,
           childMove.newRelativeCursor
         );
+
+        if (transformations.length > 0) {
+          // debugger;
+        }
 
         /* 3. Set setting that indicates that we have a transformation for the next render event */
         frame.setNewTransformations(transformations);
@@ -391,3 +409,6 @@ const frameCursorImpl = implementPartialCmdGroup(CursorCommand, {
 });
 
 zymbolFrameMaster.registerCmds([...frameCursorImpl, ...keyPressImpl]);
+
+/* USED FOR HYDRATION */
+export const DUMMY_FRAME = new ZymbolFrame(0, undefined);

@@ -13,6 +13,7 @@ import {
   FAILED_CURSOR_MOVE_RESPONSE,
   successfulMoveResponse,
 } from "../../../../../zym_lib/zy_god/cursor/cursor";
+import { DUMMY_FRAME } from "../../../zymbol_infrastructure/zymbol_frame/zymbol_frame";
 import {
   deflectDeleteBehavior,
   DeleteBehaviorType,
@@ -21,10 +22,22 @@ import {
 import { Zymbol, ZymbolRenderArgs } from "../../zymbol";
 import { extendZymbol } from "../../zymbol_cmd";
 
+const TZP_FIELDS: { CHARACTERS: "c" } = {
+  CHARACTERS: "c",
+};
+
+export interface TextZymbolPersist {
+  [TZP_FIELDS.CHARACTERS]: string[];
+}
+
 export const TEXT_ZYMBOL_NAME = "text";
 
 class TextZymbolMaster extends ZyMaster {
   zyId: string = TEXT_ZYMBOL_NAME;
+
+  newBlankChild(): Zym<any, any, any> {
+    return new TextZymbol(DUMMY_FRAME, 0, undefined);
+  }
 }
 
 export const textZymbolMaster = new TextZymbolMaster();
@@ -32,7 +45,7 @@ export const textZymbolMaster = new TextZymbolMaster();
 /* Extensions */
 extendZymbol(textZymbolMaster);
 
-export class TextZymbol extends Zymbol<{}> {
+export class TextZymbol extends Zymbol<TextZymbolPersist> {
   private characters: string[] = [];
 
   children: Zym<any, any>[] = [];
@@ -169,25 +182,16 @@ export class TextZymbol extends Zymbol<{}> {
     }, palette.deepBlue);
   };
 
-  persist(): {} {
-    return {};
+  persistData(): TextZymbolPersist {
+    return {
+      [TZP_FIELDS.CHARACTERS]: this.characters,
+    };
   }
 
-  hydrate(_persisted: {}): void {
-    throw new Error("Method not implemented.");
-  }
-
-  clone = (newParent?: Zym) => {
-    const newText = new TextZymbol(
-      this.parentFrame,
-      this.getCursorIndex(),
-      newParent ?? this.parent
-    );
-
-    newText.setCharacters(this.characters);
-
-    return newText;
+  hydrate = async (p: TextZymbolPersist): Promise<void> => {
+    this.characters = p[TZP_FIELDS.CHARACTERS];
   };
+
   /* Custom methods */
   getCharacters = () => this.characters;
   setCharacters = (characters: string[]) => {

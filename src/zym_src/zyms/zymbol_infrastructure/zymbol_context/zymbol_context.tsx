@@ -4,8 +4,10 @@ import { Zym, ZymPersist } from "../../../../zym_lib/zym/zym";
 import { useZymponent } from "../../../../zym_lib/zym/zymplementations/zyact/hooks";
 import { Zyact } from "../../../../zym_lib/zym/zymplementations/zyact/zyact";
 import { ZyMaster } from "../../../../zym_lib/zym/zy_master";
-import { ZymbolProgressionPersist } from "../zymbol_progression/zp_persist";
-import { ZymbolProgression } from "../zymbol_progression/zymbol_progression";
+import {
+  ZymbolProgression,
+  ZymbolProgressionPersist,
+} from "../zymbol_progression/zymbol_progression";
 
 export const ZCP_FIELDS: {
   PROGRESSION: "p";
@@ -49,6 +51,7 @@ export class ZymbolContext extends Zyact<ZymbolContextPersist> {
       this,
       p[ZCP_FIELDS.PROGRESSION]
     )) as ZymbolProgression;
+    this.children = [this.progression];
 
     this.reConnectParentChildren();
   }

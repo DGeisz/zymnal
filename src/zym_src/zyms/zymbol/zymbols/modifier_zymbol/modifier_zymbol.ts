@@ -1,4 +1,5 @@
-import { Zym } from "../../../../../zym_lib/zym/zym";
+import { hydrateChild } from "../../../../../zym_lib/zym/utils/hydrate";
+import { Zym, ZymPersist } from "../../../../../zym_lib/zym/zym";
 import { ZyMaster } from "../../../../../zym_lib/zym/zy_master";
 import {
   Cursor,
@@ -9,16 +10,36 @@ import {
   wrapChildCursorResponse,
 } from "../../../../../zym_lib/zy_god/cursor/cursor";
 import { BasicContext } from "../../../../../zym_lib/zy_god/types/context_types";
-import { ZymbolFrame } from "../../../zymbol_infrastructure/zymbol_frame/zymbol_frame";
+import {
+  DUMMY_FRAME,
+  ZymbolFrame,
+} from "../../../zymbol_infrastructure/zymbol_frame/zymbol_frame";
 import { Zymbol, ZymbolRenderArgs } from "../../zymbol";
 import { extendZymbol } from "../../zymbol_cmd";
 import { TeX } from "../../zymbol_types";
-import { Zocket } from "../zocket/zocket";
+import { Zocket, ZocketPersist } from "../zocket/zocket";
+
+const MP_FIELDS: {
+  MOD_ZOCKET: "z";
+  MODIFIERS: "m";
+} = {
+  MOD_ZOCKET: "z",
+  MODIFIERS: "m",
+};
+
+export interface ModifierZymbolPersist {
+  [MP_FIELDS.MODIFIERS]: ZymbolModifier[];
+  [MP_FIELDS.MOD_ZOCKET]: ZymPersist<ZocketPersist>;
+}
 
 export const MODIFIER_ZYMBOL_ID = "mod-43de939c";
 
 class ModifierZymbolMaster extends ZyMaster {
   zyId: string = MODIFIER_ZYMBOL_ID;
+
+  newBlankChild(): Zym<any, any, any> {
+    return new ModifierZymbol(DUMMY_FRAME, 0, undefined);
+  }
 }
 
 export const modifierZymbolMaster = new ModifierZymbolMaster();
@@ -35,63 +56,24 @@ export interface ZymbolModifier {
   post: TeX;
 }
 
-export enum BasicModifierId {
-  Vec = "v",
-  Hat = "h",
-  Dot = "d",
-  DDot = "dd",
-  Underline = "u",
-  Bold = "b",
-}
-
-function createBasicModifier(
-  id: BasicModifierId,
-  pre: TeX,
-  post: TeX
-): ZymbolModifier {
-  return {
-    id: {
-      group: "basic",
-      item: id,
-    },
-    pre,
-    post,
-  };
-}
-
-function createBasicWrapper(id: BasicModifierId, tex: TeX): ZymbolModifier {
-  return createBasicModifier(id, `\\${tex}{`, "}");
-}
-
-export const BasicZymbolModifiers: { [key: string]: ZymbolModifier } = {
-  [BasicModifierId.Vec]: createBasicWrapper(BasicModifierId.Vec, "vec"),
-  [BasicModifierId.Hat]: createBasicWrapper(BasicModifierId.Hat, "hat"),
-  [BasicModifierId.Dot]: createBasicWrapper(BasicModifierId.Dot, "dot"),
-  [BasicModifierId.DDot]: createBasicWrapper(BasicModifierId.DDot, "ddot"),
-  [BasicModifierId.Underline]: createBasicWrapper(
-    BasicModifierId.Underline,
-    "underline"
-  ),
-  [BasicModifierId.Bold]: createBasicWrapper(BasicModifierId.Bold, "bold"),
-};
-
-export class ModifierZymbol extends Zymbol<{}> {
+export class ModifierZymbol extends Zymbol<ModifierZymbolPersist> {
   modZocket: Zocket;
-  children: Zymbol[] = [];
+  children: Zymbol[];
   zyMaster: ZyMaster = modifierZymbolMaster;
   modifiers: ZymbolModifier[] = [];
 
   constructor(
     parentFrame: ZymbolFrame,
     cursorIndex: CursorIndex,
-    parent: Zym<any, any> | undefined,
-    persisted?: {}
+    parent: Zym<any, any> | undefined
   ) {
-    super(parentFrame, cursorIndex, parent, persisted);
+    super(parentFrame, cursorIndex, parent);
     this.modZocket = new Zocket(false, parentFrame, 0, this);
+    this.children = [this.modZocket];
   }
 
   toggleModifier = (mod: ZymbolModifier) => {
+    console.trace("get toggled", this.bid, mod.id.item);
     const hasMod = this.modifiers.some(
       (m) => m.id.group === mod.id.group && m.id.item === mod.id.item
     );
@@ -158,6 +140,10 @@ export class ModifierZymbol extends Zymbol<{}> {
   renderTex = (opts: ZymbolRenderArgs) => {
     const { childRelativeCursor } = extractCursorInfo(opts.cursor);
 
+    if (this.modifiers.length === 2) {
+      console.log("get len 2", this.bid);
+    }
+
     let finalTex = this.modZocket.renderTex({ cursor: childRelativeCursor });
 
     for (const mod of this.modifiers) {
@@ -167,23 +153,19 @@ export class ModifierZymbol extends Zymbol<{}> {
     return finalTex;
   };
 
-  clone(newParent?: Zym<any, any, any> | undefined): Zym<string, {}, any> {
-    const newMod = new ModifierZymbol(
-      this.parentFrame,
-      this.getCursorIndex(),
-      newParent ?? this.parent
-    );
-
-    newMod.modZocket = this.modZocket.clone(newMod);
-    newMod.modifiers = [...this.modifiers];
-
-    return newMod;
+  persistData(): ModifierZymbolPersist {
+    return {
+      [MP_FIELDS.MODIFIERS]: this.modifiers,
+      [MP_FIELDS.MOD_ZOCKET]: this.modZocket.persist(),
+    };
   }
 
-  persist(): {} {
-    throw new Error("Method not implemented.");
-  }
-  hydrate(persisted: {}): void {
-    throw new Error("Method not implemented.");
-  }
+  hydrate = async (p: ModifierZymbolPersist): Promise<void> => {
+    this.modifiers = p[MP_FIELDS.MODIFIERS];
+    this.modZocket = (await hydrateChild(
+      this,
+      p[MP_FIELDS.MOD_ZOCKET]
+    )) as Zocket;
+    this.children = [this.modZocket];
+  };
 }

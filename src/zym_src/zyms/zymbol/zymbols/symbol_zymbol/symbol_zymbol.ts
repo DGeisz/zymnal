@@ -5,21 +5,39 @@ import {
   CursorIndex,
   FAILED_CURSOR_MOVE_RESPONSE,
 } from "../../../../../zym_lib/zy_god/cursor/cursor";
-import { ZymbolFrame } from "../../../zymbol_infrastructure/zymbol_frame/zymbol_frame";
+import {
+  DUMMY_FRAME,
+  ZymbolFrame,
+} from "../../../zymbol_infrastructure/zymbol_frame/zymbol_frame";
 import {
   DeleteBehaviorType,
   normalDeleteBehavior,
 } from "../../delete_behavior";
 import { Zymbol, ZymbolRenderArgs } from "../../zymbol";
+import { TeX } from "../../zymbol_types";
+
+const SZP_FIELDS: {
+  TEX_SYMBOL: "t";
+} = {
+  TEX_SYMBOL: "t",
+};
+
+export interface SymbolZymbolPersist {
+  [SZP_FIELDS.TEX_SYMBOL]: TeX;
+}
 
 class SymbolZymbolMaster extends ZyMaster {
   zyId: string = "symbol-zymbol";
+
+  newBlankChild(): Zym<any, any, any> {
+    return new SymbolZymbol("", DUMMY_FRAME, 0, undefined);
+  }
 }
 
 export const symbolZymbolMaster = new SymbolZymbolMaster();
 
-export class SymbolZymbol extends Zymbol<{}> {
-  texSymbol: string;
+export class SymbolZymbol extends Zymbol<SymbolZymbolPersist> {
+  texSymbol: TeX;
   children: Zym<any, any, any>[] = [];
   zyMaster: ZyMaster = symbolZymbolMaster;
 
@@ -44,16 +62,14 @@ export class SymbolZymbol extends Zymbol<{}> {
   renderTex = (opts: ZymbolRenderArgs) => this.texSymbol;
 
   getDeleteBehavior = () => normalDeleteBehavior(DeleteBehaviorType.ALLOWED);
-  persistData(): {} {
-    throw new Error("Method not implemented.");
+
+  persistData(): SymbolZymbolPersist {
+    return {
+      [SZP_FIELDS.TEX_SYMBOL]: this.texSymbol,
+    };
   }
 
-  clone(newParent?: Zym): Zym<string, any, any> {
-    return new SymbolZymbol(
-      this.texSymbol,
-      this.parentFrame,
-      this.getCursorIndex(),
-      newParent ?? this.parent
-    );
-  }
+  hydrate = async (p: SymbolZymbolPersist): Promise<void> => {
+    this.texSymbol = p[SZP_FIELDS.TEX_SYMBOL];
+  };
 }
