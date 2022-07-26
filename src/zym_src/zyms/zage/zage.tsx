@@ -1,10 +1,37 @@
-import { Zym } from "../../../zym_lib/zym/zym";
+import { hydrateChild } from "../../../zym_lib/zym/utils/hydrate";
+import { Zym, ZymPersist } from "../../../zym_lib/zym/zym";
 import { useZymponent } from "../../../zym_lib/zym/zymplementations/zyact/hooks";
 import { Zyact } from "../../../zym_lib/zym/zymplementations/zyact/zyact";
 import { ZyMaster } from "../../../zym_lib/zym/zy_master";
-import { ZymbolContext } from "../zymbol_infrastructure/zymbol_context/zymbol_context";
-import { zageMaster } from "./zage_master";
-import { ZagePersist, ZAGE_PERSIST_FIELDS } from "./zage_persist";
+import {
+  ZymbolContext,
+  ZymbolContextPersist,
+} from "../zymbol_infrastructure/zymbol_context/zymbol_context";
+
+/* ==== PERSIST ====  */
+
+export const ZAGE_PERSIST_FIELDS: {
+  CONTEXT: "c";
+} = {
+  CONTEXT: "c",
+};
+
+export interface ZagePersist {
+  [ZAGE_PERSIST_FIELDS.CONTEXT]: ZymPersist<ZymbolContextPersist>;
+}
+
+/* ==== MASTER ====  */
+class ZageMaster extends ZyMaster<ZagePersist> {
+  zyId = "zage";
+
+  newBlankChild(): Zym<any, any, any> {
+    return new Zage(0, undefined);
+  }
+}
+
+export const zageMaster = new ZageMaster();
+
+/* ==== ZYM ====  */
 
 /* For the time being, a zage will just hold a central context */
 export class Zage extends Zyact<ZagePersist> {
@@ -22,21 +49,20 @@ export class Zage extends Zyact<ZagePersist> {
     );
   };
 
-  persist() {
+  persistData() {
     return {
       [ZAGE_PERSIST_FIELDS.CONTEXT]: this.baseZymbolContext.persist(),
     };
   }
 
-  hydrate(persisted: ZagePersist): void {
-    this.baseZymbolContext.hydrate(persisted[ZAGE_PERSIST_FIELDS.CONTEXT]);
+  async hydrate(p: ZagePersist): Promise<void> {
+    this.baseZymbolContext = (await hydrateChild(
+      this,
+      p[ZAGE_PERSIST_FIELDS.CONTEXT]
+    )) as ZymbolContext;
+
+    this.reConnectParentChildren();
   }
-
-  clone = (newParent?: Zym) => {
-    const newZage = new Zage(this.getCursorIndex(), newParent ?? this.parent);
-    newZage.baseZymbolContext = this.baseZymbolContext.clone() as ZymbolContext;
-    newZage.children = [newZage.baseZymbolContext];
-
-    return newZage;
-  };
 }
+
+/* ==== IMPLEMENTATIONS ====  */

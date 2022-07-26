@@ -1,11 +1,31 @@
 import { FC } from "react";
-import { Zym } from "../../../../zym_lib/zym/zym";
+import { hydrateChild } from "../../../../zym_lib/zym/utils/hydrate";
+import { Zym, ZymPersist } from "../../../../zym_lib/zym/zym";
 import { useZymponent } from "../../../../zym_lib/zym/zymplementations/zyact/hooks";
 import { Zyact } from "../../../../zym_lib/zym/zymplementations/zyact/zyact";
 import { ZyMaster } from "../../../../zym_lib/zym/zy_master";
+import { ZymbolProgressionPersist } from "../zymbol_progression/zp_persist";
 import { ZymbolProgression } from "../zymbol_progression/zymbol_progression";
-import { zymbolContextMaster } from "./zc_master";
-import { ZCP_FIELDS, ZymbolContextPersist } from "./zc_persist";
+
+export const ZCP_FIELDS: {
+  PROGRESSION: "p";
+} = {
+  PROGRESSION: "p",
+};
+
+export interface ZymbolContextPersist {
+  [ZCP_FIELDS.PROGRESSION]: ZymPersist<ZymbolProgressionPersist>;
+}
+
+class ZymbolContextMaster extends ZyMaster {
+  zyId = "zymbol_context";
+
+  newBlankChild(): Zym<any, any, any> {
+    return new ZymbolContext(0, undefined);
+  }
+}
+
+export const zymbolContextMaster = new ZymbolContextMaster();
 
 export class ZymbolContext extends Zyact<ZymbolContextPersist> {
   zyMaster: ZyMaster = zymbolContextMaster;
@@ -18,24 +38,18 @@ export class ZymbolContext extends Zyact<ZymbolContextPersist> {
     return <ProgressionComponent />;
   };
 
-  persist() {
+  persistData() {
     return {
       [ZCP_FIELDS.PROGRESSION]: this.progression.persist(),
     };
   }
 
-  hydrate(persisted: ZymbolContextPersist): void {
-    this.progression.hydrate(persisted[ZCP_FIELDS.PROGRESSION]);
+  async hydrate(p: ZymbolContextPersist): Promise<void> {
+    this.progression = (await hydrateChild(
+      this,
+      p[ZCP_FIELDS.PROGRESSION]
+    )) as ZymbolProgression;
+
+    this.reConnectParentChildren();
   }
-
-  clone = (newParent?: Zym) => {
-    const newContext = new ZymbolContext(
-      this.getCursorIndex(),
-      newParent ?? this.parent
-    );
-    newContext.progression = this.progression.clone() as ZymbolProgression;
-    newContext.children = [newContext.progression];
-
-    return newContext;
-  };
 }

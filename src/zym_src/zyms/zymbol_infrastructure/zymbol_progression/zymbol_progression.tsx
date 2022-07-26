@@ -1,11 +1,30 @@
 import { FC } from "react";
+import { hydrateChild } from "../../../../zym_lib/zym/utils/hydrate";
 import { Zym } from "../../../../zym_lib/zym/zym";
 import { useZymponent } from "../../../../zym_lib/zym/zymplementations/zyact/hooks";
 import { Zyact } from "../../../../zym_lib/zym/zymplementations/zyact/zyact";
 import { ZyMaster } from "../../../../zym_lib/zym/zy_master";
 import { ZymbolFrame } from "../zymbol_frame/zymbol_frame";
-import { zymbolProgressionMaster } from "./zp_master";
-import { ZymbolProgressionPersist } from "./zp_persist";
+
+const ZPP_FIELDS: { BASE_FRAME: "b" } = {
+  BASE_FRAME: "b",
+};
+
+export interface ZymbolProgressionPersist {
+  [ZPP_FIELDS.BASE_FRAME]: any;
+}
+
+export const ZYMBOL_PROGRESSION_ID = "zymbol_progression";
+
+class ZymbolProgressionMaster extends ZyMaster {
+  zyId = ZYMBOL_PROGRESSION_ID;
+
+  newBlankChild(): Zym<any, any, any> {
+    return new ZymbolProgression(0, undefined);
+  }
+}
+
+export const zymbolProgressionMaster = new ZymbolProgressionMaster();
 
 export class ZymbolProgression extends Zyact<ZymbolProgressionPersist> {
   zyMaster: ZyMaster = zymbolProgressionMaster;
@@ -22,20 +41,18 @@ export class ZymbolProgression extends Zyact<ZymbolProgressionPersist> {
     );
   };
 
-  persist() {
-    return {};
+  persistData(): ZymbolProgressionPersist {
+    return {
+      [ZPP_FIELDS.BASE_FRAME]: this.baseFrame.persist(),
+    };
   }
 
-  hydrate(_persisted: any): void {}
+  async hydrate(p: ZymbolProgressionPersist): Promise<void> {
+    this.baseFrame = (await hydrateChild(
+      this,
+      p[ZPP_FIELDS.BASE_FRAME]
+    )) as ZymbolFrame;
 
-  clone = (newParent?: Zym) => {
-    const newProgression = new ZymbolProgression(
-      this.getCursorIndex(),
-      newParent ?? this.parent
-    );
-    newProgression.baseFrame = this.baseFrame.clone() as ZymbolFrame;
-    newProgression.children = [newProgression.baseFrame];
-
-    return newProgression;
-  };
+    this.reConnectParentChildren();
+  }
 }

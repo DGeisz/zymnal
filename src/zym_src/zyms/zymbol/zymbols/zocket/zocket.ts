@@ -56,10 +56,9 @@ export class Zocket extends Zymbol<{}> {
     isBaseZocket: boolean,
     parentFrame: ZymbolFrame,
     cursorIndex: CursorIndex,
-    parent: Zym<any, any> | undefined,
-    persisted?: {}
+    parent: Zym<any, any> | undefined
   ) {
-    super(parentFrame, cursorIndex, parent, persisted);
+    super(parentFrame, cursorIndex, parent);
     this.isBaseZocket = isBaseZocket;
   }
 
@@ -466,11 +465,9 @@ export class Zocket extends Zymbol<{}> {
     return FAILED_CURSOR_MOVE_RESPONSE;
   };
 
-  persist(): {} {
+  persistData(): {} {
     return {};
   }
-
-  hydrate(_persisted: {}): void {}
 }
 
 const zocketCursorImpl = implementPartialCmdGroup(CursorCommand, {

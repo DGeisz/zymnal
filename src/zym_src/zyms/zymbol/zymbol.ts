@@ -26,10 +26,9 @@ export abstract class Zymbol<P = any> extends Zym<TeX, P> {
   constructor(
     parentFrame: ZymbolFrame,
     cursorIndex: CursorIndex,
-    parent: Zym<any, any> | undefined,
-    persisted?: P
+    parent: Zym<any, any> | undefined
   ) {
-    super(cursorIndex, parent, persisted);
+    super(cursorIndex, parent);
     this.parentFrame = parentFrame;
   }
 

@@ -11,7 +11,6 @@ import {
   TEXT_ZYMBOL_NAME,
 } from "../../../zyms/zymbol/zymbols/text_zymbol/text_zymbol";
 import { Zocket } from "../../../zyms/zymbol/zymbols/zocket/zocket";
-import { ZymbolContext } from "../../../zyms/zymbol_infrastructure/zymbol_context/zymbol_context";
 import { CreateTransformerMessage, ZymbolTransformRank } from "../transformer";
 
 export const DOT_MODIFIERS_TRANSFORM = "dot-modifiers-e1125";

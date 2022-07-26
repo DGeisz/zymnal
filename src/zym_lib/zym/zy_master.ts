@@ -15,7 +15,7 @@ import {
 import { ZyId } from "../zy_types/basic_types";
 import { Zym } from "./zym";
 
-export abstract class ZyMaster extends Zentinel {
+export abstract class ZyMaster<P = {}> extends Zentinel {
   private cmdRegistry: Map<ZyCmdSerialPath, ZyCmdHandler<any>> = new Map();
 
   checkCmd = (path: ZyCmdPath) => this.cmdRegistry.has(serializePath(path));
@@ -53,6 +53,15 @@ export abstract class ZyMaster extends Zentinel {
   registerCmds = (regs: ZyCommandRegistration<any>[]) => {
     regs.forEach((reg) => this.registerCmd(reg));
   };
+
+  abstract newChild(): Zym;
+
+  async hydrate(persistData: any): Promise<Zym<any, any, any>> {
+    const newZym = this.newChild();
+    await newZym.hydrate(persistData);
+
+    return newZym;
+  }
 
   abstract readonly zyId: ZyId;
 }

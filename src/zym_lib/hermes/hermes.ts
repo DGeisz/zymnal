@@ -1,5 +1,5 @@
 import { Zentinel } from "../zentinel/zentinel";
-import { UNIMPLEMENTED, ZyResult } from "../zy_commands/zy_command_types";
+import { ZyResult } from "../zy_commands/zy_command_types";
 import { ZyId } from "../zy_types/basic_types";
 
 export interface ZentinelMessage<T = any> {

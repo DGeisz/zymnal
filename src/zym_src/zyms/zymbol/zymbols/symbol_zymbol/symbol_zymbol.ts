@@ -27,10 +27,9 @@ export class SymbolZymbol extends Zymbol<{}> {
     texSymbol: string,
     parentFrame: ZymbolFrame,
     cursorIndex: CursorIndex,
-    parent: Zym<any, any> | undefined,
-    persisted?: {}
+    parent: Zym<any, any> | undefined
   ) {
-    super(parentFrame, cursorIndex, parent, persisted);
+    super(parentFrame, cursorIndex, parent);
     this.texSymbol = texSymbol;
   }
 
@@ -44,12 +43,8 @@ export class SymbolZymbol extends Zymbol<{}> {
 
   renderTex = (opts: ZymbolRenderArgs) => this.texSymbol;
 
-  hydrate(persisted: any): void {
-    throw new Error("Method not implemented.");
-  }
-
   getDeleteBehavior = () => normalDeleteBehavior(DeleteBehaviorType.ALLOWED);
-  persist(): {} {
+  persistData(): {} {
     throw new Error("Method not implemented.");
   }
 

@@ -1,14 +1,17 @@
 import { ControlledAwaiter } from "../../global_utils/promise_utils";
 import { Hermes, HermesMessage, ZentinelMessage } from "../hermes/hermes";
 import { Zentinel } from "../zentinel/zentinel";
+import { Zym, ZymPersist } from "../zym/zym";
 import { Zyact } from "../zym/zymplementations/zyact/zyact";
 import { ZyMaster } from "../zym/zy_master";
 import {
   isSome,
+  NONE,
   ok,
   some,
   UNIMPLEMENTED,
   unwrap,
+  unwrapOption,
   ZyResult,
 } from "../zy_commands/zy_command_types";
 import { ZyId } from "../zy_types/basic_types";
@@ -23,7 +26,6 @@ import {
   KeyPressArgs,
   KeyPressCommand,
   ZymKeyPress,
-  KeyPressBasicType,
 } from "./event_handler/key_press";
 import { newContext } from "./types/context_types";
 
@@ -31,7 +33,18 @@ export const ZyGodId: ZyId = "zyGod";
 
 enum ZyGodZentinelMessage {
   GetZymRoot = "gzr",
+  HydratePersistedZym = "hpr",
 }
+
+export const CreateZyGodMessage = {
+  hydrateZym(p: ZymPersist<any>): HermesMessage {
+    return {
+      zentinelId: ZyGodId,
+      message: ZyGodZentinelMessage.HydratePersistedZym,
+      content: p,
+    };
+  },
+};
 
 export const GET_ZYM_ROOT: HermesMessage = {
   zentinelId: ZyGodId,
@@ -126,11 +139,30 @@ class ZyGod extends ZyMaster {
 
         return ok(this.root);
       }
+      case ZyGodZentinelMessage.HydratePersistedZym: {
+        const { m: masterId, d: zymData }: ZymPersist<any> = msg.content!;
+
+        const master = this.masterRegistry.get(masterId);
+
+        if (master) {
+          const zym = await master.hydrate(zymData);
+
+          return ok(some(zym));
+        }
+
+        return ok(NONE);
+      }
       default: {
         return UNIMPLEMENTED;
       }
     }
   };
+
+  hydrate(_p: {}): Promise<Zym<any, any, any>> {
+    throw new Error(
+      "If you're hydrating the zym god, something's gone horribly wrong"
+    );
+  }
 }
 
 export const zyGod = new ZyGod();

@@ -1,5 +1,5 @@
+/* TODO: Finish the persistence JIHAD!! */
 import React, { FC } from "react";
-import { getDefaultFormatCodeSettings } from "typescript";
 import Tex from "../../../../global_building_blocks/tex/tex";
 import { Zym } from "../../../../zym_lib/zym/zym";
 import { Zyact } from "../../../../zym_lib/zym/zymplementations/zyact/zyact";
@@ -28,9 +28,7 @@ import {
   KeyPressCommand,
   KeyPressComplexType,
   keyPressEqual,
-  KeyPressModifier,
   keyPressModifierToSymbol,
-  SECONDARY_SELECTOR,
   ZymKeyPress,
 } from "../../../../zym_lib/zy_god/event_handler/key_press";
 import {
@@ -239,11 +237,9 @@ export class ZymbolFrame extends Zyact<ZymbolFramePersist, FrameRenderProps> {
     }
   };
 
-  persist(): ZymbolFramePersist {
+  persistData(): ZymbolFramePersist {
     return {};
   }
-
-  hydrate(_persisted: ZymbolFramePersist): void {}
 
   setNewTransformations = (transformations: ZymbolTreeTransformation[]) => {
     this.transformations = transformations;

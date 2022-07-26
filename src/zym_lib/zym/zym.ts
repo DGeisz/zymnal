@@ -2,6 +2,8 @@ import { HermesMessage } from "../hermes/hermes";
 import {
   pointerToPath,
   UNIMPLEMENTED,
+  unwrapOption,
+  unwrap,
   ZyCmdPointer,
   ZyResult,
 } from "../zy_commands/zy_command_types";
@@ -14,7 +16,29 @@ import {
   checkGlobalImplementation,
   defaultCmd,
 } from "../zy_god/divine_api/zy_global_cmds";
+import { CreateZyGodMessage } from "../zy_god/zy_god";
+import { ZyId } from "../zy_types/basic_types";
 import { ZyMaster } from "./zy_master";
+
+export const ZYM_PERSIST_FIELDS: {
+  MASTER_ID: "m";
+  DATA: "d";
+} = {
+  MASTER_ID: "m",
+  DATA: "d",
+};
+
+export interface ZymPersist<P> {
+  [ZYM_PERSIST_FIELDS.MASTER_ID]: ZyId;
+  [ZYM_PERSIST_FIELDS.DATA]: P;
+}
+
+export function zymPersist<P>(masterId: ZyId, data: P): ZymPersist<P> {
+  return {
+    [ZYM_PERSIST_FIELDS.MASTER_ID]: masterId,
+    [ZYM_PERSIST_FIELDS.DATA]: data,
+  };
+}
 
 /**
  * A zym is a basic object that is stored in the zym hierarchy.  This is essentially
@@ -32,7 +56,7 @@ export abstract class Zym<T = any, P = any, RenderOptions = any> {
   private cursorIndex: CursorIndex;
 
   /* Tree pointers */
-  readonly parent?: Zym<any, any>;
+  parent?: Zym<any, any>;
   abstract children: Zym<any, any>[];
 
   /* Master */
@@ -40,17 +64,9 @@ export abstract class Zym<T = any, P = any, RenderOptions = any> {
 
   bid = Math.random();
 
-  constructor(
-    cursorIndex: CursorIndex,
-    parent: Zym<any, any> | undefined,
-    persisted?: P
-  ) {
+  constructor(cursorIndex: CursorIndex, parent: Zym<any, any> | undefined) {
     this.cursorIndex = cursorIndex;
     this.parent = parent;
-
-    if (persisted) {
-      this.hydrate(persisted);
-    }
   }
 
   getCursorIndex = () => this.cursorIndex;
@@ -62,6 +78,14 @@ export abstract class Zym<T = any, P = any, RenderOptions = any> {
   reIndexChildren = () => {
     for (let i = 0; i < this.children.length; i++) {
       this.children[i].setCursorIndex(i);
+    }
+  };
+
+  reConnectParentChildren = () => {
+    this.reIndexChildren();
+
+    for (let i = 0; i < this.children.length; i++) {
+      this.children[i].parent = this;
     }
   };
 
@@ -98,16 +122,25 @@ export abstract class Zym<T = any, P = any, RenderOptions = any> {
   /* ===== PERSISTENCE METHODS ===== */
 
   /* Persists the zym */
-  abstract persist(): P;
+  persist = (): ZymPersist<P> => {
+    return zymPersist(this.getMasterId(), this.persistData());
+  };
 
-  /* Hydrates the zym from persisted data */
-  abstract hydrate(persisted: P): void;
+  abstract persistData(): P;
+
+  abstract hydrate(p: P): Promise<void>;
 
   /* ===== TREE METHODS ===== */
-  abstract clone(newParent?: Zym): Zym<T, P>;
+  clone = async (newParent?: Zym): Promise<Zym<T, P>> => {
+    const p = this.persist();
 
-  cloneChildren = (newParent?: Zym): Zym[] => {
-    return this.children.map((c) => c.clone(newParent));
+    const newZym = unwrapOption(
+      unwrap(await this.callHermes(CreateZyGodMessage.hydrateZym(p)))
+    ) as Zym;
+
+    if (newParent) newZym.parent = newParent;
+
+    return newZym;
   };
 
   /* ===== COMMANDS ===== */

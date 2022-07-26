@@ -23,6 +23,9 @@ type SlashMap = { [key: string]: string };
 
 const slashes = ["\\", "/"];
 
+const comma = ",";
+const semiColon = ";";
+
 function checkSymbol(sym: TeX): boolean {
   return checkLatex(`\\${sym}`);
 }
@@ -151,6 +154,13 @@ class InPlaceSymbol extends Zentinel {
                 symbol = backslash(slashMap[key]);
                 rank = ZymbolTransformRank.Suggest;
               }
+            } else if (word.length === 2 && word.startsWith(comma)) {
+              changed = true;
+              symbol = word.slice(1);
+              rank = ZymbolTransformRank.Suggest;
+            } else if (word.startsWith(semiColon) && word.length > 1) {
+              changed = true;
+              symbol = word.slice(1);
             }
 
             if (changed) {
