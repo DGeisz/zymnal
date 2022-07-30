@@ -106,9 +106,9 @@ class DotModifiers extends Zentinel {
                 const remainingText = text.getText().slice(firstWord.length);
 
                 if (prevZymbol.getMasterId() === MODIFIER_ZYMBOL_ID) {
-                  if ((prevZymbol as ModifierZymbol).modifiers.length === 1) {
-                    // debugger;
-                  }
+                  // if ((prevZymbol as ModifierZymbol).modifiers.length === 1) {
+                  //   // debugger;
+                  // }
                   (prevZymbol as ModifierZymbol).toggleModifier(mod);
                 } else {
                   const modZym = new ModifierZymbol(

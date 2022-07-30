@@ -90,9 +90,8 @@ export function keyPressEqual(k1: ZymKeyPress, k2: ZymKeyPress): boolean {
 }
 
 export const DEFAULT_SELECTOR: ZymKeyPress = {
-  type: KeyPressComplexType.Key,
+  type: KeyPressBasicType.Enter,
   modifiers: [KeyPressModifier.Shift],
-  key: " ",
 };
 
 export const SECONDARY_SELECTOR: ZymKeyPress = {

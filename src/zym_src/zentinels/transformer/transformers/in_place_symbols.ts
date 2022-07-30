@@ -20,6 +20,7 @@ import { CreateTransformerMessage, ZymbolTransformRank } from "../transformer";
 export const IN_PLACE_SYMBOL_TRANSFORM = "in-place-e8d29";
 
 type SlashMap = { [key: string]: string };
+type DirectMap = SlashMap;
 
 const slashes = ["\\", "/"];
 
@@ -29,6 +30,20 @@ const semiColon = ";";
 function checkSymbol(sym: TeX): boolean {
   return checkLatex(`\\${sym}`);
 }
+
+function checkWord(sym: TeX): boolean {
+  return checkLatex(sym);
+}
+
+/* +++ Basic binary operations +++ */
+const basicBinaryOperations: string[] = ["+", "=", "-"];
+
+const texBinaryOperations: string[] = ["cdot", "div", "times"];
+
+const binDirectMap: DirectMap = {
+  dot: "cdot",
+  "*": "cdot",
+};
 
 /* +++ GREEK!! +++ */
 const lowerGreek: string[] = [
@@ -98,11 +113,22 @@ const physSlash: SlashMap = {
 };
 
 /* Full word matches */
-const suggestedWords = _.uniq([...greekLetters, ...Object.values(physSlash)]);
+const suggestedWords = _.uniq([
+  ...greekLetters,
+  ...Object.values(physSlash),
+  ...texBinaryOperations,
+]);
 
 /* Slash matches */
 const slashMap = { ...greekSlashMap, ...physSlash };
 const slashKeys = Object.keys(slashMap);
+
+/* Direct Matches */
+const directMap = { ...binDirectMap };
+const directKeys = Object.keys(directMap);
+
+/* Direct words */
+const directWords = _.uniq([...basicBinaryOperations]);
 
 class InPlaceSymbol extends Zentinel {
   zyId: string = IN_PLACE_SYMBOL_TRANSFORM;
@@ -139,13 +165,18 @@ class InPlaceSymbol extends Zentinel {
             let symbol = "";
             let rank = ZymbolTransformRank.Include;
 
-            if (suggestedWords.includes(word)) {
+            if (directWords.includes(word)) {
+              changed = true;
+              symbol = word;
+              rank = ZymbolTransformRank.Suggest;
+            } else if (suggestedWords.includes(word)) {
               changed = true;
               symbol = backslash(word);
               rank = ZymbolTransformRank.Suggest;
-            } else if (/^[a-zA-Z]/.test(word) && checkSymbol(word)) {
+            } else if (directKeys.includes(word)) {
               changed = true;
-              symbol = backslash(word);
+              symbol = backslash(directMap[word]);
+              rank = ZymbolTransformRank.Suggest;
             } else if (slashes.some((s) => word.startsWith(s))) {
               const key = word.slice(1);
 
@@ -161,6 +192,9 @@ class InPlaceSymbol extends Zentinel {
             } else if (word.startsWith(semiColon) && word.length > 1) {
               changed = true;
               symbol = word.slice(1);
+            } else if (/^[a-zA-Z]/.test(word) && checkSymbol(word)) {
+              changed = true;
+              symbol = backslash(word);
             }
 
             if (changed) {

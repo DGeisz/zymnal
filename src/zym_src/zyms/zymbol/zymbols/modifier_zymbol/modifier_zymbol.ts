@@ -9,12 +9,13 @@ import {
   FAILED_CURSOR_MOVE_RESPONSE,
   wrapChildCursorResponse,
 } from "../../../../../zym_lib/zy_god/cursor/cursor";
+import { KeyPressModifier } from "../../../../../zym_lib/zy_god/event_handler/key_press";
 import { BasicContext } from "../../../../../zym_lib/zy_god/types/context_types";
 import {
   DUMMY_FRAME,
   ZymbolFrame,
 } from "../../../zymbol_infrastructure/zymbol_frame/zymbol_frame";
-import { Zymbol, ZymbolRenderArgs } from "../../zymbol";
+import { getKeyPress, Zymbol, ZymbolRenderArgs } from "../../zymbol";
 import { extendZymbol } from "../../zymbol_cmd";
 import { TeX } from "../../zymbol_types";
 import { Zocket, ZocketPersist } from "../zocket/zocket";
@@ -68,7 +69,7 @@ export class ModifierZymbol extends Zymbol<ModifierZymbolPersist> {
     parent: Zym<any, any> | undefined
   ) {
     super(parentFrame, cursorIndex, parent);
-    this.modZocket = new Zocket(false, parentFrame, 0, this);
+    this.modZocket = new Zocket(true, parentFrame, 0, this);
     this.children = [this.modZocket];
   }
 
@@ -100,36 +101,76 @@ export class ModifierZymbol extends Zymbol<ModifierZymbolPersist> {
     cursor: Cursor,
     ctx: BasicContext
   ) => {
-    const { parentOfCursorElement, nextCursorIndex, childRelativeCursor } =
+    const { parentOfCursorElement, childRelativeCursor } =
       extractCursorInfo(cursor);
 
-    if (parentOfCursorElement || nextCursorIndex === 0) {
+    if (parentOfCursorElement) {
       return FAILED_CURSOR_MOVE_RESPONSE;
     } else {
       return wrapChildCursorResponse(action(childRelativeCursor, ctx), 0);
     }
   };
 
-  moveCursorLeft = (cursor: Cursor, ctx: BasicContext) =>
-    this.takeCursorAction(this.modZocket.moveCursorLeft, cursor, ctx);
+  private hasShift = (ctx: BasicContext): boolean => {
+    const { modifiers } = getKeyPress(ctx);
 
-  moveCursorRight = (cursor: Cursor, ctx: BasicContext) =>
-    this.takeCursorAction(this.modZocket.moveCursorRight, cursor, ctx);
+    return !!modifiers && modifiers.includes(KeyPressModifier.Shift);
+  };
 
-  takeCursorFromLeft = () =>
-    wrapChildCursorResponse(this.modZocket.takeCursorFromLeft(), 0);
-  takeCursorFromRight = () =>
-    wrapChildCursorResponse(this.modZocket.takeCursorFromRight(), 0);
+  moveCursorLeft = (cursor: Cursor, ctx: BasicContext) => {
+    if (this.hasShift(ctx)) {
+      return FAILED_CURSOR_MOVE_RESPONSE;
+    } else {
+      return this.takeCursorAction(this.modZocket.moveCursorLeft, cursor, ctx);
+    }
+  };
+
+  moveCursorRight = (cursor: Cursor, ctx: BasicContext) => {
+    if (this.hasShift(ctx)) {
+      return FAILED_CURSOR_MOVE_RESPONSE;
+    } else {
+      return this.takeCursorAction(this.modZocket.moveCursorRight, cursor, ctx);
+    }
+  };
+
+  takeCursorFromLeft = (ctx: BasicContext) => {
+    if (this.hasShift(ctx)) {
+      return FAILED_CURSOR_MOVE_RESPONSE;
+    } else {
+      return wrapChildCursorResponse(this.modZocket.takeCursorFromLeft(), 0);
+    }
+  };
+  takeCursorFromRight = (ctx: BasicContext) => {
+    if (this.hasShift(ctx)) {
+      return FAILED_CURSOR_MOVE_RESPONSE;
+    } else {
+      return wrapChildCursorResponse(this.modZocket.takeCursorFromRight(), 0);
+    }
+  };
 
   addCharacter = (character: string, cursor: Cursor, ctx: BasicContext) => {
-    const { parentOfCursorElement, nextCursorIndex, childRelativeCursor } =
+    const { parentOfCursorElement, childRelativeCursor } =
       extractCursorInfo(cursor);
 
-    if (parentOfCursorElement || nextCursorIndex === 0) {
+    if (parentOfCursorElement) {
       return FAILED_CURSOR_MOVE_RESPONSE;
     } else {
       return wrapChildCursorResponse(
         this.modZocket.addCharacter(character, childRelativeCursor, ctx),
+        0
+      );
+    }
+  };
+
+  delete = (cursor: Cursor, ctx: BasicContext) => {
+    const { parentOfCursorElement, childRelativeCursor } =
+      extractCursorInfo(cursor);
+
+    if (parentOfCursorElement) {
+      return FAILED_CURSOR_MOVE_RESPONSE;
+    } else {
+      return wrapChildCursorResponse(
+        this.modZocket.delete(childRelativeCursor, ctx),
         0
       );
     }
@@ -155,7 +196,7 @@ export class ModifierZymbol extends Zymbol<ModifierZymbolPersist> {
 
   persistData(): ModifierZymbolPersist {
     return {
-      [MP_FIELDS.MODIFIERS]: this.modifiers,
+      [MP_FIELDS.MODIFIERS]: [...this.modifiers],
       [MP_FIELDS.MOD_ZOCKET]: this.modZocket.persist(),
     };
   }

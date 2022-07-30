@@ -101,7 +101,7 @@ export class Zocket extends Zymbol<ZocketPersist> {
 
     if (parentOfCursorElement) {
       const { success, newRelativeCursor } =
-        this.children[nextCursorIndex - 1].takeCursorFromRight();
+        this.children[nextCursorIndex - 1].takeCursorFromRight(ctx);
 
       if (success) {
         return successfulMoveResponse([
@@ -158,7 +158,7 @@ export class Zocket extends Zymbol<ZocketPersist> {
     const cursorZymbol = this.children[nextCursorIndex];
 
     const { success, newRelativeCursor } = parentOfCursorElement
-      ? cursorZymbol.takeCursorFromLeft()
+      ? cursorZymbol.takeCursorFromLeft(ctx)
       : cursorZymbol.moveCursorRight(childRelativeCursor, ctx);
 
     if (success) {
@@ -204,7 +204,6 @@ export class Zocket extends Zymbol<ZocketPersist> {
     if (parentOfCursorElement) {
       /* If we're the parent, then we basically just add a new text symbol at the current index, 
       and then we make sure that we merge all of our text symbols */
-      // const newZymbol = new TextZymbol(this);
       const newZymbol = new TextZymbol(this.parentFrame, nextCursorIndex, this);
       newZymbol.addCharacter(character, [0]);
 
@@ -358,11 +357,12 @@ export class Zocket extends Zymbol<ZocketPersist> {
           finalTex += CURSOR_LATEX;
         }
 
-        finalTex += this.children[i].renderTex({ cursor: [] });
+        finalTex += this.children[i].renderTex({ cursor: [] }) + " ";
       } else {
-        finalTex += this.children[i].renderTex({
-          cursor: i === nextCursorIndex ? childRelativeCursor : [],
-        });
+        finalTex +=
+          this.children[i].renderTex({
+            cursor: i === nextCursorIndex ? childRelativeCursor : [],
+          }) + " ";
       }
     }
 
@@ -396,7 +396,7 @@ export class Zocket extends Zymbol<ZocketPersist> {
 
       switch (deleteBehavior.type) {
         case DeleteBehaviorType.ABSORB: {
-          const relCursor = zymbol.takeCursorFromRight();
+          const relCursor = zymbol.takeCursorFromRight(ctx);
 
           if (relCursor.success) {
             return wrapChildCursorResponse(

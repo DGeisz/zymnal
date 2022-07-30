@@ -20,6 +20,12 @@ export interface ZymbolRenderArgs {
   cursor: Cursor;
 }
 
+export const KEYPRESS_ZYMBOL = "keypress";
+
+export function getKeyPress(ctx: BasicContext): ZymKeyPress {
+  return ctx.get(KEYPRESS_ZYMBOL);
+}
+
 export abstract class Zymbol<P = any> extends Zym<TeX, P> {
   parentFrame: ZymbolFrame;
 
@@ -41,6 +47,8 @@ export abstract class Zymbol<P = any> extends Zym<TeX, P> {
     cursor: Cursor,
     ctx: BasicContext
   ): CursorMoveResponse => {
+    ctx.set(KEYPRESS_ZYMBOL, keyPress);
+
     switch (keyPress.type) {
       case KeyPressBasicType.ArrowLeft:
         return this.moveCursorLeft(cursor, ctx);
@@ -60,13 +68,13 @@ export abstract class Zymbol<P = any> extends Zym<TeX, P> {
     cursor: Cursor,
     ctx: BasicContext
   ) => CursorMoveResponse;
-  abstract takeCursorFromLeft: () => CursorMoveResponse;
+  abstract takeCursorFromLeft: (ctx: BasicContext) => CursorMoveResponse;
 
   abstract moveCursorRight: (
     cursor: Cursor,
     ctx: BasicContext
   ) => CursorMoveResponse;
-  abstract takeCursorFromRight: () => CursorMoveResponse;
+  abstract takeCursorFromRight: (ctx: BasicContext) => CursorMoveResponse;
 
   abstract addCharacter: (
     character: string,

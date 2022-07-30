@@ -12,13 +12,15 @@ export function splitCursorStringAtLastWord(
   after: string;
   word: string;
 } {
-  const after = str.slice(cursor);
+  const after = str.slice(cursor).trim();
   const beforeAndWord = str.slice(0, cursor);
 
   const bs = beforeAndWord.split(" ");
   const word = last(bs);
 
-  const before = beforeAndWord.slice(0, beforeAndWord.length - word.length);
+  const before = beforeAndWord
+    .slice(0, beforeAndWord.length - word.length)
+    .trim();
 
   return {
     before,
