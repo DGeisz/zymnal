@@ -3,14 +3,13 @@ import { checkLatex } from "../../../../global_utils/latex_utils";
 import { Zentinel } from "../../../../zym_lib/zentinel/zentinel";
 import { Zymbol } from "../../../zyms/zymbol/zymbol";
 import {
-  ModifierZymbol,
-  MODIFIER_ZYMBOL_ID,
-} from "../../../zyms/zymbol/zymbols/modifier_zymbol/modifier_zymbol";
-import {
   TextZymbol,
   TEXT_ZYMBOL_NAME,
 } from "../../../zyms/zymbol/zymbols/text_zymbol/text_zymbol";
-import { Zocket } from "../../../zyms/zymbol/zymbols/zocket/zocket";
+import {
+  Zocket,
+  ZOCKET_MASTER_ID,
+} from "../../../zyms/zymbol/zymbols/zocket/zocket";
 import { CreateTransformerMessage, ZymbolTransformRank } from "../transformer";
 
 export const DOT_MODIFIERS_TRANSFORM = "dot-modifiers-e1125";
@@ -105,24 +104,21 @@ class DotModifiers extends Zentinel {
 
                 const remainingText = text.getText().slice(firstWord.length);
 
-                if (prevZymbol.getMasterId() === MODIFIER_ZYMBOL_ID) {
-                  // if ((prevZymbol as ModifierZymbol).modifiers.length === 1) {
-                  //   // debugger;
-                  // }
-                  (prevZymbol as ModifierZymbol).toggleModifier(mod);
+                if (prevZymbol.getMasterId() === ZOCKET_MASTER_ID) {
+                  (prevZymbol as Zocket).toggleModifier(mod);
                 } else {
-                  const modZym = new ModifierZymbol(
+                  const newZocket = new Zocket(
                     text.parentFrame,
                     zymbolIndex - 1,
                     parent
                   );
 
-                  modZym.modZocket.children = [prevZymbol];
-                  modZym.modZocket.reIndexChildren();
+                  newZocket.children = [prevZymbol];
+                  newZocket.reIndexChildren();
 
-                  modZym.toggleModifier(mod);
+                  newZocket.toggleModifier(mod);
 
-                  parent.children[zymbolIndex - 1] = modZym;
+                  parent.children[zymbolIndex - 1] = newZocket;
                 }
 
                 text.setText(remainingText);

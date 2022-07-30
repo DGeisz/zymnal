@@ -8,6 +8,7 @@ import {
 import {
   KeyPressBasicType,
   KeyPressComplexType,
+  KeyPressModifier,
   ZymKeyPress,
 } from "../../../zym_lib/zy_god/event_handler/key_press";
 import { BasicContext } from "../../../zym_lib/zy_god/types/context_types";
@@ -26,6 +27,15 @@ export function getKeyPress(ctx: BasicContext): ZymKeyPress {
   return ctx.get(KEYPRESS_ZYMBOL);
 }
 
+export function keyPressHasModifier(
+  ctx: BasicContext,
+  mod: KeyPressModifier
+): boolean {
+  const { modifiers } = getKeyPress(ctx);
+
+  return !!modifiers && modifiers.includes(mod);
+}
+
 export abstract class Zymbol<P = any> extends Zym<TeX, P> {
   parentFrame: ZymbolFrame;
 
@@ -42,6 +52,14 @@ export abstract class Zymbol<P = any> extends Zym<TeX, P> {
     this.parentFrame.render();
   };
 
+  /* Override this if you want any special cleanup methods applied after a keypress */
+  onHandleKeyPress = (
+    res: CursorMoveResponse,
+    _keyPress: ZymKeyPress
+  ): CursorMoveResponse => {
+    return res;
+  };
+
   handleKeyPress = (
     keyPress: ZymKeyPress,
     cursor: Cursor,
@@ -49,19 +67,29 @@ export abstract class Zymbol<P = any> extends Zym<TeX, P> {
   ): CursorMoveResponse => {
     ctx.set(KEYPRESS_ZYMBOL, keyPress);
 
+    let res: CursorMoveResponse;
     switch (keyPress.type) {
       case KeyPressBasicType.ArrowLeft:
-        return this.moveCursorLeft(cursor, ctx);
+        res = this.moveCursorLeft(cursor, ctx);
+        break;
       case KeyPressBasicType.ArrowRight:
-        return this.moveCursorRight(cursor, ctx);
+        res = this.moveCursorRight(cursor, ctx);
+        break;
       case KeyPressBasicType.Delete:
-        return this.delete(cursor, ctx);
+        res = this.delete(cursor, ctx);
+        break;
       case KeyPressComplexType.Key: {
-        return this.addCharacter(keyPress.key, cursor, ctx);
+        res = this.addCharacter(keyPress.key, cursor, ctx);
+        break;
       }
-      default:
-        return FAILED_CURSOR_MOVE_RESPONSE;
+      default: {
+        res = FAILED_CURSOR_MOVE_RESPONSE;
+        break;
+      }
     }
+
+    // return res;
+    return this.onHandleKeyPress(res, keyPress);
   };
 
   abstract moveCursorLeft: (

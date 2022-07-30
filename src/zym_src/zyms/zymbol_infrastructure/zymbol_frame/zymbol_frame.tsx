@@ -37,7 +37,6 @@ import {
   ZymbolTransformRank,
   ZymbolTreeTransformation,
 } from "../../../zentinels/transformer/transformer";
-import { MODIFIER_ZYMBOL_ID } from "../../zymbol/zymbols/modifier_zymbol/modifier_zymbol";
 import { Zocket } from "../../zymbol/zymbols/zocket/zocket";
 import { TeX } from "../../zymbol/zymbol_types";
 
@@ -138,7 +137,7 @@ const TexTransform: React.FC<TexTransformProps> = (props) => {
 export class ZymbolFrame extends Zyact<ZymbolFramePersist, FrameRenderProps> {
   zyMaster: ZyMaster = zymbolFrameMaster;
 
-  baseZocket: Zocket = new Zocket(true, this, 0, this);
+  baseZocket: Zocket = new Zocket(this, 0, this);
   children: Zym<any, any>[] = [this.baseZocket];
 
   transformations: ZymbolTreeTransformation[] = [];
@@ -391,6 +390,8 @@ const keyPressImpl = implementPartialCmdGroup(KeyPressCommand, {
         /* 3. Set setting that indicates that we have a transformation for the next render event */
         frame.setNewTransformations(transformations);
       }
+
+      console.log("beat", frame.children[0]);
 
       return chainMoveResponse(childMove, (nextCursor) => {
         return successfulMoveResponse(

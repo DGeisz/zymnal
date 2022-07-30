@@ -22,6 +22,10 @@ import {
   CursorCommand,
   GetInitialCursorReturn,
 } from "../../../../../zym_lib/zy_god/cursor/cursor_commands";
+import {
+  KeyPressModifier,
+  ZymKeyPress,
+} from "../../../../../zym_lib/zy_god/event_handler/key_press";
 import { BasicContext } from "../../../../../zym_lib/zy_god/types/context_types";
 import {
   DUMMY_FRAME,
@@ -33,22 +37,33 @@ import {
   DeleteBehaviorType,
   normalDeleteBehavior,
 } from "../../delete_behavior";
-import { Zymbol, ZymbolRenderArgs } from "../../zymbol";
+import { keyPressHasModifier, Zymbol, ZymbolRenderArgs } from "../../zymbol";
 import { extendZymbol } from "../../zymbol_cmd";
+import { TeX } from "../../zymbol_types";
 import { TEXT_ZYMBOL_NAME, TextZymbol } from "../text_zymbol/text_zymbol";
+
+/* === Helper Types === */
+export interface ZymbolModifier {
+  id: {
+    group: string;
+    item: string | number;
+  };
+  pre: TeX;
+  post: TeX;
+}
 
 /* === PERSIST === */
 const ZP_FIELDS: {
   CHILDREN: "c";
-  BASE_ZOCKET: "b";
+  MODIFIERS: "m";
 } = {
   CHILDREN: "c",
-  BASE_ZOCKET: "b",
+  MODIFIERS: "m",
 };
 
 export interface ZocketPersist {
   [ZP_FIELDS.CHILDREN]: ZymPersist<any>[];
-  [ZP_FIELDS.BASE_ZOCKET]: boolean;
+  [ZP_FIELDS.MODIFIERS]: ZymbolModifier[];
 }
 
 export const ZOCKET_MASTER_ID = "zocket";
@@ -57,7 +72,7 @@ class ZocketMaster extends ZyMaster {
   zyId = ZOCKET_MASTER_ID;
 
   newBlankChild(): Zym<any, any, any> {
-    return new Zocket(false, DUMMY_FRAME, 0, undefined);
+    return new Zocket(DUMMY_FRAME, 0, undefined);
   }
 }
 
@@ -69,37 +84,48 @@ extendZymbol(zocketMaster);
 export class Zocket extends Zymbol<ZocketPersist> {
   zyMaster: ZyMaster = zocketMaster;
   children: Zymbol[] = [];
-
-  /* Indicates whether this is the zocket that's directly connected to the main controller, ie
-  is at the base of the zymbol tree  */
-  private isBaseZocket: boolean;
-
-  constructor(
-    isBaseZocket: boolean,
-    parentFrame: ZymbolFrame,
-    cursorIndex: CursorIndex,
-    parent: Zym<any, any> | undefined
-  ) {
-    super(parentFrame, cursorIndex, parent);
-    this.isBaseZocket = isBaseZocket;
-  }
+  modifiers: ZymbolModifier[] = [];
 
   /* USED ONLY FOR TESTS */
   getZymbols = () => this.children;
   setZymbols = (zymbols: Zymbol[]) => (this.children = zymbols);
+
+  toggleModifier = (mod: ZymbolModifier) => {
+    const hasMod = this.modifiers.some(
+      (m) => m.id.group === mod.id.group && m.id.item === mod.id.item
+    );
+
+    if (hasMod) {
+      this.removeModifier(mod);
+    } else {
+      this.addModifier(mod);
+    }
+  };
+
+  addModifier = (mod: ZymbolModifier) => {
+    this.modifiers.push(mod);
+  };
+
+  removeModifier = (mod: ZymbolModifier) => {
+    this.modifiers = this.modifiers.filter(
+      (m) => !(m.id.group === mod.id.group && m.id.item === mod.id.item)
+    );
+  };
 
   moveCursorLeft = (cursor: Cursor, ctx: BasicContext): CursorMoveResponse => {
     const { parentOfCursorElement, nextCursorIndex, childRelativeCursor } =
       extractCursorInfo(cursor);
 
     if (parentOfCursorElement && nextCursorIndex === 0) {
-      return {
-        success: false,
-        newRelativeCursor: [],
-      };
+      return FAILED_CURSOR_MOVE_RESPONSE;
     }
 
     if (parentOfCursorElement) {
+      /* If we're holding down option, we skip past the children */
+      if (keyPressHasModifier(ctx, KeyPressModifier.Option)) {
+        return successfulMoveResponse([nextCursorIndex - 1]);
+      }
+
       const { success, newRelativeCursor } =
         this.children[nextCursorIndex - 1].takeCursorFromRight(ctx);
 
@@ -125,22 +151,10 @@ export class Zocket extends Zymbol<ZocketPersist> {
   };
 
   takeCursorFromLeft = () => {
-    /* This will behave differently if it's at the very base of everything */
-    if (this.isBaseZocket) {
-      return {
-        success: true,
-        newRelativeCursor: [0],
-      };
-    } else {
-      if (this.children.length > 1) {
-        return {
-          success: true,
-          newRelativeCursor: [1],
-        };
-      } else {
-        return FAILED_CURSOR_MOVE_RESPONSE;
-      }
-    }
+    return {
+      success: true,
+      newRelativeCursor: [0],
+    };
   };
 
   moveCursorRight = (cursor: Cursor, ctx: BasicContext): CursorMoveResponse => {
@@ -156,6 +170,17 @@ export class Zocket extends Zymbol<ZocketPersist> {
     }
 
     const cursorZymbol = this.children[nextCursorIndex];
+
+    /* If we're holding down option, we skip past the children */
+    if (
+      parentOfCursorElement &&
+      keyPressHasModifier(ctx, KeyPressModifier.Option)
+    ) {
+      return {
+        success: true,
+        newRelativeCursor: [nextCursorIndex + 1],
+      };
+    }
 
     const { success, newRelativeCursor } = parentOfCursorElement
       ? cursorZymbol.takeCursorFromLeft(ctx)
@@ -175,22 +200,10 @@ export class Zocket extends Zymbol<ZocketPersist> {
   };
 
   takeCursorFromRight = () => {
-    /* Behaves differently if this is the base zocket */
-    if (this.isBaseZocket) {
-      return {
-        success: true,
-        newRelativeCursor: [this.children.length],
-      };
-    } else {
-      if (this.children.length > 1) {
-        return {
-          success: true,
-          newRelativeCursor: [this.children.length - 1],
-        };
-      } else {
-        return FAILED_CURSOR_MOVE_RESPONSE;
-      }
-    }
+    return {
+      success: true,
+      newRelativeCursor: [this.children.length],
+    };
   };
 
   addCharacter = (
@@ -220,6 +233,45 @@ export class Zocket extends Zymbol<ZocketPersist> {
             extendChildCursor(nextCursorIndex, newRelCursor)
           )
       );
+    }
+  };
+
+  onHandleKeyPress = (res: CursorMoveResponse): CursorMoveResponse => {
+    if (!res.success) {
+      return res;
+    }
+
+    const { nextCursorIndex, childRelativeCursor } = extractCursorInfo(
+      res.newRelativeCursor
+    );
+
+    if (nextCursorIndex > -1) {
+      /* We remove all the empty text zymbols */
+      let i = 0;
+      let nextIndex = nextCursorIndex;
+
+      while (i < this.children.length) {
+        const child = this.children[i];
+
+        if (
+          child.getMasterId() === TEXT_ZYMBOL_NAME &&
+          !(child as TextZymbol).getText()
+        ) {
+          this.children.splice(i, 1);
+
+          if (i < nextIndex) {
+            nextIndex--;
+          }
+        } else {
+          i++;
+        }
+      }
+
+      return successfulMoveResponse(
+        extendChildCursor(nextIndex, childRelativeCursor)
+      );
+    } else {
+      return res;
     }
   };
 
@@ -370,6 +422,11 @@ export class Zocket extends Zymbol<ZocketPersist> {
       finalTex += CURSOR_LATEX;
     }
 
+    /* Now wrap this in all the modifiers */
+    for (const mod of this.modifiers) {
+      finalTex = `${mod.pre}${finalTex}${mod.post}`;
+    }
+
     return finalTex;
   };
 
@@ -476,8 +533,8 @@ export class Zocket extends Zymbol<ZocketPersist> {
 
   persistData = (): ZocketPersist => {
     return {
-      [ZP_FIELDS.BASE_ZOCKET]: this.isBaseZocket,
       [ZP_FIELDS.CHILDREN]: this.children.map((c) => c.persist()),
+      [ZP_FIELDS.MODIFIERS]: [...this.modifiers],
     };
   };
 
@@ -485,7 +542,7 @@ export class Zocket extends Zymbol<ZocketPersist> {
     this.children = (await Promise.all(
       p[ZP_FIELDS.CHILDREN].map((c) => hydrateChild(this, c))
     )) as Zymbol[];
-    this.isBaseZocket = p[ZP_FIELDS.BASE_ZOCKET];
+    this.modifiers = p[ZP_FIELDS.MODIFIERS];
 
     this.reConnectParentChildren();
   }
