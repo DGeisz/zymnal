@@ -1,5 +1,8 @@
 import { last } from "../../../../../global_utils/array_utils";
-import { CURSOR_LATEX } from "../../../../../global_utils/latex_utils";
+import {
+  CURSOR_LATEX,
+  LATEX_EMPTY_SOCKET,
+} from "../../../../../global_utils/latex_utils";
 import { hydrateChild } from "../../../../../zym_lib/zym/utils/hydrate";
 import { Zym, ZymPersist } from "../../../../../zym_lib/zym/zym";
 import { ZyMaster } from "../../../../../zym_lib/zym/zy_master";
@@ -399,22 +402,22 @@ export class Zocket extends Zymbol<ZocketPersist> {
 
     let finalTex = "";
 
-    if (parentOfCursorElement && this.children.length === 0) {
-      return CURSOR_LATEX;
-    }
+    if (this.children.length === 0 && !parentOfCursorElement) {
+      finalTex = LATEX_EMPTY_SOCKET;
+    } else {
+      for (let i = 0; i < this.children.length; i++) {
+        if (parentOfCursorElement) {
+          if (i === nextCursorIndex) {
+            finalTex += CURSOR_LATEX;
+          }
 
-    for (let i = 0; i < this.children.length; i++) {
-      if (parentOfCursorElement) {
-        if (i === nextCursorIndex) {
-          finalTex += CURSOR_LATEX;
+          finalTex += this.children[i].renderTex({ cursor: [] }) + " ";
+        } else {
+          finalTex +=
+            this.children[i].renderTex({
+              cursor: i === nextCursorIndex ? childRelativeCursor : [],
+            }) + " ";
         }
-
-        finalTex += this.children[i].renderTex({ cursor: [] }) + " ";
-      } else {
-        finalTex +=
-          this.children[i].renderTex({
-            cursor: i === nextCursorIndex ? childRelativeCursor : [],
-          }) + " ";
       }
     }
 

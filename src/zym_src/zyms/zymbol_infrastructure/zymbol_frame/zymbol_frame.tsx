@@ -1,5 +1,10 @@
 import React, { FC } from "react";
 import Tex from "../../../../global_building_blocks/tex/tex";
+import {
+  HermesMessage,
+  ZentinelMessage,
+} from "../../../../zym_lib/hermes/hermes";
+import { GET_ZYM_ROOT } from "../../../../zym_lib/zy_god/zy_god";
 import { hydrateChild } from "../../../../zym_lib/zym/utils/hydrate";
 import { Zym, ZymPersist } from "../../../../zym_lib/zym/zym";
 import { Zyact } from "../../../../zym_lib/zym/zymplementations/zyact/zyact";
@@ -7,6 +12,8 @@ import { ZyMaster } from "../../../../zym_lib/zym/zy_master";
 import {
   implementPartialCmdGroup,
   isSome,
+  ok,
+  UNIMPLEMENTED,
   unwrap,
   ZyOption,
 } from "../../../../zym_lib/zy_commands/zy_command_types";
@@ -31,14 +38,10 @@ import {
   keyPressModifierToSymbol,
   ZymKeyPress,
 } from "../../../../zym_lib/zy_god/event_handler/key_press";
-import {
-  CreateTransformerMessage,
-  ZymbolTransformer,
-  ZymbolTransformRank,
-  ZymbolTreeTransformation,
-} from "../../../zentinels/transformer/transformer";
+import { Zymbol } from "../../zymbol/zymbol";
 import { Zocket } from "../../zymbol/zymbols/zocket/zocket";
 import { TeX } from "../../zymbol/zymbol_types";
+import _ from "underscore";
 
 const ZFP_FIELDS: {
   BASE_ZOCKET: "b";
@@ -53,12 +56,189 @@ export interface ZymbolFramePersist {
 
 /* === MASTER ===  */
 
+export const ZymbolFrameMasterId = "zymbol_frame";
+
+enum TransformerMessage {
+  RegisterTransformer = "rt",
+  RegisterTransformerFactory = "rtf",
+  GetTransformer = "gt",
+}
+
+export const CreateTransformerMessage = {
+  registerTransformer(transformer: SourcedTransformer): HermesMessage {
+    return {
+      zentinelId: ZymbolFrameMasterId,
+      message: TransformerMessage.RegisterTransformer,
+      content: { transformer },
+    };
+  },
+  registerTransformerFactory(factory: TransformerFactory): HermesMessage {
+    return {
+      zentinelId: ZymbolFrameMasterId,
+      message: TransformerMessage.RegisterTransformerFactory,
+      content: { factory },
+    };
+  },
+  getTransformer(cursor: Cursor): HermesMessage {
+    return {
+      zentinelId: ZymbolFrameMasterId,
+      message: TransformerMessage.GetTransformer,
+      content: {
+        cursor,
+      },
+    };
+  },
+};
+
+export interface GetTransformerContent {
+  cursor: Cursor;
+}
+
+export enum ZymbolTransformRank {
+  /* Means that the transform is immediately used to transform the input, 
+  and the user has to change out in order to access something else */
+  Suggest = 0,
+  /* The transformation is included, but the user has to select the
+  transform in order to access it
+   */
+  Include = 1,
+}
+
+export interface ZymbolTreeTransformationPriority {
+  rank: ZymbolTransformRank;
+  cost: number;
+}
+
+export abstract class ZymbolTreeTransformation {
+  abstract priority: ZymbolTreeTransformationPriority;
+
+  abstract getCurrentTransformation(): {
+    newTreeRoot: Zocket;
+    cursor: Cursor;
+  };
+}
+
+export class BasicZymbolTreeTransformation extends ZymbolTreeTransformation {
+  newTreeRoot;
+  cursor: Cursor;
+  priority: ZymbolTreeTransformationPriority;
+
+  constructor(s: {
+    newTreeRoot: Zocket;
+    cursor: Cursor;
+    priority: ZymbolTreeTransformationPriority;
+  }) {
+    const { newTreeRoot, cursor, priority } = s;
+    super();
+    this.newTreeRoot = newTreeRoot;
+    this.cursor = cursor;
+    this.priority = priority;
+  }
+
+  getCurrentTransformation(): { newTreeRoot: Zocket; cursor: Cursor } {
+    return {
+      ...this,
+    };
+  }
+}
+
+export type ZymbolTransformer = (
+  rootZymbol: Zymbol,
+  cursor: Cursor
+) => Promise<ZymbolTreeTransformation[]> | ZymbolTreeTransformation[];
+
+export interface SourcedTransformer {
+  source: string;
+  name: string;
+  transform: ZymbolTransformer;
+}
+
+export interface TransformerFactory {
+  source: string;
+  name: string;
+  factory: (root: Zym, cursor: Cursor) => ZymbolTransformer[];
+}
+
 class ZymbolFrameMaster extends ZyMaster<ZymbolFramePersist> {
   zyId = "zymbol_frame";
 
   newBlankChild(): Zym<any, any, any> {
     return new ZymbolFrame(0, undefined);
   }
+
+  transformerFactories: TransformerFactory[] = [];
+  transformers: SourcedTransformer[] = [];
+
+  handleMessage = async (msg: ZentinelMessage) => {
+    switch (msg.message) {
+      case TransformerMessage.RegisterTransformerFactory: {
+        this.registerTransformerFactory(msg.content.factory);
+
+        return ok(true);
+      }
+      case TransformerMessage.RegisterTransformer: {
+        this.registerSourcedTransformer(msg.content.transformer);
+
+        return ok(true);
+      }
+      case TransformerMessage.GetTransformer: {
+        const { cursor } = msg.content as GetTransformerContent;
+
+        return ok(await this.getZymbolTransformer(cursor));
+      }
+      default: {
+        /* Zentinel defaults to unimplemented for unhandled messages */
+        return UNIMPLEMENTED;
+      }
+    }
+  };
+
+  /*
+  --- NOTE ---
+  We allow overriding transformer implementations by default
+  */
+
+  registerSourcedTransformer = (trans: SourcedTransformer) => {
+    this.transformers = this.transformers.filter(
+      (f) => !(f.name === trans.name && f.source === trans.source)
+    );
+
+    this.transformers.push(trans);
+  };
+
+  registerTransformerFactory = (factory: TransformerFactory) => {
+    /* Make sure to get rid of any existing factories of this type */
+    this.transformerFactories = this.transformerFactories.filter(
+      (f) => !(f.name === factory.name && f.source === factory.source)
+    );
+
+    this.transformerFactories.push(factory);
+  };
+
+  getZymbolTransformer = async (cursor: Cursor) => {
+    /* Get the zym root */
+    const root = unwrap(await this.callHermes(GET_ZYM_ROOT)) as Zym;
+
+    const transformers = _.flatten(
+      this.transformerFactories.map((factory) => factory.factory(root, cursor))
+    );
+
+    transformers.push(...this.transformers.map((t) => t.transform));
+
+    if (!transformers.length) {
+      return () => [];
+    }
+
+    return async (zymbolRoot: Zymbol, zymbolCursor: Cursor) => {
+      const copies = await zymbolRoot.clone(transformers.length);
+
+      return _.flatten(
+        transformers.map((t, i) => {
+          return t(copies[i] as Zymbol, zymbolCursor);
+        })
+      );
+    };
+  };
 }
 
 export const zymbolFrameMaster = new ZymbolFrameMaster();
@@ -171,7 +351,8 @@ export class ZymbolFrame extends Zyact<ZymbolFramePersist, FrameRenderProps> {
         this.transformIndex > -1 &&
         this.transformIndex < this.transformations.length
       ) {
-        const selectedTrans = this.transformations[this.transformIndex];
+        const selectedTrans =
+          this.transformations[this.transformIndex].getCurrentTransformation();
         selectedTex = selectedTrans.newTreeRoot.renderTex({
           cursor: selectedTrans.cursor,
         });
@@ -179,9 +360,10 @@ export class ZymbolFrame extends Zyact<ZymbolFramePersist, FrameRenderProps> {
         selectedTex = frameTex;
       }
 
-      const allTex = this.transformations.map((t) =>
-        t.newTreeRoot.renderTex({ cursor: t.cursor })
-      );
+      const allTex = this.transformations.map((t) => {
+        const tr = t.getCurrentTransformation();
+        return tr.newTreeRoot.renderTex({ cursor: tr.cursor });
+      });
       allTex.unshift(frameTex);
 
       return (
@@ -324,9 +506,11 @@ const keyPressImpl = implementPartialCmdGroup(KeyPressCommand, {
           const trans = frame.transformations[frame.transformIndex];
 
           if (trans) {
-            frame.setBaseZocket(trans.newTreeRoot);
+            const t = trans.getCurrentTransformation();
 
-            cursor = [0, ...trans.cursor];
+            frame.setBaseZocket(t.newTreeRoot);
+
+            cursor = [0, ...t.cursor];
 
             const { nextCursorIndex: n, childRelativeCursor: c } =
               extractCursorInfo(cursor);
