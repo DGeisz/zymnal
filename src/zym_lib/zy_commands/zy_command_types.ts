@@ -229,6 +229,7 @@ export function unwrapOption<T>(opt: ZyOption<T>): T {
   if (isSome(opt)) {
     return opt.val;
   } else {
+    console.trace("op not some");
     throw new Error("Option was not some!");
   }
 }

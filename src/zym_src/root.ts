@@ -9,6 +9,8 @@ import { Zage, zageMaster } from "./zyms/zage/zage";
 import { zymbolMasterList } from "./zyms/zymbol/zymbols/zymbol_list";
 import { zymbolInfrastructureMasters } from "./zyms/zymbol_infrastructure/zymbol_infrastructure";
 import { inPlaceSymbol } from "./zyms/zymbol_infrastructure/zymbol_frame/transformers/in_place_symbols";
+import { parenthesisModifiers } from "./zyms/zymbol_infrastructure/zymbol_frame/transformers/parenthesis";
+import { cashFunction } from "./zyms/zymbol_infrastructure/zymbol_frame/transformers/cash_functions";
 
 const root = new Zage(0, undefined);
 
@@ -25,4 +27,9 @@ export const zyMasterList: ZyMaster[] = [
   ...zymbolMasterList,
 ];
 
-export const zentinelList: Zentinel[] = [inPlaceSymbol, dotModifiers];
+export const zentinelList: Zentinel[] = [
+  inPlaceSymbol,
+  dotModifiers,
+  parenthesisModifiers,
+  cashFunction,
+];

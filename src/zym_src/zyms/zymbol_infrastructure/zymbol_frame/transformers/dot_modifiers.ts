@@ -48,8 +48,6 @@ class DotModifiers extends Zentinel {
         transform: (root, cursor) => {
           const cursorCopy = [...cursor];
 
-          console.log("zrc pro", root);
-
           /* First we want to get to the parent */
           let currZymbol = root;
           let parent = root;

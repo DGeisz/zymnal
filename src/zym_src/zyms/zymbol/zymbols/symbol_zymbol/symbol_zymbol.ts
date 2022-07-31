@@ -3,8 +3,10 @@ import { ZyMaster } from "../../../../../zym_lib/zym/zy_master";
 import {
   Cursor,
   CursorIndex,
+  CursorMoveResponse,
   FAILED_CURSOR_MOVE_RESPONSE,
 } from "../../../../../zym_lib/zy_god/cursor/cursor";
+import { BasicContext } from "../../../../../zym_lib/zy_god/types/context_types";
 import {
   DUMMY_FRAME,
   ZymbolFrame,
@@ -62,6 +64,10 @@ export class SymbolZymbol extends Zymbol<SymbolZymbolPersist> {
   renderTex = (opts: ZymbolRenderArgs) => this.texSymbol;
 
   getDeleteBehavior = () => normalDeleteBehavior(DeleteBehaviorType.ALLOWED);
+
+  delete(_cursor: Cursor, _ctx: BasicContext): CursorMoveResponse {
+    return FAILED_CURSOR_MOVE_RESPONSE;
+  }
 
   persistData(): SymbolZymbolPersist {
     return {

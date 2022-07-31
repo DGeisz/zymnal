@@ -1,129 +1,167 @@
-export {};
-// import { last } from "../../../../../global_utils/array_utils";
-// import { splitCursorStringAtLastWord } from "../../../../../global_utils/text_utils";
-// import { Zentinel } from "../../../../../zym_lib/zentinel/zentinel";
-// import { Zymbol } from "../../../zymbol/zymbol";
-// import {
-//   TextZymbol,
-//   TEXT_ZYMBOL_NAME,
-// } from "../../../zymbol/zymbols/text_zymbol/text_zymbol";
-// import { CreateTransformerMessage } from "../zymbol_frame";
+import { createNoSubstitutionTemplateLiteral, tokenToString } from "typescript";
+import { last } from "../../../../../global_utils/array_utils";
+import { splitCursorStringAtLastWord } from "../../../../../global_utils/text_utils";
+import { Zentinel } from "../../../../../zym_lib/zentinel/zentinel";
+import { extendParentCursor } from "../../../../../zym_lib/zy_god/cursor/cursor";
+import { Zymbol } from "../../../zymbol/zymbol";
+import {
+  TextZymbol,
+  TEXT_ZYMBOL_NAME,
+} from "../../../zymbol/zymbols/text_zymbol/text_zymbol";
+import { Zocket, ZymbolModifier } from "../../../zymbol/zymbols/zocket/zocket";
+import {
+  BasicZymbolTreeTransformation,
+  CreateTransformerMessage,
+  ZymbolTransformRank,
+} from "../zymbol_frame";
 
-// export const PARENTHESIS_TRANSFORM = "par-trans-t23dki";
+const LEFT_PARENTHESIS = "(";
+const RIGHT_PARENTHESIS = ")";
 
-// class Parenthesis extends Zentinel {
-//   zyId: string = PARENTHESIS_TRANSFORM;
+export const PARENTHESIS_TRANSFORM = "par-trans-t23dki";
 
-//   onRegistration = async () => {
-//     this.callHermes(
-//       CreateTransformerMessage.registerTransformer({
-//         source: PARENTHESIS_TRANSFORM,
-//         name: "par-trans",
-//         transform: (root, cursor) => {
-//           const cursorCopy = [...cursor];
+class Parenthesis extends Zentinel {
+  zyId: string = PARENTHESIS_TRANSFORM;
 
-//           /* First we want to get to the parent */
-//           let currZymbol = root;
-//           let parent = root;
+  onRegistration = async () => {
+    this.callHermes(
+      CreateTransformerMessage.registerTransformer({
+        source: PARENTHESIS_TRANSFORM,
+        name: "par-trans",
+        transform: (root, cursor) => {
+          const cursorCopy = [...cursor];
 
-//           for (let i = 0; i < cursorCopy.length - 1; i++) {
-//             parent = currZymbol;
-//             currZymbol = parent.children[cursorCopy[i]] as Zymbol;
+          /* First we want to get to the parent */
+          let currZymbol = root;
+          let parent = root;
 
-//             if (!currZymbol) {
-//               return [];
-//             }
-//           }
+          for (let i = 0; i < cursorCopy.length - 1; i++) {
+            parent = currZymbol;
+            currZymbol = parent.children[cursorCopy[i]] as Zymbol;
 
-//           const zymbolIndex: number = last(cursorCopy, 2);
+            if (!currZymbol) {
+              return [];
+            }
+          }
 
-//           if (
-//             zymbolIndex > 0 &&
-//             currZymbol.getMasterId() === TEXT_ZYMBOL_NAME
-//           ) {
-//             const prevZymbol = parent.children[zymbolIndex - 1] as Zymbol;
+          const zymbolIndex: number = last(cursorCopy, 2);
 
-//             const i = last(cursorCopy);
-//             const text = currZymbol as TextZymbol;
+          if (
+            zymbolIndex > 0 &&
+            currZymbol.getMasterId() === TEXT_ZYMBOL_NAME
+          ) {
+            const i = last(cursorCopy);
+            const text = currZymbol as TextZymbol;
 
-//             const { word, before, after } = splitCursorStringAtLastWord(
-//               text.getText(),
-//               i
-//             );
+            const {
+              word,
+              before: rightBefore,
+              after: rightAfter,
+            } = splitCursorStringAtLastWord(text.getText(), i);
 
-//             const firstWord = text
-//               .getText()
-//               .split(/\s+/)
-//               .filter((t) => !!t)[0];
+            if (word === RIGHT_PARENTHESIS) {
+              /* Now we look for a left parenthesis up until that mark */
+              for (let k = 0; k < zymbolIndex; k++) {
+                const child = parent.children[k];
 
-//             if (firstWord && firstWord.startsWith(dot)) {
-//               let modWord = firstWord.slice(1);
+                if (child.getMasterId() === TEXT_ZYMBOL_NAME) {
+                  const newText = child as TextZymbol;
+                  const words = newText.getText().split(/\s/);
 
-//               let allowed = false;
-//               let rank = ZymbolTransformRank.Include;
+                  const openIndex = words.indexOf(LEFT_PARENTHESIS);
 
-//               if (dotKeys.includes(modWord)) {
-//                 allowed = true;
-//                 rank = ZymbolTransformRank.Suggest;
-//                 modWord = dotMap[modWord];
-//               } else if (suggestedMods.includes(modWord)) {
-//                 allowed = true;
-//                 rank = ZymbolTransformRank.Suggest;
-//               } else if (checkMod(modWord)) {
-//                 /* We default to suggested */
-//                 allowed = true;
-//               }
+                  if (openIndex > -1) {
+                    cursorCopy.pop();
+                    cursorCopy.pop();
 
-//               if (allowed) {
-//                 const mod = {
-//                   id: {
-//                     group: "basic",
-//                     item: modWord,
-//                   },
-//                   pre: `\\${modWord}{`,
-//                   post: "}",
-//                 };
+                    let newPointer = k + 1;
 
-//                 const remainingText = text.getText().slice(firstWord.length);
+                    const { before: leftBefore, after: leftAfter } =
+                      splitCursorStringAtLastWord(
+                        newText.getText(),
+                        openIndex + 1
+                      );
 
-//                 if (prevZymbol.getMasterId() === ZOCKET_MASTER_ID) {
-//                   (prevZymbol as Zocket).toggleModifier(mod);
-//                 } else {
-//                   const newZocket = new Zocket(
-//                     text.parentFrame,
-//                     zymbolIndex - 1,
-//                     parent
-//                   );
+                    /* Now create the new children */
+                    const newChildren = parent.children.slice(
+                      k + 1,
+                      zymbolIndex
+                    );
 
-//                   newZocket.children = [prevZymbol];
-//                   newZocket.reIndexChildren();
+                    if (rightBefore) {
+                      const txt = new TextZymbol(parent.parentFrame, 0, parent);
+                      txt.setText(rightBefore);
 
-//                   newZocket.toggleModifier(mod);
+                      newChildren.push(txt);
+                    }
 
-//                   parent.children[zymbolIndex - 1] = newZocket;
-//                 }
+                    if (leftAfter) {
+                      const txt = new TextZymbol(parent.parentFrame, 0, parent);
+                      txt.setText(leftAfter);
 
-//                 text.setText(remainingText);
+                      newChildren.unshift(txt);
+                    }
 
-//                 cursorCopy.pop();
+                    /* Doctor the old children */
+                    parent.children.splice(k, 1 + zymbolIndex - k);
 
-//                 return [
-//                   new BasicZymbolTreeTransformation({
-//                     newTreeRoot: root as Zocket,
-//                     cursor: cursorCopy,
-//                     priority: {
-//                       rank,
-//                       cost: 100,
-//                     },
-//                   }),
-//                 ];
-//               }
-//             }
-//           }
+                    if (rightAfter) {
+                      const txt = new TextZymbol(parent.parentFrame, 0, parent);
+                      txt.setText(rightAfter);
 
-//           return [];
-//         },
-//       })
-//     );
-//   };
-// }
+                      parent.children.splice(k, 0, txt);
+                    }
+
+                    const newZocket = new Zocket(parent.parentFrame, 0, parent);
+                    newZocket.children = newChildren as Zymbol[];
+
+                    parent.children.splice(k, 0, newZocket);
+
+                    if (leftBefore) {
+                      const txt = new TextZymbol(parent.parentFrame, 0, parent);
+                      txt.setText(leftBefore);
+                      newPointer++;
+
+                      parent.children.splice(k, 0, txt);
+                    }
+
+                    parent.reIndexChildren();
+                    newZocket.reIndexChildren();
+
+                    const mod: ZymbolModifier = {
+                      id: {
+                        group: "wrap",
+                        item: "parenthesis",
+                      },
+                      pre: "\\left(",
+                      post: "\\right)",
+                    };
+
+                    newZocket.toggleModifier(mod);
+
+                    console.log("new", root);
+
+                    return [
+                      new BasicZymbolTreeTransformation({
+                        newTreeRoot: root as Zocket,
+                        cursor: extendParentCursor(newPointer, cursorCopy),
+                        priority: {
+                          rank: ZymbolTransformRank.Suggest,
+                          cost: 100,
+                        },
+                      }),
+                    ];
+                  }
+                }
+              }
+            }
+          }
+
+          return [];
+        },
+      })
+    );
+  };
+}
+
+export const parenthesisModifiers = new Parenthesis();

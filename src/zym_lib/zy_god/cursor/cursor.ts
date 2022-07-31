@@ -136,10 +136,6 @@ class CursorBlink {
         ? "visible"
         : "hidden";
     }
-
-    // if (cursor) {
-    //   cursor.style.visibility = this.cursorVisible ? "visible" : "hidden";
-    // }
   }
 }
 

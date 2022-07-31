@@ -555,27 +555,17 @@ const keyPressImpl = implementPartialCmdGroup(KeyPressCommand, {
           )
         ) as ZymbolTransformer;
 
-        // if (
-        //   frame.baseZocket.children[0]?.getMasterId() === MODIFIER_ZYMBOL_ID
-        // ) {
-        //   debugger;
-        // }
-
         /* 2. Apply the transformer to get a list of potential transformations */
         const transformations = await transformer(
           frame.baseZocket,
           childMove.newRelativeCursor
         );
 
-        if (transformations.length > 0) {
-          // debugger;
-        }
-
         /* 3. Set setting that indicates that we have a transformation for the next render event */
         frame.setNewTransformations(transformations);
       }
 
-      console.log("beat", frame.children[0]);
+      console.log("beat", Math.random(), frame.children[0]);
 
       return chainMoveResponse(childMove, (nextCursor) => {
         return successfulMoveResponse(

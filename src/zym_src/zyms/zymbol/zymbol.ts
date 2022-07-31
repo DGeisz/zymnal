@@ -115,7 +115,7 @@ export abstract class Zymbol<P = any> extends Zym<TeX, P> {
   primeDelete = () => {};
 
   /* This needs to be overloaded for any more complex zymbol */
-  delete = (_cursor: Cursor, _ctx: BasicContext) => FAILED_CURSOR_MOVE_RESPONSE;
+  abstract delete(cursor: Cursor, ctx: BasicContext): CursorMoveResponse;
 
   /* This needs to be overloaded if the zymbol allows deflect deletes.
   @return: Indicates whether the deflect delete was successful */

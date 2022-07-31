@@ -15,9 +15,3 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
     monospace;
 }
-
-/* #cursor span {
-  display: inline-block;
-  width: 0 !important;
-  transform: translateX(-1px) translateY(-1px) scaleY(1.1);
-} */
