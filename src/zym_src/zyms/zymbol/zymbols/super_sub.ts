@@ -1,8 +1,6 @@
-import _ from "underscore";
-import { last } from "../../../../../global_utils/array_utils";
-import { hydrateChild } from "../../../../../zym_lib/zym/utils/hydrate";
-import { Zym, ZymPersist } from "../../../../../zym_lib/zym/zym";
-import { ZyMaster } from "../../../../../zym_lib/zym/zy_master";
+import { last } from "../../../../global_utils/array_utils";
+import { Zym, ZymPersist } from "../../../../zym_lib/zym/zym";
+import { ZyMaster } from "../../../../zym_lib/zym/zy_master";
 import {
   Cursor,
   CursorIndex,
@@ -10,80 +8,58 @@ import {
   extractCursorInfo,
   FAILED_CURSOR_MOVE_RESPONSE,
   wrapChildCursorResponse,
-} from "../../../../../zym_lib/zy_god/cursor/cursor";
-import { BasicContext } from "../../../../../zym_lib/zy_god/types/context_types";
-import {
-  DUMMY_FRAME,
-  ZymbolFrame,
-} from "../../../zymbol_infrastructure/zymbol_frame/zymbol_frame";
-import {
-  DeleteBehaviorType,
-  normalDeleteBehavior,
-} from "../../delete_behavior";
-import { Zymbol, ZymbolRenderArgs } from "../../zymbol";
-import { TeX } from "../../zymbol_types";
-import { Zocket } from "../zocket/zocket";
+} from "../../../../zym_lib/zy_god/cursor/cursor";
+import { BasicContext } from "../../../../zym_lib/zy_god/types/context_types";
+import { ZymbolFrame } from "../../zymbol_infrastructure/zymbol_frame/zymbol_frame";
+import { DeleteBehaviorType, normalDeleteBehavior } from "../delete_behavior";
+import { Zymbol, ZymbolRenderArgs } from "../zymbol";
+import { extendZymbol } from "../zymbol_cmd";
 
-const FZP_FIELDS: {
+const SSP_FIELDS: {
   CHILDREN: "c";
-  ZOCKET_MAPPINGS: "z";
-  BASE_TEX: "b";
+  STATUS: "s";
 } = {
   CHILDREN: "c",
-  ZOCKET_MAPPINGS: "z",
-  BASE_TEX: "b",
+  STATUS: "s",
 };
 
-export interface FunctionZymbolPersist {
-  [FZP_FIELDS.CHILDREN]: ZymPersist<any>[];
-  [FZP_FIELDS.ZOCKET_MAPPINGS]: number[];
-  [FZP_FIELDS.BASE_TEX]: TeX;
+export interface SuperSubPersist {
+  [SSP_FIELDS.CHILDREN]: ZymPersist<any>;
+  [SSP_FIELDS.STATUS]: SuperSubStatus;
 }
 
-class FunctionZymbolMaster extends ZyMaster {
-  zyId: string = "function-zymbol";
+class SuperSubMaster extends ZyMaster {
+  zyId: string = "super-sub";
 
   newBlankChild(): Zym<any, any, any> {
-    return new FunctionZymbol("", 0, DUMMY_FRAME, 0, undefined);
+    throw new Error("Method not implemented.");
   }
 }
 
-export const functionZymbolMaster = new FunctionZymbolMaster();
+export const superSubMaster = new SuperSubMaster();
 
-export class FunctionZymbol extends Zymbol<FunctionZymbolPersist> {
-  children: Zymbol[];
-  zyMaster: ZyMaster = functionZymbolMaster;
-  zocketMapping: number[];
+extendZymbol(superSubMaster);
 
-  baseTex: TeX;
+enum SuperSubStatus {
+  OnlySub,
+  OnlySuper,
+  Both,
+}
+
+export class SuperSubZymbol extends Zymbol<SuperSubPersist> {
+  children: Zymbol[] = [];
+  zyMaster: ZyMaster = superSubMaster;
+  status: SuperSubStatus;
 
   constructor(
-    baseTex: TeX,
-    zocketMapping: number[] | number,
+    status: SuperSubStatus,
     parentFrame: ZymbolFrame,
     cursorIndex: CursorIndex,
     parent: Zym<any, any> | undefined
   ) {
     super(parentFrame, cursorIndex, parent);
 
-    if (typeof zocketMapping === "number") {
-      let z = [];
-
-      for (let i = 0; i < zocketMapping; i++) {
-        z.push(i);
-      }
-
-      zocketMapping = z;
-    }
-
-    this.zocketMapping = zocketMapping;
-
-    this.children = [];
-    for (let i = 0; i < zocketMapping.length; i++) {
-      this.children.push(new Zocket(parentFrame, i, this));
-    }
-
-    this.baseTex = baseTex;
+    this.status = status;
   }
 
   moveCursorLeft = (cursor: Cursor, ctx: BasicContext) => {
@@ -187,36 +163,15 @@ export class FunctionZymbol extends Zymbol<FunctionZymbolPersist> {
   }
 
   renderTex = (opts: ZymbolRenderArgs) => {
-    const { cursor } = opts;
-
-    const { childRelativeCursor, nextCursorIndex } = extractCursorInfo(cursor);
-
-    let baseTex = `\\${this.baseTex}`;
-
-    for (const i of this.zocketMapping) {
-      baseTex += `{${this.children[i].renderTex({
-        cursor: i === nextCursorIndex ? childRelativeCursor : [],
-      })}}`;
-    }
-
-    return baseTex;
+    /* TODO: FILL THIS IN */
+    return "";
   };
 
-  persistData = (): FunctionZymbolPersist => {
-    return {
-      [FZP_FIELDS.CHILDREN]: this.children.map((c) => c.persist()),
-      [FZP_FIELDS.BASE_TEX]: this.baseTex,
-      [FZP_FIELDS.ZOCKET_MAPPINGS]: [...this.zocketMapping],
-    };
-  };
+  persistData(): SuperSubPersist {
+    throw new Error("Method not implemented.");
+  }
 
-  hydrate = async (p: FunctionZymbolPersist): Promise<void> => {
-    this.children = (await Promise.all(
-      p[FZP_FIELDS.CHILDREN].map((c) => hydrateChild(this, c))
-    )) as Zymbol[];
-    this.baseTex = p[FZP_FIELDS.BASE_TEX];
-    this.zocketMapping = p[FZP_FIELDS.ZOCKET_MAPPINGS];
-
-    this.reConnectParentChildren();
-  };
+  hydrate(p: SuperSubPersist): Promise<void> {
+    throw new Error("Method not implemented.");
+  }
 }

@@ -28,3 +28,9 @@ export function splitCursorStringAtLastWord(
     word,
   };
 }
+
+export function floatToReadableString(n: number): string {
+  return n.toLocaleString(undefined, {
+    maximumFractionDigits: n.toString().length,
+  });
+}

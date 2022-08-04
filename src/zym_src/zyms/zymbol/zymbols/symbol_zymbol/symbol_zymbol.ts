@@ -16,16 +16,21 @@ import {
   normalDeleteBehavior,
 } from "../../delete_behavior";
 import { Zymbol, ZymbolRenderArgs } from "../../zymbol";
+import { extendZymbol } from "../../zymbol_cmd";
 import { TeX } from "../../zymbol_types";
+import { ZymbolModifier } from "../zocket/zocket";
 
 const SZP_FIELDS: {
   TEX_SYMBOL: "t";
+  MODIFIERS: "m";
 } = {
   TEX_SYMBOL: "t",
+  MODIFIERS: "m",
 };
 
 export interface SymbolZymbolPersist {
   [SZP_FIELDS.TEX_SYMBOL]: TeX;
+  [SZP_FIELDS.MODIFIERS]: ZymbolModifier[];
 }
 
 class SymbolZymbolMaster extends ZyMaster {
@@ -38,9 +43,12 @@ class SymbolZymbolMaster extends ZyMaster {
 
 export const symbolZymbolMaster = new SymbolZymbolMaster();
 
+extendZymbol(symbolZymbolMaster);
+
 export class SymbolZymbol extends Zymbol<SymbolZymbolPersist> {
   texSymbol: TeX;
   children: Zym<any, any, any>[] = [];
+  modifiers: ZymbolModifier[] = [];
   zyMaster: ZyMaster = symbolZymbolMaster;
 
   constructor(
@@ -53,6 +61,28 @@ export class SymbolZymbol extends Zymbol<SymbolZymbolPersist> {
     this.texSymbol = texSymbol;
   }
 
+  toggleModifier = (mod: ZymbolModifier) => {
+    const hasMod = this.modifiers.some(
+      (m) => m.id.group === mod.id.group && m.id.item === mod.id.item
+    );
+
+    if (hasMod) {
+      this.removeModifier(mod);
+    } else {
+      this.addModifier(mod);
+    }
+  };
+
+  addModifier = (mod: ZymbolModifier) => {
+    this.modifiers.push(mod);
+  };
+
+  removeModifier = (mod: ZymbolModifier) => {
+    this.modifiers = this.modifiers.filter(
+      (m) => !(m.id.group === mod.id.group && m.id.item === mod.id.item)
+    );
+  };
+
   moveCursorLeft = (_cursor: Cursor) => FAILED_CURSOR_MOVE_RESPONSE;
   takeCursorFromLeft = () => FAILED_CURSOR_MOVE_RESPONSE;
   moveCursorRight = (_cursor: Cursor) => FAILED_CURSOR_MOVE_RESPONSE;
@@ -61,7 +91,16 @@ export class SymbolZymbol extends Zymbol<SymbolZymbolPersist> {
   addCharacter = (_character: string, _cursor: Cursor) =>
     FAILED_CURSOR_MOVE_RESPONSE;
 
-  renderTex = (opts: ZymbolRenderArgs) => this.texSymbol;
+  renderTex = (_opts: ZymbolRenderArgs) => {
+    let finalTex = this.texSymbol;
+
+    /* Now wrap this in all the modifiers */
+    for (const mod of this.modifiers) {
+      finalTex = `${mod.pre}${finalTex}${mod.post}`;
+    }
+
+    return finalTex;
+  };
 
   getDeleteBehavior = () => normalDeleteBehavior(DeleteBehaviorType.ALLOWED);
 
@@ -72,10 +111,16 @@ export class SymbolZymbol extends Zymbol<SymbolZymbolPersist> {
   persistData(): SymbolZymbolPersist {
     return {
       [SZP_FIELDS.TEX_SYMBOL]: this.texSymbol,
+      [SZP_FIELDS.MODIFIERS]: [...this.modifiers],
     };
   }
 
   hydrate = async (p: SymbolZymbolPersist): Promise<void> => {
     this.texSymbol = p[SZP_FIELDS.TEX_SYMBOL];
+    this.modifiers = p[SZP_FIELDS.MODIFIERS];
   };
+}
+
+export function isSymbolZymbol(zym: Zym): zym is SymbolZymbol {
+  return zym.getMasterId() === symbolZymbolMaster.zyId;
 }

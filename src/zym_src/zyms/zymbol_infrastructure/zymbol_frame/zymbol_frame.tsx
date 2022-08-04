@@ -116,23 +116,36 @@ export abstract class ZymbolTreeTransformation {
     newTreeRoot: Zocket;
     cursor: Cursor;
   };
+
+  /* We use this to see if the keypress is allowed to
+    be used to confirm the transformation (see in_place_symbols for 
+    an example of when we don't do this)  */
+  checkKeypressConfirms = (_keyPress: ZymKeyPress): boolean => true;
 }
+
+export type KeyPressValidator = (keyPress: ZymKeyPress) => boolean;
 
 export class BasicZymbolTreeTransformation extends ZymbolTreeTransformation {
   newTreeRoot;
   cursor: Cursor;
   priority: ZymbolTreeTransformationPriority;
 
-  constructor(s: {
-    newTreeRoot: Zocket;
-    cursor: Cursor;
-    priority: ZymbolTreeTransformationPriority;
-  }) {
+  keyPressValidator?: KeyPressValidator;
+
+  constructor(
+    s: {
+      newTreeRoot: Zocket;
+      cursor: Cursor;
+      priority: ZymbolTreeTransformationPriority;
+    },
+    keyPressValidator?: KeyPressValidator
+  ) {
     const { newTreeRoot, cursor, priority } = s;
     super();
     this.newTreeRoot = newTreeRoot;
     this.cursor = cursor;
     this.priority = priority;
+    this.keyPressValidator = keyPressValidator;
   }
 
   getCurrentTransformation(): { newTreeRoot: Zocket; cursor: Cursor } {
@@ -140,6 +153,14 @@ export class BasicZymbolTreeTransformation extends ZymbolTreeTransformation {
       ...this,
     };
   }
+
+  checkKeypressConfirms = (keyPress: ZymKeyPress): boolean => {
+    if (!!this.keyPressValidator) {
+      return this.keyPressValidator(keyPress);
+    } else {
+      return true;
+    }
+  };
 }
 
 export type ZymbolTransformer = (
@@ -505,7 +526,7 @@ const keyPressImpl = implementPartialCmdGroup(KeyPressCommand, {
         } else if (frame.transformIndex > -1) {
           const trans = frame.transformations[frame.transformIndex];
 
-          if (trans) {
+          if (trans && trans.checkKeypressConfirms(keyPress)) {
             const t = trans.getCurrentTransformation();
 
             frame.setBaseZocket(t.newTreeRoot);

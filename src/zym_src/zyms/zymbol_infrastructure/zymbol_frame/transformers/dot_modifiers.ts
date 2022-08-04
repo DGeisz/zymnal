@@ -2,6 +2,7 @@ import { last } from "../../../../../global_utils/array_utils";
 import { checkLatex } from "../../../../../global_utils/latex_utils";
 import { Zentinel } from "../../../../../zym_lib/zentinel/zentinel";
 import { Zymbol } from "../../../zymbol/zymbol";
+import { isSymbolZymbol } from "../../../zymbol/zymbols/symbol_zymbol/symbol_zymbol";
 import {
   TextZymbol,
   TEXT_ZYMBOL_NAME,
@@ -106,21 +107,8 @@ class DotModifiers extends Zentinel {
 
                 const remainingText = text.getText().slice(firstWord.length);
 
-                if (prevZymbol.getMasterId() === ZOCKET_MASTER_ID) {
-                  (prevZymbol as Zocket).toggleModifier(mod);
-                } else {
-                  const newZocket = new Zocket(
-                    text.parentFrame,
-                    zymbolIndex - 1,
-                    parent
-                  );
-
-                  newZocket.children = [prevZymbol];
-                  newZocket.reIndexChildren();
-
-                  newZocket.toggleModifier(mod);
-
-                  parent.children[zymbolIndex - 1] = newZocket;
+                if (isSymbolZymbol(prevZymbol)) {
+                  prevZymbol.toggleModifier(mod);
                 }
 
                 text.setText(remainingText);

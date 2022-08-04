@@ -7,7 +7,12 @@ import {
 } from "../../../../../global_utils/text_utils";
 import { Zentinel } from "../../../../../zym_lib/zentinel/zentinel";
 import { extendParentCursor } from "../../../../../zym_lib/zy_god/cursor/cursor";
+import {
+  KeyPressComplexType,
+  ZymKeyPress,
+} from "../../../../../zym_lib/zy_god/event_handler/key_press";
 import { Zymbol } from "../../../zymbol/zymbol";
+import { NumberZymbol } from "../../../zymbol/zymbols/number_zymbol";
 import { SymbolZymbol } from "../../../zymbol/zymbols/symbol_zymbol/symbol_zymbol";
 import {
   TextZymbol,
@@ -18,6 +23,7 @@ import { TeX } from "../../../zymbol/zymbol_types";
 import {
   BasicZymbolTreeTransformation,
   CreateTransformerMessage,
+  KeyPressValidator,
   ZymbolTransformRank,
 } from "../zymbol_frame";
 
@@ -33,10 +39,6 @@ const semiColon = ";";
 
 function checkSymbol(sym: TeX): boolean {
   return checkLatex(`\\${sym}`);
-}
-
-function checkWord(sym: TeX): boolean {
-  return checkLatex(sym);
 }
 
 /* +++ Basic binary operations +++ */
@@ -167,7 +169,9 @@ class InPlaceSymbol extends Zentinel {
 
             let changed = false;
             let symbol = "";
+            let number: number | undefined;
             let rank = ZymbolTransformRank.Include;
+            let keyPressValidator: KeyPressValidator | undefined;
 
             if (directWords.includes(word)) {
               changed = true;
@@ -196,6 +200,23 @@ class InPlaceSymbol extends Zentinel {
             } else if (word.startsWith(semiColon) && word.length > 1) {
               changed = true;
               symbol = word.slice(1);
+              rank = ZymbolTransformRank.Suggest;
+
+              keyPressValidator = (keyPress: ZymKeyPress) =>
+                !(
+                  keyPress.type === KeyPressComplexType.Key &&
+                  /^[a-zA-Z]$/.test(keyPress.key)
+                );
+            } else if (/^(\d+.?\d*)|(r.\d+)$/.test(word)) {
+              changed = true;
+              number = parseFloat(word);
+              rank = ZymbolTransformRank.Suggest;
+
+              keyPressValidator = (keyPress: ZymKeyPress) =>
+                !(
+                  keyPress.type === KeyPressComplexType.Key &&
+                  /^[0-9.]$/.test(keyPress.key)
+                );
             } else if (/^[a-zA-Z]/.test(word) && checkSymbol(word)) {
               changed = true;
               symbol = backslash(word);
@@ -222,14 +243,27 @@ class InPlaceSymbol extends Zentinel {
                 newTextPointer++;
               }
 
-              const sym = new SymbolZymbol(
-                symbol,
-                parentZocket.parentFrame,
-                textPointer + 1,
-                parentZocket
-              );
+              /* Now either create a symbol or a number */
+              if (number !== undefined) {
+                const numZym = new NumberZymbol(
+                  number,
 
-              newZym.push(sym);
+                  parentZocket.parentFrame,
+                  textPointer + 1,
+                  parentZocket
+                );
+
+                newZym.push(numZym);
+              } else {
+                const sym = new SymbolZymbol(
+                  symbol,
+                  parentZocket.parentFrame,
+                  textPointer + 1,
+                  parentZocket
+                );
+
+                newZym.push(sym);
+              }
 
               if (after) {
                 const txt2 = new TextZymbol(
@@ -246,14 +280,17 @@ class InPlaceSymbol extends Zentinel {
               parentZocket.children.splice(textPointer, 1, ...newZym);
 
               return [
-                new BasicZymbolTreeTransformation({
-                  newTreeRoot: root as Zocket,
-                  cursor: extendParentCursor(newTextPointer, cursorCopy),
-                  priority: {
-                    rank: rank,
-                    cost: 100,
+                new BasicZymbolTreeTransformation(
+                  {
+                    newTreeRoot: root as Zocket,
+                    cursor: extendParentCursor(newTextPointer, cursorCopy),
+                    priority: {
+                      rank: rank,
+                      cost: 100,
+                    },
                   },
-                }),
+                  keyPressValidator
+                ),
               ];
             }
           }
