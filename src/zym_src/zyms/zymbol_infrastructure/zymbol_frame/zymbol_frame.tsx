@@ -180,7 +180,7 @@ export interface TransformerFactory {
   factory: (root: Zym, cursor: Cursor) => ZymbolTransformer[];
 }
 
-class ZymbolFrameMaster extends ZyMaster<ZymbolFramePersist> {
+class ZymbolFrameMaster extends ZyMaster {
   zyId = "zymbol_frame";
 
   newBlankChild(): Zym<any, any, any> {

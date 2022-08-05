@@ -1,19 +1,20 @@
 import { last } from "../../../../global_utils/array_utils";
+import { hydrateChild } from "../../../../zym_lib/zym/utils/hydrate";
 import { Zym, ZymPersist } from "../../../../zym_lib/zym/zym";
 import { ZyMaster } from "../../../../zym_lib/zym/zy_master";
 import {
   Cursor,
-  CursorIndex,
   CursorMoveResponse,
   extractCursorInfo,
   FAILED_CURSOR_MOVE_RESPONSE,
   wrapChildCursorResponse,
 } from "../../../../zym_lib/zy_god/cursor/cursor";
 import { BasicContext } from "../../../../zym_lib/zy_god/types/context_types";
-import { ZymbolFrame } from "../../zymbol_infrastructure/zymbol_frame/zymbol_frame";
+import { DUMMY_FRAME } from "../../zymbol_infrastructure/zymbol_frame/zymbol_frame";
 import { DeleteBehaviorType, normalDeleteBehavior } from "../delete_behavior";
 import { Zymbol, ZymbolRenderArgs } from "../zymbol";
 import { extendZymbol } from "../zymbol_cmd";
+import { Zocket } from "./zocket/zocket";
 
 const SSP_FIELDS: {
   CHILDREN: "c";
@@ -24,15 +25,17 @@ const SSP_FIELDS: {
 };
 
 export interface SuperSubPersist {
-  [SSP_FIELDS.CHILDREN]: ZymPersist<any>;
+  [SSP_FIELDS.CHILDREN]: ZymPersist<any>[];
   [SSP_FIELDS.STATUS]: SuperSubStatus;
 }
 
+export const SUPER_SUB_ID = "super-sub";
+
 class SuperSubMaster extends ZyMaster {
-  zyId: string = "super-sub";
+  zyId: string = SUPER_SUB_ID;
 
   newBlankChild(): Zym<any, any, any> {
-    throw new Error("Method not implemented.");
+    return new SuperSubZymbol(DUMMY_FRAME, 0, undefined);
   }
 }
 
@@ -41,26 +44,79 @@ export const superSubMaster = new SuperSubMaster();
 extendZymbol(superSubMaster);
 
 enum SuperSubStatus {
+  Neither,
   OnlySub,
   OnlySuper,
   Both,
 }
 
 export class SuperSubZymbol extends Zymbol<SuperSubPersist> {
+  /* Super goes after sub */
   children: Zymbol[] = [];
   zyMaster: ZyMaster = superSubMaster;
-  status: SuperSubStatus;
+  status: SuperSubStatus = SuperSubStatus.Neither;
 
-  constructor(
-    status: SuperSubStatus,
-    parentFrame: ZymbolFrame,
-    cursorIndex: CursorIndex,
-    parent: Zym<any, any> | undefined
-  ) {
-    super(parentFrame, cursorIndex, parent);
+  getChildPosition = (isSuper: boolean) => {
+    switch (this.status) {
+      case SuperSubStatus.Neither: {
+        return -1;
+      }
+      case SuperSubStatus.OnlySub: {
+        return isSuper ? -1 : 0;
+      }
+      case SuperSubStatus.OnlySuper: {
+        return isSuper ? 0 : -1;
+      }
+      case SuperSubStatus.Both: {
+        return isSuper ? 1 : 0;
+      }
+    }
+  };
 
-    this.status = status;
-  }
+  addChild = (isSuper: boolean): Cursor => {
+    const newChild = new Zocket(this.parentFrame, 0, this);
+
+    switch (this.status) {
+      case SuperSubStatus.Neither: {
+        this.children = [newChild];
+
+        this.status = isSuper
+          ? SuperSubStatus.OnlySuper
+          : SuperSubStatus.OnlySub;
+
+        return [0, 0];
+      }
+      case SuperSubStatus.OnlySub: {
+        if (isSuper) {
+          this.children.push(newChild);
+          this.status = SuperSubStatus.Both;
+
+          this.reIndexChildren();
+
+          return [1, 0];
+        } else {
+          return [0, 0];
+        }
+      }
+      case SuperSubStatus.OnlySuper: {
+        if (isSuper) {
+          return [0, 0];
+        } else {
+          this.children.unshift(newChild);
+          this.status = SuperSubStatus.Both;
+
+          this.reIndexChildren();
+
+          return [0, 0];
+        }
+      }
+      case SuperSubStatus.Both: {
+        return [isSuper ? 1 : 0, 0];
+      }
+    }
+  };
+
+  /* ==== Default Methods ==== */
 
   moveCursorLeft = (cursor: Cursor, ctx: BasicContext) => {
     const { childRelativeCursor, nextCursorIndex } = extractCursorInfo(cursor);
@@ -163,15 +219,44 @@ export class SuperSubZymbol extends Zymbol<SuperSubPersist> {
   }
 
   renderTex = (opts: ZymbolRenderArgs) => {
-    /* TODO: FILL THIS IN */
-    return "";
+    const { cursor } = opts;
+    const { childRelativeCursor, nextCursorIndex } = extractCursorInfo(cursor);
+
+    const newOpts = { cursor: childRelativeCursor };
+
+    switch (this.status) {
+      case SuperSubStatus.Neither: {
+        return "";
+      }
+      case SuperSubStatus.Both: {
+        return `_{${this.children[0].renderTex({
+          cursor: nextCursorIndex === 0 ? childRelativeCursor : [],
+        })}}^{${this.children[1].renderTex({
+          cursor: nextCursorIndex === 1 ? childRelativeCursor : [],
+        })}}`;
+      }
+      case SuperSubStatus.OnlySub: {
+        return `_{${this.children[0].renderTex(newOpts)}}`;
+      }
+      case SuperSubStatus.OnlySuper: {
+        return `^{${this.children[0].renderTex(newOpts)}}`;
+      }
+    }
   };
 
   persistData(): SuperSubPersist {
-    throw new Error("Method not implemented.");
+    return {
+      [SSP_FIELDS.CHILDREN]: this.children.map((c) => c.persist()),
+      [SSP_FIELDS.STATUS]: this.status,
+    };
   }
 
-  hydrate(p: SuperSubPersist): Promise<void> {
-    throw new Error("Method not implemented.");
+  async hydrate(p: SuperSubPersist): Promise<void> {
+    this.children = (await Promise.all(
+      p[SSP_FIELDS.CHILDREN].map((c) => hydrateChild(this, c))
+    )) as Zymbol[];
+    this.status = p[SSP_FIELDS.STATUS];
+
+    this.reConnectParentChildren();
   }
 }

@@ -34,3 +34,7 @@ export function floatToReadableString(n: number): string {
     maximumFractionDigits: n.toString().length,
   });
 }
+
+export function firstWord(s: string): string {
+  return s.split(/\s+/).filter((t) => !!t)[0];
+}

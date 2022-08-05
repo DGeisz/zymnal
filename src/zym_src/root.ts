@@ -10,8 +10,9 @@ import { zymbolMasterList } from "./zyms/zymbol/zymbols/zymbol_list";
 import { zymbolInfrastructureMasters } from "./zyms/zymbol_infrastructure/zymbol_infrastructure";
 import { inPlaceSymbol } from "./zyms/zymbol_infrastructure/zymbol_frame/transformers/in_place_symbols";
 import { parenthesisModifiers } from "./zyms/zymbol_infrastructure/zymbol_frame/transformers/parenthesis";
-import { fraction } from "./zyms/zymbol_infrastructure/zymbol_frame/transformers/fraction";
+import { fraction } from "./zyms/zymbol_infrastructure/zymbol_frame/transformers/fraction_transform";
 import { cashFunctions } from "./zyms/zymbol_infrastructure/zymbol_frame/transformers/cash_functions";
+import { superSubTransform } from "./zyms/zymbol_infrastructure/zymbol_frame/transformers/super_sub_transform";
 
 const root = new Zage(0, undefined);
 
@@ -34,4 +35,5 @@ export const zentinelList: Zentinel[] = [
   parenthesisModifiers,
   cashFunctions,
   fraction,
+  superSubTransform,
 ];

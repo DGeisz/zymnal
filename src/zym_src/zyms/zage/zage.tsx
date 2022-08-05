@@ -21,7 +21,7 @@ export interface ZagePersist {
 }
 
 /* ==== MASTER ====  */
-class ZageMaster extends ZyMaster<ZagePersist> {
+class ZageMaster extends ZyMaster {
   zyId = "zage";
 
   newBlankChild(): Zym<any, any, any> {

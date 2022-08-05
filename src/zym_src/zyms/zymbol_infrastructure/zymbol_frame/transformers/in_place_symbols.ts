@@ -26,6 +26,7 @@ import {
   KeyPressValidator,
   ZymbolTransformRank,
 } from "../zymbol_frame";
+import { getTransformTextZymbolAndParent } from "./transform_utils";
 
 export const IN_PLACE_SYMBOL_TRANSFORM = "in-place-e8d29";
 
@@ -147,20 +148,12 @@ class InPlaceSymbol extends Zentinel {
         transform: (root, cursor) => {
           const cursorCopy = [...cursor];
 
-          /* First we want to get to the parent */
-          let currZymbol = root;
+          const transformText = getTransformTextZymbolAndParent(root, cursor);
 
-          for (let i = 0; i < cursorCopy.length - 1; i++) {
-            currZymbol = currZymbol.children[cursorCopy[i]] as Zymbol;
+          if (transformText.isTextZymbol) {
+            const { text } = transformText;
 
-            if (!currZymbol) {
-              return [];
-            }
-          }
-
-          if (currZymbol.getMasterId() === TEXT_ZYMBOL_NAME) {
             const i = last(cursorCopy);
-            const text = currZymbol as TextZymbol;
 
             const { word, before, after } = splitCursorStringAtLastWord(
               text.getText(),
