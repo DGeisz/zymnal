@@ -11,15 +11,6 @@ export async function hydrateChild(
   );
 }
 
-// export async function safeHydrate<T>(
-//   p: T | undefined,
-//   fn: (t: T) => Promise<void> | void
-// ) {
-//   if (p) {
-//     await fn(p);
-//   }
-// }
-
 export async function safeHydrate<T extends object>(
   p: Partial<T>,
   resolver: { [key in keyof T]: (t: T[key]) => Promise<void> | void }

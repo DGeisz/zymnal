@@ -1,3 +1,4 @@
+import { before } from "underscore";
 import { palette } from "../../../../../global_styles/palette";
 import {
   add_latex_color,
@@ -9,11 +10,15 @@ import { Zym } from "../../../../../zym_lib/zym/zym";
 import { ZyMaster } from "../../../../../zym_lib/zym/zy_master";
 import {
   Cursor,
+  CursorIndex,
   CursorMoveResponse,
   extractCursorInfo,
   FAILED_CURSOR_MOVE_RESPONSE,
   successfulMoveResponse,
 } from "../../../../../zym_lib/zy_god/cursor/cursor";
+import { BasicContext } from "../../../../../zym_lib/zy_god/types/context_types";
+import { addZymChangeLink } from "../../../../../zym_lib/zy_god/undo_redo/undo_redo";
+import { getFullContextCursor } from "../../../../../zym_lib/zy_god/zy_god";
 import { DUMMY_FRAME } from "../../../zymbol_infrastructure/zymbol_frame/zymbol_frame";
 import {
   deflectDeleteBehavior,
@@ -118,16 +123,44 @@ export class TextZymbol extends Zymbol<TextZymbolPersist> {
     }
   };
 
-  addCharacter = (character: string, cursor: Cursor) => {
+  private _addZymChangeLink = (
+    ctx: BasicContext,
+    beforeChars: string[],
+    afterChars: string[]
+  ) => {
+    addZymChangeLink(ctx, {
+      zymLocation: this.getFullCursorPointer(),
+      beforeChange: {
+        renderOpts: { cursor: [] },
+        zymState: {
+          [TZP_FIELDS.CHARACTERS]: beforeChars,
+        },
+      },
+      afterChange: {
+        renderOpts: { cursor: [] },
+        zymState: {
+          [TZP_FIELDS.CHARACTERS]: afterChars,
+        },
+      },
+    });
+  };
+
+  addCharacter = (character: string, cursor: Cursor, ctx: BasicContext) => {
     const { parentOfCursorElement, nextCursorIndex } =
       extractCursorInfo(cursor);
 
     if (parentOfCursorElement) {
+      const beforeChars = [...this.characters];
       this.characters.splice(nextCursorIndex, 0, character);
 
-      return successfulMoveResponse(
-        Math.min(nextCursorIndex + 1, this.characters.length)
+      const newCursorIndex = Math.min(
+        nextCursorIndex + 1,
+        this.characters.length
       );
+
+      this._addZymChangeLink(ctx, beforeChars, [...this.characters]);
+
+      return successfulMoveResponse(newCursorIndex);
     } else {
       return FAILED_CURSOR_MOVE_RESPONSE;
     }
@@ -142,7 +175,7 @@ export class TextZymbol extends Zymbol<TextZymbolPersist> {
     return normalDeleteBehavior(DeleteBehaviorType.ALLOWED);
   };
 
-  delete = (cursor: Cursor) => {
+  delete = (cursor: Cursor, ctx: BasicContext) => {
     const { parentOfCursorElement, nextCursorIndex } =
       extractCursorInfo(cursor);
 
@@ -151,7 +184,15 @@ export class TextZymbol extends Zymbol<TextZymbolPersist> {
         return FAILED_CURSOR_MOVE_RESPONSE;
       }
 
+      const fullCursor = getFullContextCursor(ctx);
+      const afterCursor = [...fullCursor];
+      afterCursor.splice(afterCursor.length - 1, 1, nextCursorIndex - 1);
+
+      const beforeChars = [...this.characters];
+
       this.characters.splice(nextCursorIndex - 1, 1);
+
+      this._addZymChangeLink(ctx, beforeChars, [...this.characters]);
 
       return successfulMoveResponse(nextCursorIndex - 1);
     } else {
@@ -185,7 +226,7 @@ export class TextZymbol extends Zymbol<TextZymbolPersist> {
 
   persistData(): TextZymbolPersist {
     return {
-      [TZP_FIELDS.CHARACTERS]: this.characters,
+      [TZP_FIELDS.CHARACTERS]: [...this.characters],
     };
   }
 

@@ -113,7 +113,8 @@ class DocumentEventHandler {
       });
     }
 
-    if (modifiers.includes(KeyPressModifier.Cmd)) {
+    if (modifiers.includes(KeyPressModifier.Cmd) && event.key !== "r") {
+      event.preventDefault();
       this.handleKeyPress(event);
     }
 

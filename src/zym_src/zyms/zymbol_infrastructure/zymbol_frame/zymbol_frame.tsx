@@ -4,7 +4,10 @@ import {
   HermesMessage,
   ZentinelMessage,
 } from "../../../../zym_lib/hermes/hermes";
-import { GET_ZYM_ROOT } from "../../../../zym_lib/zy_god/zy_god";
+import {
+  getFullContextCursor,
+  GET_ZYM_ROOT,
+} from "../../../../zym_lib/zy_god/zy_god";
 import {
   hydrateChild,
   safeHydrate,
@@ -45,7 +48,10 @@ import { Zymbol } from "../../zymbol/zymbol";
 import { Zocket } from "../../zymbol/zymbols/zocket/zocket";
 import { TeX } from "../../zymbol/zymbol_types";
 import _ from "underscore";
-import { addZymChange } from "../../../../zym_lib/zy_god/undo_redo/undo_redo";
+import {
+  addZymChangeLink,
+  UndoRedoCommand,
+} from "../../../../zym_lib/zy_god/undo_redo/undo_redo";
 
 const ZFP_FIELDS: {
   BASE_ZOCKET: "b";
@@ -431,6 +437,7 @@ export class ZymbolFrame extends Zyact<ZymbolFramePersist, FrameRenderProps> {
         <div className={Styles.FrameContainer}>
           <div className={Styles.MainFrameContainer}>
             <TexTransform tex={frameTex} />
+            <div>{frameTex}</div>
           </div>
         </div>
       );
@@ -534,16 +541,23 @@ const keyPressImpl = implementPartialCmdGroup(KeyPressCommand, {
           if (trans && trans.checkKeypressConfirms(keyPress)) {
             const t = trans.getCurrentTransformation();
 
-            /* Set the persist updates for right before we make the change */
-            const updates: Partial<ZymbolFramePersist> = {
-              [ZFP_FIELDS.BASE_ZOCKET]: frame.baseZocket.persist(),
-            };
+            const beforeState = frame.baseZocket.persist();
 
             frame.setBaseZocket(t.newTreeRoot);
+            const framePointer = frame.getFullCursorPointer();
 
-            addZymChange(keyPressContext, {
-              cursor: frame.getFullCursorPointer(),
-              updates,
+            addZymChangeLink(keyPressContext, {
+              zymLocation: framePointer,
+              beforeChange: {
+                zymState: {
+                  [ZFP_FIELDS.BASE_ZOCKET]: beforeState,
+                },
+              },
+              afterChange: {
+                zymState: {
+                  [ZFP_FIELDS.BASE_ZOCKET]: frame.baseZocket.persist(),
+                },
+              },
             });
 
             cursor = [0, ...t.cursor];
@@ -629,7 +643,20 @@ const frameCursorImpl = implementPartialCmdGroup(CursorCommand, {
   canHandleCursorBranchRender: () => true,
 });
 
-zymbolFrameMaster.registerCmds([...frameCursorImpl, ...keyPressImpl]);
+const undoRedoImpl = implementPartialCmdGroup(UndoRedoCommand, {
+  prepUndoRedo: async (zym) => {
+    const frame = zym as ZymbolFrame;
+    frame.setNewTransformations([]);
+
+    zym.children.forEach((c) => c.cmd(UndoRedoCommand.prepUndoRedo));
+  },
+});
+
+zymbolFrameMaster.registerCmds([
+  ...frameCursorImpl,
+  ...keyPressImpl,
+  ...undoRedoImpl,
+]);
 
 /* USED FOR HYDRATION */
 export const DUMMY_FRAME = new ZymbolFrame(0, undefined);

@@ -1,4 +1,3 @@
-import { last } from "../../../../../global_utils/array_utils";
 import {
   CURSOR_LATEX,
   LATEX_EMPTY_SOCKET,
@@ -30,9 +29,10 @@ import {
 } from "../../../../../zym_lib/zy_god/cursor/cursor_commands";
 import { KeyPressModifier } from "../../../../../zym_lib/zy_god/event_handler/key_press";
 import { BasicContext } from "../../../../../zym_lib/zy_god/types/context_types";
+import { addZymChangeLink } from "../../../../../zym_lib/zy_god/undo_redo/undo_redo";
+import { getFullContextCursor } from "../../../../../zym_lib/zy_god/zy_god";
 import { DUMMY_FRAME } from "../../../zymbol_infrastructure/zymbol_frame/zymbol_frame";
 import {
-  deflectDeleteBehavior,
   DeleteBehavior,
   DeleteBehaviorType,
   normalDeleteBehavior,
@@ -218,11 +218,31 @@ export class Zocket extends Zymbol<ZocketPersist> {
       /* If we're the parent, then we basically just add a new text symbol at the current index, 
       and then we make sure that we merge all of our text symbols */
       const newZymbol = new TextZymbol(this.parentFrame, nextCursorIndex, this);
-      newZymbol.addCharacter(character, [0]);
+      newZymbol.setText(character);
+
+      const beforeChildren = this.children.map((c) => c.persist());
 
       this.children.splice(nextCursorIndex, 0, newZymbol);
 
-      return this.mergeTextZymbols([nextCursorIndex, 1]);
+      const mergedRes = this.mergeTextZymbols([nextCursorIndex, 1]);
+
+      addZymChangeLink(ctx, {
+        zymLocation: this.getFullCursorPointer(),
+        beforeChange: {
+          renderOpts: { cursor: [] },
+          zymState: {
+            [ZP_FIELDS.CHILDREN]: beforeChildren,
+          },
+        },
+        afterChange: {
+          renderOpts: { cursor: [] },
+          zymState: {
+            [ZP_FIELDS.CHILDREN]: this.children.map((c) => c.persist()),
+          },
+        },
+      });
+
+      return mergedRes;
     } else {
       const nextZymbol = this.children[nextCursorIndex] as Zymbol;
 
@@ -383,13 +403,8 @@ export class Zocket extends Zymbol<ZocketPersist> {
     );
   };
 
-  getDeleteBehavior = (): DeleteBehavior => {
-    if (this.children.length > 1) {
-      return deflectDeleteBehavior(last(this.children).getDeleteBehavior());
-    } else {
-      return normalDeleteBehavior(DeleteBehaviorType.ALLOWED);
-    }
-  };
+  getDeleteBehavior = (): DeleteBehavior =>
+    normalDeleteBehavior(DeleteBehaviorType.ALLOWED);
 
   renderTex = (opts: ZymbolRenderArgs) => {
     const { cursor } = opts;

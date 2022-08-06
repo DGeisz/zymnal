@@ -13,6 +13,7 @@ import { parenthesisModifiers } from "./zyms/zymbol_infrastructure/zymbol_frame/
 import { fraction } from "./zyms/zymbol_infrastructure/zymbol_frame/transformers/fraction_transform";
 import { cashFunctions } from "./zyms/zymbol_infrastructure/zymbol_frame/transformers/cash_functions";
 import { superSubTransform } from "./zyms/zymbol_infrastructure/zymbol_frame/transformers/super_sub_transform";
+import { defaultUndoRedoImpl } from "../zym_lib/zy_god/undo_redo/undo_redo";
 
 const root = new Zage(0, undefined);
 
@@ -21,7 +22,11 @@ export function getZymTreeRoot(): Zyact {
 }
 
 /* ==== Add default cmd implementations ==== */
-registerDefaultCmds([...defaultKeyPressImpl, ...defaultCursorImpl]);
+registerDefaultCmds([
+  ...defaultKeyPressImpl,
+  ...defaultCursorImpl,
+  ...defaultUndoRedoImpl,
+]);
 
 export const zyMasterList: ZyMaster[] = [
   zageMaster,

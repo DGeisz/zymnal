@@ -62,7 +62,8 @@ export abstract class Zym<T = any, P = any, RenderOptions = any> {
   /* Master */
   abstract readonly zyMaster: ZyMaster;
 
-  bid = Math.random();
+  /* Instance id (used for re-rendering...) */
+  iid = Math.random();
 
   constructor(cursorIndex: CursorIndex, parent: Zym<any, any> | undefined) {
     this.cursorIndex = cursorIndex;

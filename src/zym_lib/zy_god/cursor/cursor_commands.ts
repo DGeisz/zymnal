@@ -15,7 +15,6 @@ import { Cursor, extendChildCursor, extractCursorInfo } from "./cursor";
 /* ==== LOCAL COMMANDS ==== */
 
 const CURSOR_COMMANDS_ID = "cursor-a7c53";
-
 const lcc = groupPathFactory(CURSOR_COMMANDS_ID);
 
 /* Get initial cursor */
@@ -78,24 +77,23 @@ export const defaultCursorImpl = implementPartialCmdGroup(CursorCommand, {
 
     return NONE;
   },
-  basicRender: async (zym, args) => {
+  modifyNodeAndReRender: async (zym, args) => {
     const { cursor, renderOpts, updates } = args;
 
-    const { parentOfCursorElement, nextCursorIndex, childRelativeCursor } =
-      extractCursorInfo(cursor);
+    const { nextCursorIndex, childRelativeCursor } = extractCursorInfo(cursor);
 
-    if (parentOfCursorElement) {
-      const child = zym.children[nextCursorIndex];
-
-      if (child) {
-        await child.hydrate(updates);
-        child.render(renderOpts);
-      }
+    if (nextCursorIndex === -1) {
+      await zym.hydrate(updates);
+      zym.render(renderOpts);
     } else {
-      await zym.children[nextCursorIndex].cmd(CursorCommand.basicRender, {
-        cursor: childRelativeCursor,
-        renderOpts,
-      });
+      await zym.children[nextCursorIndex].cmd<any, ModifyNodeAndReRenderArgs>(
+        CursorCommand.modifyNodeAndReRender,
+        {
+          cursor: childRelativeCursor,
+          renderOpts,
+          updates,
+        }
+      );
     }
   },
   cursorRender: async (zym, args: CursorRenderArgs) => {
