@@ -11,7 +11,6 @@ import {
   some,
   UNIMPLEMENTED,
   unwrap,
-  unwrapOption,
   ZyResult,
 } from "../zy_commands/zy_command_types";
 import { ZyId } from "../zy_types/basic_types";
@@ -20,20 +19,29 @@ import {
   CursorCommand,
   CursorRenderArgs,
   GetInitialCursorReturn,
+  ModifyNodeAndReRenderArgs,
 } from "./cursor/cursor_commands";
 import { docEventHandler } from "./event_handler/document_event_handler";
 import {
   KeyPressArgs,
   KeyPressCommand,
+  KeyPressComplexType,
+  KeyPressModifier,
   ZymKeyPress,
 } from "./event_handler/key_press";
 import { newContext } from "./types/context_types";
+import {
+  getZymChanges,
+  UndoRedoStack,
+  ZymChangeFrame,
+} from "./undo_redo/undo_redo";
 
 export const ZyGodId: ZyId = "zyGod";
 
 enum ZyGodZentinelMessage {
   GetZymRoot = "gzr",
   HydratePersistedZym = "hpr",
+  QueueSimulatedKeyPress = "qsk",
 }
 
 export const CreateZyGodMessage = {
@@ -42,6 +50,13 @@ export const CreateZyGodMessage = {
       zentinelId: ZyGodId,
       message: ZyGodZentinelMessage.HydratePersistedZym,
       content: p,
+    };
+  },
+  queueSimulatedKeyPress(keyPress: ZymKeyPress): HermesMessage {
+    return {
+      zentinelId: ZyGodId,
+      message: ZyGodZentinelMessage.QueueSimulatedKeyPress,
+      content: keyPress,
     };
   },
 };
@@ -61,6 +76,9 @@ class ZyGod extends ZyMaster {
   private cursor: Cursor = [];
   private root?: Zyact;
   private rootAwaiter = new ControlledAwaiter();
+
+  simulatedKeyPressQueue: ZymKeyPress[] = [];
+  undoRedoStack: UndoRedoStack = new UndoRedoStack();
 
   constructor() {
     super();
@@ -83,21 +101,79 @@ class ZyGod extends ZyMaster {
     this.cursor = newCursor;
   };
 
+  handleUndo = async () => {
+    console.log("undo!");
+
+    await this.handleChangeFrame(this.undoRedoStack.undo());
+  };
+
+  handleRedo = async () => {
+    await this.handleChangeFrame(this.undoRedoStack.redo());
+  };
+
+  handleChangeFrame = async (frame: ZymChangeFrame | undefined) => {
+    if (frame) {
+      for (const change of frame.changes) {
+        const { updates, cursor, renderOpts } = change;
+
+        await this.root?.cmd<any, ModifyNodeAndReRenderArgs>(
+          CursorCommand.modifyNodeAndReRender,
+          {
+            cursor,
+            updates,
+            renderOpts,
+          }
+        );
+      }
+
+      this.handleCursorChange(frame.cursor);
+    }
+  };
+
   handleKeyPress = async (event: ZymKeyPress) => {
     if (this.root) {
+      /* First handle undo/redo */
+      console.log(event, KeyPressModifier.Cmd);
+
+      if (
+        event.type === KeyPressComplexType.Key &&
+        event.modifiers &&
+        event.modifiers.includes(KeyPressModifier.Cmd)
+      ) {
+        if (event.key === "z") {
+          return await this.handleUndo();
+        } else if (event.key === "r") {
+          return await this.handleRedo();
+        }
+      }
+
+      const ctx = newContext();
+
       const moveResponse = unwrap(
         await this.root.cmd<CursorMoveResponse, KeyPressArgs>(
           KeyPressCommand.handleKeyPress,
           {
             cursor: this.cursor,
             keyPress: event,
-            keyPressContext: newContext(),
+            keyPressContext: ctx,
           }
         )
       );
 
+      const changes = getZymChanges(ctx);
+
+      if (changes)
+        this.undoRedoStack.addChangeFrame({
+          cursor: this.cursor,
+          changes,
+        });
+
       if (moveResponse.success) {
         this.handleCursorChange(moveResponse.newRelativeCursor);
+      }
+
+      if (this.simulatedKeyPressQueue.length > 0) {
+        this.handleKeyPress(this.simulatedKeyPressQueue.shift()!);
       }
     }
   };
@@ -149,6 +225,11 @@ class ZyGod extends ZyMaster {
 
           return ok(some(zym));
         }
+
+        return ok(NONE);
+      }
+      case ZyGodZentinelMessage.QueueSimulatedKeyPress: {
+        this.simulatedKeyPressQueue.push(msg.content);
 
         return ok(NONE);
       }

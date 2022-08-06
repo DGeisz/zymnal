@@ -45,7 +45,10 @@ export type ZyCmdSerialPath = string;
 /* Arguments */
 export type ZyCmdArgs<A = any> = A;
 
-type ZyCall<T = any> = (zym: Zym, args: ZyCmdArgs) => T;
+type ZyCall<R = any, A = any> = (
+  zym: Zym,
+  args: ZyCmdArgs<A>
+) => Promise<R> | R;
 type ZyArgValidator = (args: ZyCmdArgs) => boolean;
 
 /* Cmd handlers */
@@ -94,13 +97,20 @@ export function justPath(path: ZyCmdPath): ZyCommandGroupMember {
   };
 }
 
-export type ZyCommandGroup<T extends object = any> = {
+export type ZyCommandGroupType = {
+  [key: string]: {
+    args: any;
+    return: any;
+  };
+};
+
+export type ZyCommandGroup<T extends ZyCommandGroupType = any> = {
   [key in keyof T]: ZyCommandGroupMember;
 };
 
-export function implementPartialCmdGroup<T extends object = any>(
+export function implementPartialCmdGroup<T extends ZyCommandGroupType = any>(
   group: ZyCommandGroup<T>,
-  calls: Partial<{ [key in keyof T]: ZyCall }>
+  calls: Partial<{ [key in keyof T]: ZyCall<T[key]["return"], T[key]["args"]> }>
 ) {
   const registrations: ZyCommandRegistration[] = [];
 
@@ -124,9 +134,9 @@ export function implementPartialCmdGroup<T extends object = any>(
   return registrations;
 }
 
-export function implementTotalCmdGroup<T extends object = any>(
+export function implementTotalCmdGroup<T extends ZyCommandGroupType = any>(
   group: ZyCommandGroup<T>,
-  calls: { [key in keyof T]: ZyCall }
+  calls: { [key in keyof T]: ZyCall<T[key]["return"], T[key]["args"]> }
 ) {
   return implementPartialCmdGroup(group, calls);
 }

@@ -1,5 +1,9 @@
+import _ from "underscore";
 import { last } from "../../../../global_utils/array_utils";
-import { hydrateChild } from "../../../../zym_lib/zym/utils/hydrate";
+import {
+  hydrateChild,
+  safeHydrate,
+} from "../../../../zym_lib/zym/utils/hydrate";
 import { Zym, ZymPersist } from "../../../../zym_lib/zym/zym";
 import { ZyMaster } from "../../../../zym_lib/zym/zy_master";
 import {
@@ -9,7 +13,12 @@ import {
   FAILED_CURSOR_MOVE_RESPONSE,
   wrapChildCursorResponse,
 } from "../../../../zym_lib/zy_god/cursor/cursor";
+import {
+  KeyPressBasicType,
+  ZymKeyPress,
+} from "../../../../zym_lib/zy_god/event_handler/key_press";
 import { BasicContext } from "../../../../zym_lib/zy_god/types/context_types";
+import { CreateZyGodMessage } from "../../../../zym_lib/zy_god/zy_god";
 import { DUMMY_FRAME } from "../../zymbol_infrastructure/zymbol_frame/zymbol_frame";
 import { DeleteBehaviorType, normalDeleteBehavior } from "../delete_behavior";
 import { Zymbol, ZymbolRenderArgs } from "../zymbol";
@@ -68,7 +77,7 @@ export class SuperSubZymbol extends Zymbol<SuperSubPersist> {
         return isSuper ? 0 : -1;
       }
       case SuperSubStatus.Both: {
-        return isSuper ? 1 : 0;
+        return isSuper ? 0 : 1;
       }
     }
   };
@@ -88,12 +97,12 @@ export class SuperSubZymbol extends Zymbol<SuperSubPersist> {
       }
       case SuperSubStatus.OnlySub: {
         if (isSuper) {
-          this.children.push(newChild);
+          this.children.unshift(newChild);
           this.status = SuperSubStatus.Both;
 
           this.reIndexChildren();
 
-          return [1, 0];
+          return [0, 0];
         } else {
           return [0, 0];
         }
@@ -102,21 +111,69 @@ export class SuperSubZymbol extends Zymbol<SuperSubPersist> {
         if (isSuper) {
           return [0, 0];
         } else {
-          this.children.unshift(newChild);
+          this.children.push(newChild);
           this.status = SuperSubStatus.Both;
 
           this.reIndexChildren();
 
-          return [0, 0];
+          return [1, 0];
         }
       }
       case SuperSubStatus.Both: {
-        return [isSuper ? 1 : 0, 0];
+        return [isSuper ? 0 : 1, 0];
       }
     }
   };
 
   /* ==== Default Methods ==== */
+  defaultKeyPressHandler = (
+    keyPress: ZymKeyPress,
+    cursor: Cursor,
+    ctx: BasicContext
+  ): CursorMoveResponse => {
+    const { childRelativeCursor, nextCursorIndex, parentOfCursorElement } =
+      extractCursorInfo(cursor);
+
+    if (cursor.length === 0) {
+      return FAILED_CURSOR_MOVE_RESPONSE;
+    } else if (parentOfCursorElement) {
+      console.log(
+        "beta",
+        [this.children[nextCursorIndex].children.length],
+        childRelativeCursor
+      );
+    }
+
+    if (nextCursorIndex > -1) {
+      if (
+        _.isEqual(
+          [this.children[nextCursorIndex].children.length],
+          childRelativeCursor
+        ) &&
+        keyPress.type === KeyPressBasicType.Enter
+      ) {
+        console.log(
+          "nci",
+          nextCursorIndex,
+          this.children[nextCursorIndex].defaultKeyPressHandler
+        );
+
+        this.callHermes(
+          CreateZyGodMessage.queueSimulatedKeyPress({
+            type: KeyPressBasicType.ArrowRight,
+          })
+        );
+      }
+
+      return this.children[nextCursorIndex].defaultKeyPressHandler(
+        keyPress,
+        childRelativeCursor,
+        ctx
+      );
+    } else {
+      return FAILED_CURSOR_MOVE_RESPONSE;
+    }
+  };
 
   moveCursorLeft = (cursor: Cursor, ctx: BasicContext) => {
     const { childRelativeCursor, nextCursorIndex } = extractCursorInfo(cursor);
@@ -229,10 +286,10 @@ export class SuperSubZymbol extends Zymbol<SuperSubPersist> {
         return "";
       }
       case SuperSubStatus.Both: {
-        return `_{${this.children[0].renderTex({
-          cursor: nextCursorIndex === 0 ? childRelativeCursor : [],
-        })}}^{${this.children[1].renderTex({
+        return `_{${this.children[1].renderTex({
           cursor: nextCursorIndex === 1 ? childRelativeCursor : [],
+        })}}^{${this.children[0].renderTex({
+          cursor: nextCursorIndex === 0 ? childRelativeCursor : [],
         })}}`;
       }
       case SuperSubStatus.OnlySub: {
@@ -251,11 +308,17 @@ export class SuperSubZymbol extends Zymbol<SuperSubPersist> {
     };
   }
 
-  async hydrate(p: SuperSubPersist): Promise<void> {
-    this.children = (await Promise.all(
-      p[SSP_FIELDS.CHILDREN].map((c) => hydrateChild(this, c))
-    )) as Zymbol[];
-    this.status = p[SSP_FIELDS.STATUS];
+  async hydrate(p: Partial<SuperSubPersist>): Promise<void> {
+    await safeHydrate(p, {
+      [SSP_FIELDS.CHILDREN]: async (children) => {
+        this.children = (await Promise.all(
+          children.map((c) => hydrateChild(this, c))
+        )) as Zymbol[];
+      },
+      [SSP_FIELDS.STATUS]: (s) => {
+        this.status = s;
+      },
+    });
 
     this.reConnectParentChildren();
   }

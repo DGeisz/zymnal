@@ -3,7 +3,10 @@ import {
   CURSOR_LATEX,
   LATEX_EMPTY_SOCKET,
 } from "../../../../../global_utils/latex_utils";
-import { hydrateChild } from "../../../../../zym_lib/zym/utils/hydrate";
+import {
+  hydrateChild,
+  safeHydrate,
+} from "../../../../../zym_lib/zym/utils/hydrate";
 import { Zym, ZymPersist } from "../../../../../zym_lib/zym/zym";
 import { ZyMaster } from "../../../../../zym_lib/zym/zy_master";
 import {
@@ -535,11 +538,17 @@ export class Zocket extends Zymbol<ZocketPersist> {
     };
   };
 
-  async hydrate(p: ZocketPersist): Promise<void> {
-    this.children = (await Promise.all(
-      p[ZP_FIELDS.CHILDREN].map((c) => hydrateChild(this, c))
-    )) as Zymbol[];
-    this.modifiers = p[ZP_FIELDS.MODIFIERS];
+  async hydrate(p: Partial<ZocketPersist>): Promise<void> {
+    await safeHydrate(p, {
+      [ZP_FIELDS.CHILDREN]: async (children) => {
+        this.children = (await Promise.all(
+          children.map((c) => hydrateChild(this, c))
+        )) as Zymbol[];
+      },
+      [ZP_FIELDS.MODIFIERS]: (mod) => {
+        this.modifiers = mod;
+      },
+    });
 
     this.reConnectParentChildren();
   }

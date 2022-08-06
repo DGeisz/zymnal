@@ -5,6 +5,7 @@ import {
   justPath,
   unwrap,
   ZyCommandGroup,
+  ZyCommandGroupType,
 } from "../../zy_commands/zy_command_types";
 import {
   chainMoveResponse,
@@ -106,26 +107,26 @@ const KEY_PRESS_CMD_ID = "keypress-cmd-6a62";
 
 const kpc = groupPathFactory(KEY_PRESS_CMD_ID);
 
-enum KeyPressEnum {
-  handleKeyPress,
-}
-
-export type KeyPressType = typeof KeyPressEnum;
-
-export const KeyPressCommand: ZyCommandGroup<KeyPressType> = {
-  handleKeyPress: justPath(kpc("hkp")),
-};
-
 export interface KeyPressArgs {
   keyPress: ZymKeyPress;
   cursor: Cursor;
   keyPressContext: BasicContext;
 }
 
+export interface KeyPressType extends ZyCommandGroupType {
+  handleKeyPress: {
+    args: KeyPressArgs;
+    return: CursorMoveResponse;
+  };
+}
+
+export const KeyPressCommand: ZyCommandGroup<KeyPressType> = {
+  handleKeyPress: justPath(kpc("hkp")),
+};
+
 export const defaultKeyPressImpl = implementTotalCmdGroup(KeyPressCommand, {
   handleKeyPress: async (zym, args) => {
-    const { cursor, keyPressContext, keyPress } = args as KeyPressArgs;
-
+    const { cursor, keyPressContext, keyPress } = args;
     const { nextCursorIndex, childRelativeCursor } = extractCursorInfo(cursor);
 
     if (nextCursorIndex >= 0) {
@@ -145,8 +146,8 @@ export const defaultKeyPressImpl = implementTotalCmdGroup(KeyPressCommand, {
           extendChildCursor(nextCursorIndex, nextCursor)
         );
       });
-    } else {
-      return FAILED_CURSOR_MOVE_RESPONSE;
     }
+
+    return FAILED_CURSOR_MOVE_RESPONSE;
   },
 });

@@ -128,7 +128,7 @@ export abstract class Zym<T = any, P = any, RenderOptions = any> {
 
   abstract persistData(): P;
 
-  abstract hydrate(p: P): Promise<void>;
+  abstract hydrate(p: Partial<P>): Promise<void>;
 
   /* ===== TREE METHODS ===== */
   clone = async (copies = 1, newParent?: Zym): Promise<Zym<T, P>[]> => {

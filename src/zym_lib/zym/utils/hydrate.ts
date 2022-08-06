@@ -10,3 +10,21 @@ export async function hydrateChild(
     unwrap(await zym.callHermes(CreateZyGodMessage.hydrateZym(childPersist)))
   );
 }
+
+// export async function safeHydrate<T>(
+//   p: T | undefined,
+//   fn: (t: T) => Promise<void> | void
+// ) {
+//   if (p) {
+//     await fn(p);
+//   }
+// }
+
+export async function safeHydrate<T extends object>(
+  p: Partial<T>,
+  resolver: { [key in keyof T]: (t: T[key]) => Promise<void> | void }
+) {
+  for (let key in p) {
+    await resolver[key](p[key]!);
+  }
+}

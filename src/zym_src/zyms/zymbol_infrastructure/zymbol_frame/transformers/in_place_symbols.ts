@@ -1,3 +1,4 @@
+import { debug } from "console";
 import _ from "underscore";
 import { last } from "../../../../../global_utils/array_utils";
 import { backslash, checkLatex } from "../../../../../global_utils/latex_utils";

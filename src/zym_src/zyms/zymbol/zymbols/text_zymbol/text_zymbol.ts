@@ -4,6 +4,7 @@ import {
   create_tex_text,
   text_with_cursor,
 } from "../../../../../global_utils/latex_utils";
+import { safeHydrate } from "../../../../../zym_lib/zym/utils/hydrate";
 import { Zym } from "../../../../../zym_lib/zym/zym";
 import { ZyMaster } from "../../../../../zym_lib/zym/zy_master";
 import {
@@ -48,7 +49,7 @@ extendZymbol(textZymbolMaster);
 export class TextZymbol extends Zymbol<TextZymbolPersist> {
   private characters: string[] = [];
 
-  children: Zym<any, any>[] = [];
+  children: Zymbol[] = [];
   zyMaster: ZyMaster = textZymbolMaster;
 
   /* Zymbol Methods  */
@@ -188,8 +189,12 @@ export class TextZymbol extends Zymbol<TextZymbolPersist> {
     };
   }
 
-  hydrate = async (p: TextZymbolPersist): Promise<void> => {
-    this.characters = p[TZP_FIELDS.CHARACTERS];
+  hydrate = async (p: Partial<TextZymbolPersist>): Promise<void> => {
+    await safeHydrate(p, {
+      [TZP_FIELDS.CHARACTERS]: (c) => {
+        this.characters = c;
+      },
+    });
   };
 
   /* Custom methods */

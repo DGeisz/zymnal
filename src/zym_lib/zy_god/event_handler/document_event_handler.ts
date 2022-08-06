@@ -63,17 +63,10 @@ class DocumentEventHandler {
   ): KeyPressModifier[] => {
     const mods: KeyPressModifier[] = [];
 
-    if (event.altKey) {
-      mods.push(KeyPressModifier.Option);
-    }
-
-    if (event.shiftKey) {
-      mods.push(KeyPressModifier.Shift);
-    }
-
-    if (event.ctrlKey) {
-      mods.push(KeyPressModifier.Ctrl);
-    }
+    if (event.altKey) mods.push(KeyPressModifier.Option);
+    if (event.shiftKey) mods.push(KeyPressModifier.Shift);
+    if (event.ctrlKey) mods.push(KeyPressModifier.Ctrl);
+    if (event.metaKey) mods.push(KeyPressModifier.Cmd);
 
     return mods;
   };
@@ -82,7 +75,6 @@ class DocumentEventHandler {
     this.acquireKeyLock(KeyLock.KEYDOWN);
 
     const key = event.key;
-
     const modifiers = this.genKeyPressModifierList(event);
 
     let keyPressType: KeyPressBasicType | undefined = undefined;
@@ -119,6 +111,10 @@ class DocumentEventHandler {
         type: keyPressType,
         modifiers,
       });
+    }
+
+    if (modifiers.includes(KeyPressModifier.Cmd)) {
+      this.handleKeyPress(event);
     }
 
     this.handleKeyUnlock(KeyLock.KEYDOWN);

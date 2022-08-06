@@ -3,6 +3,7 @@ import {
   Cursor,
   CursorIndex,
   CursorMoveResponse,
+  extractCursorInfo,
   FAILED_CURSOR_MOVE_RESPONSE,
 } from "../../../zym_lib/zy_god/cursor/cursor";
 import {
@@ -38,6 +39,7 @@ export function keyPressHasModifier(
 
 export abstract class Zymbol<P = any> extends Zym<TeX, P> {
   parentFrame: ZymbolFrame;
+  abstract children: Zymbol[];
 
   constructor(
     parentFrame: ZymbolFrame,
@@ -83,13 +85,34 @@ export abstract class Zymbol<P = any> extends Zym<TeX, P> {
         break;
       }
       default: {
-        res = FAILED_CURSOR_MOVE_RESPONSE;
+        res = this.defaultKeyPressHandler(keyPress, cursor, ctx);
         break;
       }
     }
 
-    // return res;
     return this.onHandleKeyPress(res, keyPress);
+  };
+
+  defaultKeyPressHandler = (
+    keyPress: ZymKeyPress,
+    cursor: Cursor,
+    ctx: BasicContext
+  ): CursorMoveResponse => {
+    const { childRelativeCursor, nextCursorIndex } = extractCursorInfo(cursor);
+
+    if (
+      cursor.length === 0 ||
+      nextCursorIndex <= -1 ||
+      nextCursorIndex >= this.children.length
+    ) {
+      return FAILED_CURSOR_MOVE_RESPONSE;
+    } else {
+      return this.children[nextCursorIndex].defaultKeyPressHandler(
+        keyPress,
+        childRelativeCursor,
+        ctx
+      );
+    }
   };
 
   abstract moveCursorLeft: (

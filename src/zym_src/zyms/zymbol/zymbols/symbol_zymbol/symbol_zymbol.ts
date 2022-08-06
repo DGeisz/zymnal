@@ -1,3 +1,4 @@
+import { safeHydrate } from "../../../../../zym_lib/zym/utils/hydrate";
 import { Zym } from "../../../../../zym_lib/zym/zym";
 import { ZyMaster } from "../../../../../zym_lib/zym/zy_master";
 import {
@@ -47,7 +48,7 @@ extendZymbol(symbolZymbolMaster);
 
 export class SymbolZymbol extends Zymbol<SymbolZymbolPersist> {
   texSymbol: TeX;
-  children: Zym<any, any, any>[] = [];
+  children: Zymbol[] = [];
   modifiers: ZymbolModifier[] = [];
   zyMaster: ZyMaster = symbolZymbolMaster;
 
@@ -115,9 +116,15 @@ export class SymbolZymbol extends Zymbol<SymbolZymbolPersist> {
     };
   }
 
-  hydrate = async (p: SymbolZymbolPersist): Promise<void> => {
-    this.texSymbol = p[SZP_FIELDS.TEX_SYMBOL];
-    this.modifiers = p[SZP_FIELDS.MODIFIERS];
+  hydrate = async (p: Partial<SymbolZymbolPersist>): Promise<void> => {
+    await safeHydrate(p, {
+      [SZP_FIELDS.MODIFIERS]: (mod) => {
+        this.modifiers = mod;
+      },
+      [SZP_FIELDS.TEX_SYMBOL]: (tex) => {
+        this.texSymbol = tex;
+      },
+    });
   };
 }
 

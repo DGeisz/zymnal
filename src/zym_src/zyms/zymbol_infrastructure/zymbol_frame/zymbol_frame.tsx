@@ -5,7 +5,10 @@ import {
   ZentinelMessage,
 } from "../../../../zym_lib/hermes/hermes";
 import { GET_ZYM_ROOT } from "../../../../zym_lib/zy_god/zy_god";
-import { hydrateChild } from "../../../../zym_lib/zym/utils/hydrate";
+import {
+  hydrateChild,
+  safeHydrate,
+} from "../../../../zym_lib/zym/utils/hydrate";
 import { Zym, ZymPersist } from "../../../../zym_lib/zym/zym";
 import { Zyact } from "../../../../zym_lib/zym/zymplementations/zyact/zyact";
 import { ZyMaster } from "../../../../zym_lib/zym/zy_master";
@@ -42,6 +45,7 @@ import { Zymbol } from "../../zymbol/zymbol";
 import { Zocket } from "../../zymbol/zymbols/zocket/zocket";
 import { TeX } from "../../zymbol/zymbol_types";
 import _ from "underscore";
+import { addZymChange } from "../../../../zym_lib/zy_god/undo_redo/undo_redo";
 
 const ZFP_FIELDS: {
   BASE_ZOCKET: "b";
@@ -470,11 +474,12 @@ export class ZymbolFrame extends Zyact<ZymbolFramePersist, FrameRenderProps> {
     });
   };
 
-  hydrate = async (p: ZymbolFramePersist): Promise<void> => {
-    this.baseZocket = (await hydrateChild(
-      this,
-      p[ZFP_FIELDS.BASE_ZOCKET]
-    )) as Zocket;
+  hydrate = async (p: Partial<ZymbolFramePersist>): Promise<void> => {
+    await safeHydrate(p, {
+      [ZFP_FIELDS.BASE_ZOCKET]: async (bz) => {
+        this.baseZocket = (await hydrateChild(this, bz)) as Zocket;
+      },
+    });
     this.children = [this.baseZocket];
 
     this.baseZocket.setParentFrame(this);
@@ -490,8 +495,8 @@ const keyPressImpl = implementPartialCmdGroup(KeyPressCommand, {
   handleKeyPress: async (zym, args) => {
     const frame = zym as ZymbolFrame;
 
-    const { keyPressContext, keyPress } = args as KeyPressArgs;
-    let { cursor } = args as KeyPressArgs;
+    const { keyPressContext, keyPress } = args;
+    let { cursor } = args;
 
     let { nextCursorIndex, childRelativeCursor } = extractCursorInfo(cursor);
 
@@ -529,7 +534,17 @@ const keyPressImpl = implementPartialCmdGroup(KeyPressCommand, {
           if (trans && trans.checkKeypressConfirms(keyPress)) {
             const t = trans.getCurrentTransformation();
 
+            /* Set the persist updates for right before we make the change */
+            const updates: Partial<ZymbolFramePersist> = {
+              [ZFP_FIELDS.BASE_ZOCKET]: frame.baseZocket.persist(),
+            };
+
             frame.setBaseZocket(t.newTreeRoot);
+
+            addZymChange(keyPressContext, {
+              cursor: frame.getFullCursorPointer(),
+              updates,
+            });
 
             cursor = [0, ...t.cursor];
 
@@ -544,6 +559,18 @@ const keyPressImpl = implementPartialCmdGroup(KeyPressCommand, {
 
         if (keyPress.type === KeyPressBasicType.Enter) {
           frame.setNewTransformations([]);
+
+          unwrap(
+            await zym.children[nextCursorIndex].cmd<
+              CursorMoveResponse,
+              KeyPressArgs
+            >(KeyPressCommand.handleKeyPress, {
+              cursor: childRelativeCursor,
+              keyPressContext,
+              keyPress,
+            })
+          );
+
           return successfulMoveResponse(cursor);
         }
       }
@@ -585,8 +612,6 @@ const keyPressImpl = implementPartialCmdGroup(KeyPressCommand, {
         /* 3. Set setting that indicates that we have a transformation for the next render event */
         frame.setNewTransformations(transformations);
       }
-
-      console.log("beat", Math.random(), frame.children[0]);
 
       return chainMoveResponse(childMove, (nextCursor) => {
         return successfulMoveResponse(

@@ -1,6 +1,9 @@
 import _ from "underscore";
 import { last } from "../../../../../global_utils/array_utils";
-import { hydrateChild } from "../../../../../zym_lib/zym/utils/hydrate";
+import {
+  hydrateChild,
+  safeHydrate,
+} from "../../../../../zym_lib/zym/utils/hydrate";
 import { Zym, ZymPersist } from "../../../../../zym_lib/zym/zym";
 import { ZyMaster } from "../../../../../zym_lib/zym/zy_master";
 import {
@@ -210,12 +213,20 @@ export class FunctionZymbol extends Zymbol<FunctionZymbolPersist> {
     };
   };
 
-  hydrate = async (p: FunctionZymbolPersist): Promise<void> => {
-    this.children = (await Promise.all(
-      p[FZP_FIELDS.CHILDREN].map((c) => hydrateChild(this, c))
-    )) as Zymbol[];
-    this.baseTex = p[FZP_FIELDS.BASE_TEX];
-    this.zocketMapping = p[FZP_FIELDS.ZOCKET_MAPPINGS];
+  hydrate = async (p: Partial<FunctionZymbolPersist>): Promise<void> => {
+    await safeHydrate(p, {
+      [FZP_FIELDS.BASE_TEX]: (tex) => {
+        this.baseTex = tex;
+      },
+      [FZP_FIELDS.CHILDREN]: async (children) => {
+        this.children = (await Promise.all(
+          children.map((c) => hydrateChild(this, c))
+        )) as Zymbol[];
+      },
+      [FZP_FIELDS.ZOCKET_MAPPINGS]: async (zm) => {
+        this.zocketMapping = zm;
+      },
+    });
 
     this.reConnectParentChildren();
   };

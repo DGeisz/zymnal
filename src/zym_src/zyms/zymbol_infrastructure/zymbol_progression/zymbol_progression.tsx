@@ -1,5 +1,8 @@
 import { FC } from "react";
-import { hydrateChild } from "../../../../zym_lib/zym/utils/hydrate";
+import {
+  hydrateChild,
+  safeHydrate,
+} from "../../../../zym_lib/zym/utils/hydrate";
 import { Zym } from "../../../../zym_lib/zym/zym";
 import { useZymponent } from "../../../../zym_lib/zym/zymplementations/zyact/hooks";
 import { Zyact } from "../../../../zym_lib/zym/zymplementations/zyact/zyact";
@@ -47,11 +50,12 @@ export class ZymbolProgression extends Zyact<ZymbolProgressionPersist> {
     };
   }
 
-  async hydrate(p: ZymbolProgressionPersist): Promise<void> {
-    this.baseFrame = (await hydrateChild(
-      this,
-      p[ZPP_FIELDS.BASE_FRAME]
-    )) as ZymbolFrame;
+  async hydrate(p: Partial<ZymbolProgressionPersist>): Promise<void> {
+    await safeHydrate(p, {
+      [ZPP_FIELDS.BASE_FRAME]: async (frame) => {
+        this.baseFrame = (await hydrateChild(this, frame)) as ZymbolFrame;
+      },
+    });
     this.children = [this.baseFrame];
 
     this.reConnectParentChildren();

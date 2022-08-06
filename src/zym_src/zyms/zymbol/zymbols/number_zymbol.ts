@@ -1,4 +1,5 @@
 import { floatToReadableString } from "../../../../global_utils/text_utils";
+import { safeHydrate } from "../../../../zym_lib/zym/utils/hydrate";
 import { Zym } from "../../../../zym_lib/zym/zym";
 import { ZyMaster } from "../../../../zym_lib/zym/zy_master";
 import {
@@ -41,7 +42,7 @@ export const numberZymbolMaster = new NumberZymbolMaster();
 extendZymbol(numberZymbolMaster);
 
 export class NumberZymbol extends Zymbol<NumberZymbolPersist> {
-  children: Zym<any, any, any>[] = [];
+  children: Zymbol[] = [];
   zyMaster: ZyMaster = numberZymbolMaster;
   number: number;
 
@@ -79,7 +80,11 @@ export class NumberZymbol extends Zymbol<NumberZymbolPersist> {
     };
   }
 
-  async hydrate(p: NumberZymbolPersist): Promise<void> {
-    this.number = p[NZ_FIELDS.NUMBER];
+  async hydrate(p: Partial<NumberZymbolPersist>): Promise<void> {
+    await safeHydrate(p, {
+      [NZ_FIELDS.NUMBER]: (n) => {
+        this.number = n;
+      },
+    });
   }
 }

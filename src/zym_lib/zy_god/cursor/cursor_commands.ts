@@ -7,6 +7,7 @@ import {
   some,
   unwrap,
   ZyCommandGroup,
+  ZyCommandGroupType,
   ZyOption,
 } from "../../zy_commands/zy_command_types";
 import { Cursor, extendChildCursor, extractCursorInfo } from "./cursor";
@@ -20,32 +21,51 @@ const lcc = groupPathFactory(CURSOR_COMMANDS_ID);
 /* Get initial cursor */
 export type GetInitialCursorReturn = ZyOption<Cursor>;
 
-enum LocalCursorCommandsEnum {
-  /* Allows to get where the cursor should start */
-  getInitialCursor,
-  /* During a cursor render, this indicates that we should block the cursor render
-  here, and allow this zym to render the remainder of it's children */
-  canHandleCursorBranchRender,
-  /* Re-renders the portions of the tree that need to change after a cursor change */
-  cursorRender,
-}
-
 export interface CursorRenderArgs {
   oldCursor: ZyOption<Cursor>;
   newCursor: ZyOption<Cursor>;
 }
 
-export type CursorCommandType = typeof LocalCursorCommandsEnum;
+export interface ModifyNodeAndReRenderArgs {
+  cursor: Cursor;
+  /* This should be Partial<PERSISTED_TYPE> (from undo-redo) */
+  updates: any;
+  renderOpts: any;
+}
+
+export interface CursorCommandType extends ZyCommandGroupType {
+  /* Allows to get where the cursor should start */
+  getInitialCursor: {
+    args: undefined;
+    return: ZyOption<Cursor>;
+  };
+  /* Re-renders the tree on a cursor change */
+  cursorRender: {
+    args: CursorRenderArgs;
+    return: void;
+  };
+  /* Re-renders a tree node without the cursor (for undo-redo) */
+  modifyNodeAndReRender: {
+    args: ModifyNodeAndReRenderArgs;
+    return: void;
+  };
+  /* Re-renders the portions of the tree that need to change after a cursor change */
+  canHandleCursorBranchRender: {
+    args: undefined;
+    return: boolean;
+  };
+}
 
 export const CursorCommand: ZyCommandGroup<CursorCommandType> = {
   getInitialCursor: justPath(lcc("gic")),
   canHandleCursorBranchRender: justPath(lcc("bcr")),
   cursorRender: justPath(lcc("cr")),
+  modifyNodeAndReRender: justPath(lcc("mnr")),
 };
 
 /* ==== DEFAULT IMPL ====  */
 export const defaultCursorImpl = implementPartialCmdGroup(CursorCommand, {
-  getInitialCursor: async (zym): Promise<ZyOption<Cursor>> => {
+  getInitialCursor: async (zym) => {
     for (let i = 0; i < zym.children.length; i++) {
       const option = unwrap<ZyOption<Cursor>>(
         await zym.children[i].cmd(CursorCommand.getInitialCursor)
@@ -57,6 +77,26 @@ export const defaultCursorImpl = implementPartialCmdGroup(CursorCommand, {
     }
 
     return NONE;
+  },
+  basicRender: async (zym, args) => {
+    const { cursor, renderOpts, updates } = args;
+
+    const { parentOfCursorElement, nextCursorIndex, childRelativeCursor } =
+      extractCursorInfo(cursor);
+
+    if (parentOfCursorElement) {
+      const child = zym.children[nextCursorIndex];
+
+      if (child) {
+        await child.hydrate(updates);
+        child.render(renderOpts);
+      }
+    } else {
+      await zym.children[nextCursorIndex].cmd(CursorCommand.basicRender, {
+        cursor: childRelativeCursor,
+        renderOpts,
+      });
+    }
   },
   cursorRender: async (zym, args: CursorRenderArgs) => {
     const { oldCursor, newCursor } = args;

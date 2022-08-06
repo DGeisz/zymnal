@@ -1,4 +1,4 @@
-import { hydrateChild } from "../../../zym_lib/zym/utils/hydrate";
+import { hydrateChild, safeHydrate } from "../../../zym_lib/zym/utils/hydrate";
 import { Zym, ZymPersist } from "../../../zym_lib/zym/zym";
 import { useZymponent } from "../../../zym_lib/zym/zymplementations/zyact/hooks";
 import { Zyact } from "../../../zym_lib/zym/zymplementations/zyact/zyact";
@@ -55,11 +55,15 @@ export class Zage extends Zyact<ZagePersist> {
     };
   }
 
-  async hydrate(p: ZagePersist): Promise<void> {
-    this.baseZymbolContext = (await hydrateChild(
-      this,
-      p[ZAGE_PERSIST_FIELDS.CONTEXT]
-    )) as ZymbolContext;
+  async hydrate(p: Partial<ZagePersist>): Promise<void> {
+    await safeHydrate(p, {
+      [ZAGE_PERSIST_FIELDS.CONTEXT]: async (ctx) => {
+        this.baseZymbolContext = (await hydrateChild(
+          this,
+          ctx
+        )) as ZymbolContext;
+      },
+    });
     this.children = [this.baseZymbolContext];
 
     this.reConnectParentChildren();
