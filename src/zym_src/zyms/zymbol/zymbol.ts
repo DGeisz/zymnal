@@ -68,6 +68,7 @@ export abstract class Zymbol<P = any> extends Zym<TeX, P> {
     ctx: BasicContext
   ): CursorMoveResponse => {
     ctx.set(KEYPRESS_ZYMBOL, keyPress);
+    this.reIndexChildren();
 
     let res: CursorMoveResponse;
     switch (keyPress.type) {

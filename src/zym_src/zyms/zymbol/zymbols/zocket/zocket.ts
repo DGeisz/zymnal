@@ -225,6 +225,7 @@ export class Zocket extends Zymbol<ZocketPersist> {
       this.children.splice(nextCursorIndex, 0, newZymbol);
 
       const mergedRes = this.mergeTextZymbols([nextCursorIndex, 1]);
+      this.reIndexChildren();
 
       addZymChangeLink(ctx, {
         zymLocation: this.getFullCursorPointer(),
