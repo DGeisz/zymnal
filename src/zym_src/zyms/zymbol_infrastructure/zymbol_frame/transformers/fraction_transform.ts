@@ -1,18 +1,17 @@
 import { last } from "../../../../../global_utils/array_utils";
 import { Zentinel } from "../../../../../zym_lib/zentinel/zentinel";
-import { Zymbol } from "../../../zymbol/zymbol";
 import { FunctionZymbol } from "../../../zymbol/zymbols/function_zymbol/function_zymbol";
-import {
-  TextZymbol,
-  TEXT_ZYMBOL_NAME,
-} from "../../../zymbol/zymbols/text_zymbol/text_zymbol";
 import { Zocket } from "../../../zymbol/zymbols/zocket/zocket";
 import {
   BasicZymbolTreeTransformation,
   CreateTransformerMessage,
   ZymbolTransformRank,
 } from "../zymbol_frame";
-import { getTransformTextZymbolAndParent } from "./transform_utils";
+import {
+  getTransformTextZymbolAndParent,
+  makeHelperCursor,
+  recoverAllowedCursor,
+} from "./transform_utils";
 
 const FRACTION = "fraction-transform";
 
@@ -27,6 +26,7 @@ class Fraction extends Zentinel {
         source: FRACTION,
         name: "fraction",
         transform: (root, cursor) => {
+          cursor = makeHelperCursor(cursor, root);
           const cursorCopy = [...cursor];
 
           const transformText = getTransformTextZymbolAndParent(
@@ -87,7 +87,7 @@ class Fraction extends Zentinel {
                 return [
                   new BasicZymbolTreeTransformation({
                     newTreeRoot: root as Zocket,
-                    cursor: cursorCopy,
+                    cursor: recoverAllowedCursor(cursorCopy, root),
                     priority: {
                       rank: ZymbolTransformRank.Suggest,
                       cost: 100,
@@ -113,7 +113,7 @@ class Fraction extends Zentinel {
                 return [
                   new BasicZymbolTreeTransformation({
                     newTreeRoot: root as Zocket,
-                    cursor: cursorCopy,
+                    cursor: recoverAllowedCursor(cursorCopy, root),
                     priority: {
                       rank: ZymbolTransformRank.Suggest,
                       cost: 100,

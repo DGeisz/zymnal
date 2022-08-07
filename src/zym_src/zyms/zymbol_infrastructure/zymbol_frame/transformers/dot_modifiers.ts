@@ -7,15 +7,13 @@ import {
   TextZymbol,
   TEXT_ZYMBOL_NAME,
 } from "../../../zymbol/zymbols/text_zymbol/text_zymbol";
-import {
-  Zocket,
-  ZOCKET_MASTER_ID,
-} from "../../../zymbol/zymbols/zocket/zocket";
+import { Zocket } from "../../../zymbol/zymbols/zocket/zocket";
 import {
   BasicZymbolTreeTransformation,
   CreateTransformerMessage,
   ZymbolTransformRank,
 } from "../zymbol_frame";
+import { makeHelperCursor, recoverAllowedCursor } from "./transform_utils";
 
 export const DOT_MODIFIERS_TRANSFORM = "dot-modifiers-e1125";
 
@@ -47,6 +45,7 @@ class DotModifiers extends Zentinel {
         source: DOT_MODIFIERS_TRANSFORM,
         name: "dot-mod",
         transform: (root, cursor) => {
+          cursor = makeHelperCursor(cursor, root);
           const cursorCopy = [...cursor];
 
           /* First we want to get to the parent */
@@ -118,7 +117,7 @@ class DotModifiers extends Zentinel {
                 return [
                   new BasicZymbolTreeTransformation({
                     newTreeRoot: root as Zocket,
-                    cursor: cursorCopy,
+                    cursor: recoverAllowedCursor(cursorCopy, root),
                     priority: {
                       rank,
                       cost: 100,

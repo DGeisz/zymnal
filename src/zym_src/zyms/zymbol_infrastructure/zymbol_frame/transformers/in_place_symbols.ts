@@ -27,7 +27,11 @@ import {
   KeyPressValidator,
   ZymbolTransformRank,
 } from "../zymbol_frame";
-import { getTransformTextZymbolAndParent } from "./transform_utils";
+import {
+  getTransformTextZymbolAndParent,
+  makeHelperCursor,
+  recoverAllowedCursor,
+} from "./transform_utils";
 
 export const IN_PLACE_SYMBOL_TRANSFORM = "in-place-e8d29";
 
@@ -147,6 +151,7 @@ class InPlaceSymbol extends Zentinel {
         source: IN_PLACE_SYMBOL_TRANSFORM,
         name: "in-place",
         transform: (root, cursor) => {
+          cursor = makeHelperCursor(cursor, root);
           const cursorCopy = [...cursor];
 
           const transformText = getTransformTextZymbolAndParent(root, cursor);
@@ -277,7 +282,10 @@ class InPlaceSymbol extends Zentinel {
                 new BasicZymbolTreeTransformation(
                   {
                     newTreeRoot: root as Zocket,
-                    cursor: extendParentCursor(newTextPointer, cursorCopy),
+                    cursor: recoverAllowedCursor(
+                      extendParentCursor(newTextPointer, cursorCopy),
+                      root
+                    ),
                     priority: {
                       rank: rank,
                       cost: 100,

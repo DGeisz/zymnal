@@ -143,7 +143,7 @@ export abstract class Zymbol<P = any> extends Zym<TeX, P> {
 
   /* This needs to be overloaded if the zymbol allows deflect deletes.
   @return: Indicates whether the deflect delete was successful */
-  deflectDelete = (): boolean => false;
+  deflectDelete = (ctx: BasicContext): boolean => false;
 
   abstract renderTex: (opts: ZymbolRenderArgs) => TeX;
 

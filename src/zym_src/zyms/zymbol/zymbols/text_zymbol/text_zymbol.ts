@@ -172,6 +172,7 @@ export class TextZymbol extends Zymbol<TextZymbolPersist> {
         normalDeleteBehavior(DeleteBehaviorType.ALLOWED)
       );
     }
+
     return normalDeleteBehavior(DeleteBehaviorType.ALLOWED);
   };
 
@@ -200,9 +201,13 @@ export class TextZymbol extends Zymbol<TextZymbolPersist> {
     }
   };
 
-  deflectDelete = () => {
+  deflectDelete = (ctx: BasicContext) => {
     if (this.characters.length > 1) {
+      const before = [...this.characters];
       this.characters.pop();
+      const after = [...this.characters];
+
+      this._addZymChangeLink(ctx, before, after);
 
       return true;
     }

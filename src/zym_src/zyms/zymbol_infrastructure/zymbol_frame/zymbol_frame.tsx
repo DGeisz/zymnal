@@ -437,7 +437,7 @@ export class ZymbolFrame extends Zyact<ZymbolFramePersist, FrameRenderProps> {
         <div className={Styles.FrameContainer}>
           <div className={Styles.MainFrameContainer}>
             <TexTransform tex={frameTex} />
-            <div>{frameTex}</div>
+            {/* <div>{frameTex}</div> */}
           </div>
         </div>
       );

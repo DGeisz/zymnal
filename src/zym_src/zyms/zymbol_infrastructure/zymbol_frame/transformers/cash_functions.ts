@@ -15,6 +15,7 @@ import {
   CreateTransformerMessage,
   ZymbolTransformRank,
 } from "../zymbol_frame";
+import { makeHelperCursor, recoverAllowedCursor } from "./transform_utils";
 
 const CASH_FUNCTIONS = "cash-fractions";
 
@@ -44,6 +45,8 @@ class CashFunctions extends Zentinel {
         source: CASH_FUNCTIONS,
         name: "cash-fn",
         transform: (root, cursor) => {
+          cursor = makeHelperCursor(cursor, root);
+
           const cursorCopy = [...cursor];
 
           /* First we want to get to the parent */
@@ -126,7 +129,7 @@ class CashFunctions extends Zentinel {
                 return [
                   new BasicZymbolTreeTransformation({
                     newTreeRoot: root as Zocket,
-                    cursor: cursorCopy,
+                    cursor: recoverAllowedCursor(cursorCopy, root),
                     priority: {
                       rank: rank,
                       cost: 100,

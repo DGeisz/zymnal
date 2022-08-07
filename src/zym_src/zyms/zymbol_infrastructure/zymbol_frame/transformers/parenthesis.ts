@@ -1,4 +1,3 @@
-import { createNoSubstitutionTemplateLiteral, tokenToString } from "typescript";
 import { last } from "../../../../../global_utils/array_utils";
 import { splitCursorStringAtLastWord } from "../../../../../global_utils/text_utils";
 import { Zentinel } from "../../../../../zym_lib/zentinel/zentinel";
@@ -14,6 +13,7 @@ import {
   CreateTransformerMessage,
   ZymbolTransformRank,
 } from "../zymbol_frame";
+import { makeHelperCursor, recoverAllowedCursor } from "./transform_utils";
 
 const LEFT_PARENTHESIS = "(";
 const RIGHT_PARENTHESIS = ")";
@@ -29,6 +29,7 @@ class Parenthesis extends Zentinel {
         source: PARENTHESIS_TRANSFORM,
         name: "par-trans",
         transform: (root, cursor) => {
+          cursor = makeHelperCursor(cursor, root);
           const cursorCopy = [...cursor];
 
           /* First we want to get to the parent */
@@ -139,12 +140,13 @@ class Parenthesis extends Zentinel {
 
                     newZocket.toggleModifier(mod);
 
-                    console.log("new", root);
-
                     return [
                       new BasicZymbolTreeTransformation({
                         newTreeRoot: root as Zocket,
-                        cursor: extendParentCursor(newPointer, cursorCopy),
+                        cursor: recoverAllowedCursor(
+                          extendParentCursor(newPointer, cursorCopy),
+                          root
+                        ),
                         priority: {
                           rank: ZymbolTransformRank.Suggest,
                           cost: 100,

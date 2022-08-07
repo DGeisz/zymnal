@@ -11,7 +11,11 @@ import {
   CreateTransformerMessage,
   ZymbolTransformRank,
 } from "../zymbol_frame";
-import { getTransformTextZymbolAndParent } from "./transform_utils";
+import {
+  getTransformTextZymbolAndParent,
+  makeHelperCursor,
+  recoverAllowedCursor,
+} from "./transform_utils";
 
 const SUPER_DELIM = "^";
 const SUB_DELIM = "_";
@@ -27,6 +31,7 @@ class SuperSubTransform extends Zentinel {
         source: SUPER_SUB_TRANSFORM,
         name: "super-sub-transform",
         transform: (root, cursor) => {
+          cursor = makeHelperCursor(cursor, root);
           const transformText = getTransformTextZymbolAndParent(root, cursor);
 
           if (transformText.isTextZymbol) {
@@ -67,11 +72,11 @@ class SuperSubTransform extends Zentinel {
                   parent.reIndexChildren();
                 }
 
-                cursorCopy.pop();
-                cursorCopy.pop();
-
                 const newRelativeChildCursor = superSub.addChild(isSuper);
-                cursorCopy.push(
+
+                cursorCopy.splice(
+                  cursorCopy.length - 2,
+                  2,
                   superSub.getCursorIndex(),
                   ...newRelativeChildCursor
                 );
@@ -85,7 +90,7 @@ class SuperSubTransform extends Zentinel {
                 return [
                   new BasicZymbolTreeTransformation({
                     newTreeRoot: root as Zocket,
-                    cursor: cursorCopy,
+                    cursor: recoverAllowedCursor(cursorCopy, root),
                     priority: {
                       rank: ZymbolTransformRank.Suggest,
                       cost: 100,

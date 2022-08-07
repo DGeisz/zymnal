@@ -33,7 +33,8 @@ export const LATEX_EMPTY_SOCKET = "□";
 export const LATEX_NAME = "\\LaTeX";
 
 export const CURSOR_NAME = "cursor";
-export const CURSOR_LATEX: string = `\\htmlClass{${CURSOR_NAME}}{\\boldsymbol{|}}`;
+export const CURSOR_LATEX: string = `\\htmlClass{${CURSOR_NAME}}{\\color{black}{\\boldsymbol{|}}}`;
+// export const CURSOR_LATEX: string = `\\htmlClass{${CURSOR_NAME}}{{\\boldsymbol{|}}}`;
 
 export function text_with_cursor(
   text: string,

@@ -1,3 +1,4 @@
+import { after } from "underscore";
 import {
   CURSOR_LATEX,
   LATEX_EMPTY_SOCKET,
@@ -206,6 +207,28 @@ export class Zocket extends Zymbol<ZocketPersist> {
     };
   };
 
+  _addZymChangeLinks = (
+    ctx: BasicContext,
+    beforeChildren: ZymPersist<any>[],
+    afterChildren: ZymPersist<any>[]
+  ) => {
+    addZymChangeLink(ctx, {
+      zymLocation: this.getFullCursorPointer(),
+      beforeChange: {
+        renderOpts: { cursor: [] },
+        zymState: {
+          [ZP_FIELDS.CHILDREN]: beforeChildren,
+        },
+      },
+      afterChange: {
+        renderOpts: { cursor: [] },
+        zymState: {
+          [ZP_FIELDS.CHILDREN]: afterChildren,
+        },
+      },
+    });
+  };
+
   addCharacter = (
     character: string,
     cursor: Cursor,
@@ -225,23 +248,12 @@ export class Zocket extends Zymbol<ZocketPersist> {
       this.children.splice(nextCursorIndex, 0, newZymbol);
 
       const mergedRes = this.mergeTextZymbols([nextCursorIndex, 1]);
-      this.reIndexChildren();
 
-      addZymChangeLink(ctx, {
-        zymLocation: this.getFullCursorPointer(),
-        beforeChange: {
-          renderOpts: { cursor: [] },
-          zymState: {
-            [ZP_FIELDS.CHILDREN]: beforeChildren,
-          },
-        },
-        afterChange: {
-          renderOpts: { cursor: [] },
-          zymState: {
-            [ZP_FIELDS.CHILDREN]: this.children.map((c) => c.persist()),
-          },
-        },
-      });
+      this._addZymChangeLinks(
+        ctx,
+        beforeChildren,
+        this.children.map((c) => c.persist())
+      );
 
       return mergedRes;
     } else {
@@ -395,13 +407,28 @@ export class Zocket extends Zymbol<ZocketPersist> {
       }
     }
 
+    let finalCursor;
+
+    if (modifiedCursor1) {
+      finalCursor = [cursor0, cursor1];
+    } else {
+      finalCursor = extendChildCursor(cursor0, childRelativeCursor);
+    }
+
+    /* Check if we're pointing to the end of a text zymbol,
+      and change the cursor if so */
+    const child = this.children[cursor0];
+    if (
+      child &&
+      child.getMasterId() === TEXT_ZYMBOL_NAME &&
+      (child as TextZymbol).getCharacters().length === cursor1
+    ) {
+      finalCursor = [cursor0 + 1];
+    }
+
     this.reIndexChildren();
 
-    return successfulMoveResponse(
-      modifiedCursor1
-        ? [cursor0, cursor1]
-        : extendChildCursor(cursor0, childRelativeCursor)
-    );
+    return successfulMoveResponse(finalCursor);
   };
 
   getDeleteBehavior = (): DeleteBehavior =>
@@ -461,40 +488,26 @@ export class Zocket extends Zymbol<ZocketPersist> {
 
       const deleteBehavior = zymbol.getDeleteBehavior();
 
-      const deleteZymbol = () => {
-        this.children.splice(nextCursorIndex - 1, 1);
-
-        return this.mergeTextZymbols([nextCursorIndex - 1]);
-      };
-
       switch (deleteBehavior.type) {
-        case DeleteBehaviorType.ABSORB: {
-          const relCursor = zymbol.takeCursorFromRight(ctx);
-
-          if (relCursor.success) {
-            return wrapChildCursorResponse(
-              zymbol.delete(relCursor.newRelativeCursor, ctx),
-              nextCursorIndex - 1
-            );
-          } else {
-            return FAILED_CURSOR_MOVE_RESPONSE;
-          }
-        }
         case DeleteBehaviorType.ALLOWED: {
-          return deleteZymbol();
+          const beforeChildren = this.children.map((c) => c.persist());
+
+          this.children.splice(nextCursorIndex - 1, 1);
+          const mergeRes = this.mergeTextZymbols([nextCursorIndex - 1]);
+
+          this._addZymChangeLinks(
+            ctx,
+            beforeChildren,
+            this.children.map((c) => c.persist())
+          );
+
+          return mergeRes;
         }
         case DeleteBehaviorType.FORBIDDEN: {
           break;
         }
-        case DeleteBehaviorType.UNPRIMED: {
-          zymbol.primeDelete();
-          break;
-        }
-        case DeleteBehaviorType.PRIMED: {
-          return deleteZymbol();
-        }
         case DeleteBehaviorType.DEFLECT: {
-          const success = zymbol.deflectDelete();
+          const success = zymbol.deflectDelete(ctx);
 
           if (success) {
             return successfulMoveResponse(nextCursorIndex);
@@ -511,6 +524,16 @@ export class Zocket extends Zymbol<ZocketPersist> {
         (newRelativeCursor) => {
           /* We need to clean text zymbols up */
           let nextChildPointer = nextCursorIndex;
+
+          if (child.getMasterId() === TEXT_ZYMBOL_NAME) {
+            const text = child as TextZymbol;
+            if (
+              text.getCharacters().length === 0 ||
+              (newRelativeCursor.length > 0 && newRelativeCursor[0] === 0)
+            ) {
+              newRelativeCursor = [];
+            }
+          }
 
           /* First check if we're pointing to an empty text zymbol */
           if (
