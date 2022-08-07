@@ -1,6 +1,7 @@
 import { last } from "../../../../../global_utils/array_utils";
 import { Cursor } from "../../../../../zym_lib/zy_god/cursor/cursor";
 import { Zymbol } from "../../../zymbol/zymbol";
+import { isSymbolZymbol } from "../../../zymbol/zymbols/symbol_zymbol/symbol_zymbol";
 import {
   TextZymbol,
   TEXT_ZYMBOL_NAME,
@@ -99,4 +100,16 @@ export function recoverAllowedCursor(cursor: Cursor, root: Zymbol): Cursor {
   }
 
   return cursor;
+}
+
+/* TODO: Replace this with something more official!! */
+export const binaryOperatorTeX = [
+  "+",
+  "=",
+  "-",
+  ...["cdot", "div", "times"].map((x) => `\\${x}`),
+];
+
+export function zymbolIsBinaryOperator(zymbol: Zymbol): boolean {
+  return isSymbolZymbol(zymbol) && binaryOperatorTeX.includes(zymbol.texSymbol);
 }

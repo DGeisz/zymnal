@@ -1,11 +1,11 @@
-import React, { FC } from "react";
+import React, { useEffect } from "react";
 import Tex from "../../../../global_building_blocks/tex/tex";
 import {
   HermesMessage,
   ZentinelMessage,
 } from "../../../../zym_lib/hermes/hermes";
 import {
-  getFullContextCursor,
+  CreateZyGodMessage,
   GET_ZYM_ROOT,
 } from "../../../../zym_lib/zy_god/zy_god";
 import {
@@ -44,7 +44,11 @@ import {
   keyPressModifierToSymbol,
   ZymKeyPress,
 } from "../../../../zym_lib/zy_god/event_handler/key_press";
-import { Zymbol } from "../../zymbol/zymbol";
+import {
+  Zymbol,
+  ZymbolHtmlClickInfo,
+  ZymbolHtmlIdCommandGroup,
+} from "../../zymbol/zymbol";
 import { Zocket } from "../../zymbol/zymbols/zocket/zocket";
 import { TeX } from "../../zymbol/zymbol_types";
 import _ from "underscore";
@@ -52,6 +56,10 @@ import {
   addZymChangeLink,
   UndoRedoCommand,
 } from "../../../../zym_lib/zy_god/undo_redo/undo_redo";
+import { cursorToString } from "../../../../global_utils/latex_utils";
+import { palette } from "../../../../global_styles/palette";
+import { last } from "../../../../global_utils/array_utils";
+import { BasicContext } from "../../../../zym_lib/zy_god/types/context_types";
 
 const ZFP_FIELDS: {
   BASE_ZOCKET: "b";
@@ -131,6 +139,8 @@ export abstract class ZymbolTreeTransformation {
     be used to confirm the transformation (see in_place_symbols for 
     an example of when we don't do this)  */
   checkKeypressConfirms = (_keyPress: ZymKeyPress): boolean => true;
+
+  abstract setRootParent(parent: Zym): void;
 }
 
 export type KeyPressValidator = (keyPress: ZymKeyPress) => boolean;
@@ -162,6 +172,10 @@ export class BasicZymbolTreeTransformation extends ZymbolTreeTransformation {
     return {
       ...this,
     };
+  }
+
+  setRootParent(parent: Zym<any, any, any>): void {
+    this.newTreeRoot.parent = parent;
   }
 
   checkKeypressConfirms = (keyPress: ZymKeyPress): boolean => {
@@ -260,13 +274,18 @@ class ZymbolFrameMaster extends ZyMaster {
       return () => [];
     }
 
-    return async (zymbolRoot: Zymbol, zymbolCursor: Cursor) => {
+    return async (
+      zymbolRoot: Zymbol,
+      zymbolCursor: Cursor
+    ): Promise<ZymbolTreeTransformation[]> => {
       const copies = await zymbolRoot.clone(transformers.length);
 
       return _.flatten(
-        transformers.map((t, i) => {
-          return t(copies[i] as Zymbol, zymbolCursor);
-        })
+        await Promise.all(
+          transformers.map((t, i) => {
+            return t(copies[i] as Zymbol, zymbolCursor);
+          })
+        )
       );
     };
   };
@@ -360,7 +379,7 @@ export class ZymbolFrame extends Zyact<ZymbolFramePersist, FrameRenderProps> {
     this.children = [this.baseZocket];
   };
 
-  component: FC<FrameRenderProps> = (props) => {
+  component: React.FC<FrameRenderProps> = (props) => {
     let cursorOpt;
 
     if (props.relativeCursor) {
@@ -374,6 +393,68 @@ export class ZymbolFrame extends Zyact<ZymbolFramePersist, FrameRenderProps> {
     const frameTex = this.baseZocket.renderTex({
       cursor: relativeCursor,
     });
+
+    useEffect(() => {
+      (async () => {
+        let baseZocket;
+        let usingTransformation = false;
+
+        if (
+          this.transformations.length > 0 &&
+          this.transformIndex > -1 &&
+          this.transformIndex < this.transformations.length
+        ) {
+          const selectedTrans =
+            this.transformations[
+              this.transformIndex
+            ].getCurrentTransformation();
+
+          baseZocket = selectedTrans.newTreeRoot;
+
+          usingTransformation = true;
+        } else {
+          baseZocket = this.baseZocket;
+        }
+
+        /* First get all the ids in the sub tree */
+        const subTreePointers = unwrap(
+          await baseZocket.cmd<ZymbolHtmlClickInfo[]>(
+            ZymbolHtmlIdCommandGroup.getAllDescendentHTMLIds
+          )
+        );
+
+        console.log("subTreePointers", subTreePointers);
+
+        for (const pointer of subTreePointers) {
+          const id = cursorToString(pointer.loc);
+          const element = document.getElementById(id);
+
+          if (element) {
+            element.style.pointerEvents = "auto";
+            element.style.transitionDuration = "0.1s";
+            element.style.cursor = "pointer";
+
+            console.log("pointer", pointer);
+
+            element.onmouseover = () => {
+              element.style.color = palette.mediumForestGreen;
+            };
+
+            element.onmouseout = () => {
+              element.style.color = palette.black;
+            };
+
+            element.onclick = () => {
+              usingTransformation && this.takeSelectedTransformation();
+
+              this.callHermes(
+                CreateZyGodMessage.takeCursor(pointer.clickCursor)
+              );
+            };
+          }
+        }
+      })();
+    }, [frameTex]);
 
     if (this.transformations.length > 0) {
       let selectedTex: string;
@@ -393,14 +474,24 @@ export class ZymbolFrame extends Zyact<ZymbolFramePersist, FrameRenderProps> {
 
       const allTex = this.transformations.map((t) => {
         const tr = t.getCurrentTransformation();
-        return tr.newTreeRoot.renderTex({ cursor: tr.cursor });
+        return tr.newTreeRoot.renderTex({
+          cursor: tr.cursor,
+          excludeHtmlIds: true,
+        });
       });
-      allTex.unshift(frameTex);
+
+      allTex.unshift(
+        this.baseZocket.renderTex({
+          cursor: relativeCursor,
+          excludeHtmlIds: true,
+        })
+      );
 
       return (
         <div className={Styles.FrameContainer}>
           <div className={Styles.MainFrameContainer}>
             <TexTransform tex={selectedTex} showSelector />
+            <div>{selectedTex}</div>
           </div>
           <div className="shadow-lg shadow-gray-400 py-4 px-2 rounded-lg bg-gray-100">
             {allTex.map((t, i) => (
@@ -437,7 +528,7 @@ export class ZymbolFrame extends Zyact<ZymbolFramePersist, FrameRenderProps> {
         <div className={Styles.FrameContainer}>
           <div className={Styles.MainFrameContainer}>
             <TexTransform tex={frameTex} />
-            {/* <div>{frameTex}</div> */}
+            <div>{frameTex}</div>
           </div>
         </div>
       );
@@ -450,11 +541,47 @@ export class ZymbolFrame extends Zyact<ZymbolFramePersist, FrameRenderProps> {
     };
   }
 
+  takeSelectedTransformation = (keyPressContext?: BasicContext): Cursor => {
+    const trans = this.transformations[this.transformIndex];
+
+    const t = trans.getCurrentTransformation();
+
+    const beforeState = this.baseZocket.persist();
+
+    this.setBaseZocket(t.newTreeRoot);
+    const framePointer = this.getFullCursorPointer();
+
+    if (keyPressContext)
+      addZymChangeLink(keyPressContext, {
+        zymLocation: framePointer,
+        beforeChange: {
+          zymState: {
+            [ZFP_FIELDS.BASE_ZOCKET]: beforeState,
+          },
+        },
+        afterChange: {
+          zymState: {
+            [ZFP_FIELDS.BASE_ZOCKET]: this.baseZocket.persist(),
+          },
+        },
+      });
+
+    this.setNewTransformations([]);
+
+    return [0, ...t.cursor];
+  };
+
   setNewTransformations = (transformations: ZymbolTreeTransformation[]) => {
     this.transformations = transformations;
 
     this.rankTransactions();
     const topTrans = this.transformations[0];
+
+    console.log("tt", this.transformations);
+
+    this.transformations.forEach((t) => {
+      t.setRootParent(this);
+    });
 
     if (topTrans && topTrans.priority.rank === ZymbolTransformRank.Suggest) {
       this.transformIndex = 0;
@@ -539,28 +666,7 @@ const keyPressImpl = implementPartialCmdGroup(KeyPressCommand, {
           const trans = frame.transformations[frame.transformIndex];
 
           if (trans && trans.checkKeypressConfirms(keyPress)) {
-            const t = trans.getCurrentTransformation();
-
-            const beforeState = frame.baseZocket.persist();
-
-            frame.setBaseZocket(t.newTreeRoot);
-            const framePointer = frame.getFullCursorPointer();
-
-            addZymChangeLink(keyPressContext, {
-              zymLocation: framePointer,
-              beforeChange: {
-                zymState: {
-                  [ZFP_FIELDS.BASE_ZOCKET]: beforeState,
-                },
-              },
-              afterChange: {
-                zymState: {
-                  [ZFP_FIELDS.BASE_ZOCKET]: frame.baseZocket.persist(),
-                },
-              },
-            });
-
-            cursor = [0, ...t.cursor];
+            cursor = frame.takeSelectedTransformation(keyPressContext);
 
             const { nextCursorIndex: n, childRelativeCursor: c } =
               extractCursorInfo(cursor);

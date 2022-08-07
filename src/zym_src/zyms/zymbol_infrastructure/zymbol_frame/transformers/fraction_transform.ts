@@ -55,7 +55,13 @@ class Fraction extends Zentinel {
               );
 
               if (zymbolIndex > 0) {
-                text.setText(fullText.trimStart().slice(2));
+                const newText = fullText.trimStart().slice(2);
+
+                if (newText) {
+                  text.setText(newText);
+                } else {
+                  parent.children.splice(zymbolIndex, 1);
+                }
 
                 /* Check if we want to do a full fraction, or a single symbol fraction */
                 if (fullText.startsWith(fractionDelim)) {
@@ -65,10 +71,11 @@ class Fraction extends Zentinel {
 
                   parent.children.splice(zymbolIndex - 1, 1, fraction);
 
-                  cursorCopy.pop();
-                  cursorCopy.pop();
-
-                  cursorCopy.push(...[zymbolIndex - 1, 1, 0]);
+                  cursorCopy.splice(
+                    cursorCopy.length - 2,
+                    2,
+                    ...[zymbolIndex - 1, 1, 0]
+                  );
                 } else {
                   fraction.children[0].children = parent.children.slice(
                     0,
@@ -78,12 +85,10 @@ class Fraction extends Zentinel {
                   parent.children = parent.children.slice(zymbolIndex);
                   parent.children.unshift(fraction);
 
-                  cursorCopy.pop();
-                  cursorCopy.pop();
-
-                  cursorCopy.push(...[0, 1, 0]);
+                  cursorCopy.splice(cursorCopy.length - 2, 2, ...[0, 1, 0]);
                 }
 
+                root.recursivelyReIndexChildren();
                 return [
                   new BasicZymbolTreeTransformation({
                     newTreeRoot: root as Zocket,
@@ -110,6 +115,7 @@ class Fraction extends Zentinel {
 
                 cursorCopy.push(...[0, 0, 0]);
 
+                root.recursivelyReIndexChildren();
                 return [
                   new BasicZymbolTreeTransformation({
                     newTreeRoot: root as Zocket,

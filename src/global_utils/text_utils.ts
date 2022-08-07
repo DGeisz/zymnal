@@ -6,7 +6,8 @@ export function capitalizeFirstLetter(string: string) {
 
 export function splitCursorStringAtLastWord(
   str: string,
-  cursor: number
+  cursor: number,
+  splitList?: string[]
 ): {
   before: string;
   after: string;
@@ -16,11 +17,20 @@ export function splitCursorStringAtLastWord(
   const beforeAndWord = str.slice(0, cursor);
 
   const bs = beforeAndWord.split(" ");
-  const word = last(bs);
+  let word = last(bs);
 
-  const before = beforeAndWord
+  let before = beforeAndWord
     .slice(0, beforeAndWord.length - word.length)
     .trim();
+
+  if (splitList) {
+    for (const split of splitList) {
+      if (word.startsWith(split)) {
+        word = word.slice(split.length);
+        before += split;
+      }
+    }
+  }
 
   return {
     before,

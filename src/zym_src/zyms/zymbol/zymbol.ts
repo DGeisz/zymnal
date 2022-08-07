@@ -1,4 +1,14 @@
+import _ from "underscore";
+import { last } from "../../../global_utils/array_utils";
 import { Zym } from "../../../zym_lib/zym/zym";
+import {
+  groupPathFactory,
+  implementPartialCmdGroup,
+  justPath,
+  unwrap,
+  ZyCommandGroup,
+  ZyCommandGroupType,
+} from "../../../zym_lib/zy_commands/zy_command_types";
 import {
   Cursor,
   CursorIndex,
@@ -13,6 +23,7 @@ import {
   ZymKeyPress,
 } from "../../../zym_lib/zy_god/event_handler/key_press";
 import { BasicContext } from "../../../zym_lib/zy_god/types/context_types";
+import { CreateZyGodMessage } from "../../../zym_lib/zy_god/zy_god";
 import { ZymbolFrame } from "../zymbol_infrastructure/zymbol_frame/zymbol_frame";
 import { DeleteBehavior } from "./delete_behavior";
 import { TeX } from "./zymbol_types";
@@ -20,6 +31,7 @@ import { TeX } from "./zymbol_types";
 /* Help */
 export interface ZymbolRenderArgs {
   cursor: Cursor;
+  excludeHtmlIds?: boolean;
 }
 
 export const KEYPRESS_ZYMBOL = "keypress";
@@ -106,6 +118,12 @@ export abstract class Zymbol<P = any> extends Zym<TeX, P> {
       nextCursorIndex <= -1 ||
       nextCursorIndex >= this.children.length
     ) {
+      this.callHermes(
+        CreateZyGodMessage.queueSimulatedKeyPress({
+          type: KeyPressBasicType.ArrowRight,
+        })
+      );
+
       return FAILED_CURSOR_MOVE_RESPONSE;
     } else {
       return this.children[nextCursorIndex].defaultKeyPressHandler(
@@ -143,7 +161,7 @@ export abstract class Zymbol<P = any> extends Zym<TeX, P> {
 
   /* This needs to be overloaded if the zymbol allows deflect deletes.
   @return: Indicates whether the deflect delete was successful */
-  deflectDelete = (ctx: BasicContext): boolean => false;
+  deflectDelete = (_ctx: BasicContext): boolean => false;
 
   abstract renderTex: (opts: ZymbolRenderArgs) => TeX;
 
@@ -153,4 +171,71 @@ export abstract class Zymbol<P = any> extends Zym<TeX, P> {
     this.parentFrame = frame;
     this.children.forEach((c) => (c as Zymbol).setParentFrame(frame));
   };
+
+  recursivelyReIndexChildren = () => {
+    this.reIndexChildren();
+
+    this.children.forEach((c) => (c as Zymbol).recursivelyReIndexChildren());
+  };
 }
+
+export const ZYMBOL_HTML_ID_COMMANDS = "zymbol-html-id-com";
+
+export interface ZymbolHtmlClickInfo {
+  loc: Cursor;
+  /* Where the cursor should go after it's clicked */
+  clickCursor: Cursor;
+}
+
+interface ZymbolHtmlIdCommandGroupType extends ZyCommandGroupType {
+  getAllDescendentHTMLIds: {
+    args: undefined;
+    return: ZymbolHtmlClickInfo[];
+  };
+}
+
+const hcc = groupPathFactory(ZYMBOL_HTML_ID_COMMANDS);
+
+export const ZymbolHtmlIdCommandGroup: ZyCommandGroup<ZymbolHtmlIdCommandGroupType> =
+  {
+    getAllDescendentHTMLIds: justPath(hcc("gadh")),
+  };
+
+export const defaultZymbolHtmlIdImpl = implementPartialCmdGroup(
+  ZymbolHtmlIdCommandGroup,
+  {
+    async getAllDescendentHTMLIds(zym) {
+      return _.flatten(
+        await Promise.all(
+          zym.children.map(async (c) =>
+            unwrap(
+              await c.cmd<ZymbolHtmlClickInfo[]>(
+                ZymbolHtmlIdCommandGroup.getAllDescendentHTMLIds
+              )
+            )
+          )
+        ),
+        1
+      );
+    },
+  }
+);
+
+export const basicZymbolHtmlIdImpl = implementPartialCmdGroup(
+  ZymbolHtmlIdCommandGroup,
+  {
+    async getAllDescendentHTMLIds(zym) {
+      const pointer = zym.getFullCursorPointer();
+
+      const nextPointer = [...pointer];
+      nextPointer.splice(nextPointer.length - 1, 1, last(nextPointer) + 1);
+
+      return [
+        {
+          loc: pointer,
+          clickCursor: nextPointer,
+        },
+      ];
+    },
+  }
+);

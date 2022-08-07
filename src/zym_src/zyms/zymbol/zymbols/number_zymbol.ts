@@ -1,3 +1,9 @@
+import { forEachTrailingCommentRange } from "typescript";
+import { number } from "zod";
+import {
+  cursorToString,
+  wrapHtmlId,
+} from "../../../../global_utils/latex_utils";
 import { floatToReadableString } from "../../../../global_utils/text_utils";
 import { safeHydrate } from "../../../../zym_lib/zym/utils/hydrate";
 import { Zym } from "../../../../zym_lib/zym/zym";
@@ -14,7 +20,7 @@ import {
   ZymbolFrame,
 } from "../../zymbol_infrastructure/zymbol_frame/zymbol_frame";
 import { DeleteBehaviorType, normalDeleteBehavior } from "../delete_behavior";
-import { Zymbol, ZymbolRenderArgs } from "../zymbol";
+import { basicZymbolHtmlIdImpl, Zymbol, ZymbolRenderArgs } from "../zymbol";
 import { extendZymbol } from "../zymbol_cmd";
 
 const NZ_FIELDS: {
@@ -70,8 +76,15 @@ export class NumberZymbol extends Zymbol<NumberZymbolPersist> {
     return FAILED_CURSOR_MOVE_RESPONSE;
   }
 
-  renderTex = (_opts: ZymbolRenderArgs) => {
-    return floatToReadableString(this.number);
+  renderTex = (opts: ZymbolRenderArgs) => {
+    const { excludeHtmlIds } = opts;
+    const finalTex = floatToReadableString(this.number);
+
+    if (excludeHtmlIds) {
+      return finalTex;
+    } else {
+      return wrapHtmlId(finalTex, cursorToString(this.getFullCursorPointer()));
+    }
   };
 
   persistData(): NumberZymbolPersist {
@@ -88,3 +101,5 @@ export class NumberZymbol extends Zymbol<NumberZymbolPersist> {
     });
   }
 }
+
+numberZymbolMaster.registerCmds([...basicZymbolHtmlIdImpl]);

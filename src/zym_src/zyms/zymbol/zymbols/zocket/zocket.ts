@@ -1,7 +1,10 @@
+import _ from "underscore";
 import { after } from "underscore";
 import {
+  cursorToString,
   CURSOR_LATEX,
   LATEX_EMPTY_SOCKET,
+  wrapHtmlId,
 } from "../../../../../global_utils/latex_utils";
 import {
   hydrateChild,
@@ -12,6 +15,7 @@ import { ZyMaster } from "../../../../../zym_lib/zym/zy_master";
 import {
   implementPartialCmdGroup,
   some,
+  unwrap,
 } from "../../../../../zym_lib/zy_commands/zy_command_types";
 import {
   chainMoveResponse,
@@ -38,7 +42,13 @@ import {
   DeleteBehaviorType,
   normalDeleteBehavior,
 } from "../../delete_behavior";
-import { keyPressHasModifier, Zymbol, ZymbolRenderArgs } from "../../zymbol";
+import {
+  keyPressHasModifier,
+  Zymbol,
+  ZymbolHtmlClickInfo,
+  ZymbolHtmlIdCommandGroup,
+  ZymbolRenderArgs,
+} from "../../zymbol";
 import { extendZymbol } from "../../zymbol_cmd";
 import { TeX } from "../../zymbol_types";
 import { TEXT_ZYMBOL_NAME, TextZymbol } from "../text_zymbol/text_zymbol";
@@ -435,15 +445,17 @@ export class Zocket extends Zymbol<ZocketPersist> {
     normalDeleteBehavior(DeleteBehaviorType.ALLOWED);
 
   renderTex = (opts: ZymbolRenderArgs) => {
-    const { cursor } = opts;
+    const { cursor, excludeHtmlIds } = opts;
 
     const { parentOfCursorElement, nextCursorIndex, childRelativeCursor } =
       extractCursorInfo(cursor);
 
     let finalTex = "";
+    let emptySocket = false;
 
     if (this.children.length === 0 && !parentOfCursorElement) {
       finalTex = LATEX_EMPTY_SOCKET;
+      emptySocket = true;
     } else {
       for (let i = 0; i < this.children.length; i++) {
         if (parentOfCursorElement) {
@@ -451,10 +463,11 @@ export class Zocket extends Zymbol<ZocketPersist> {
             finalTex += CURSOR_LATEX;
           }
 
-          finalTex += this.children[i].renderTex({ cursor: [] }) + " ";
+          finalTex += this.children[i].renderTex({ ...opts, cursor: [] }) + " ";
         } else {
           finalTex +=
             this.children[i].renderTex({
+              ...opts,
               cursor: i === nextCursorIndex ? childRelativeCursor : [],
             }) + " ";
         }
@@ -468,6 +481,13 @@ export class Zocket extends Zymbol<ZocketPersist> {
     /* Now wrap this in all the modifiers */
     for (const mod of this.modifiers) {
       finalTex = `${mod.pre}${finalTex}${mod.post}`;
+    }
+
+    if (!excludeHtmlIds && emptySocket) {
+      finalTex = wrapHtmlId(
+        finalTex,
+        cursorToString(this.getFullCursorPointer())
+      );
     }
 
     return finalTex;
@@ -597,4 +617,35 @@ const zocketCursorImpl = implementPartialCmdGroup(CursorCommand, {
   getInitialCursor: (): GetInitialCursorReturn => some([0]),
 });
 
-zocketMaster.registerCmds([...zocketCursorImpl]);
+export const zocketHtmlIdImpl = implementPartialCmdGroup(
+  ZymbolHtmlIdCommandGroup,
+  {
+    async getAllDescendentHTMLIds(zym) {
+      if (zym.children.length === 0) {
+        const pointer = zym.getFullCursorPointer();
+
+        return [
+          {
+            loc: pointer,
+            clickCursor: [...pointer, 0],
+          },
+        ];
+      } else {
+        return _.flatten(
+          await Promise.all(
+            zym.children.map(async (c) =>
+              unwrap(
+                await c.cmd<ZymbolHtmlClickInfo[]>(
+                  ZymbolHtmlIdCommandGroup.getAllDescendentHTMLIds
+                )
+              )
+            )
+          ),
+          1
+        );
+      }
+    },
+  }
+);
+
+zocketMaster.registerCmds([...zocketCursorImpl, ...zocketHtmlIdImpl]);

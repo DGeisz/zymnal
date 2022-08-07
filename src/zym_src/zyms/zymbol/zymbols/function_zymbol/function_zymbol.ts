@@ -14,7 +14,12 @@ import {
   FAILED_CURSOR_MOVE_RESPONSE,
   wrapChildCursorResponse,
 } from "../../../../../zym_lib/zy_god/cursor/cursor";
+import {
+  KeyPressBasicType,
+  ZymKeyPress,
+} from "../../../../../zym_lib/zy_god/event_handler/key_press";
 import { BasicContext } from "../../../../../zym_lib/zy_god/types/context_types";
+import { CreateZyGodMessage } from "../../../../../zym_lib/zy_god/zy_god";
 import {
   DUMMY_FRAME,
   ZymbolFrame,
@@ -198,6 +203,7 @@ export class FunctionZymbol extends Zymbol<FunctionZymbolPersist> {
 
     for (const i of this.zocketMapping) {
       baseTex += `{${this.children[i].renderTex({
+        ...opts,
         cursor: i === nextCursorIndex ? childRelativeCursor : [],
       })}}`;
     }

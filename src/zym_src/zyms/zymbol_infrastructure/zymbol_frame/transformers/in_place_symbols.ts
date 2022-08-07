@@ -1,4 +1,3 @@
-import { debug } from "console";
 import _ from "underscore";
 import { last } from "../../../../../global_utils/array_utils";
 import { backslash, checkLatex } from "../../../../../global_utils/latex_utils";
@@ -12,13 +11,9 @@ import {
   KeyPressComplexType,
   ZymKeyPress,
 } from "../../../../../zym_lib/zy_god/event_handler/key_press";
-import { Zymbol } from "../../../zymbol/zymbol";
 import { NumberZymbol } from "../../../zymbol/zymbols/number_zymbol";
 import { SymbolZymbol } from "../../../zymbol/zymbols/symbol_zymbol/symbol_zymbol";
-import {
-  TextZymbol,
-  TEXT_ZYMBOL_NAME,
-} from "../../../zymbol/zymbols/text_zymbol/text_zymbol";
+import { TextZymbol } from "../../../zymbol/zymbols/text_zymbol/text_zymbol";
 import { Zocket } from "../../../zymbol/zymbols/zocket/zocket";
 import { TeX } from "../../../zymbol/zymbol_types";
 import {
@@ -163,7 +158,8 @@ class InPlaceSymbol extends Zentinel {
 
             const { word, before, after } = splitCursorStringAtLastWord(
               text.getText(),
-              i
+              i,
+              ["("]
             );
 
             let changed = false;
@@ -278,6 +274,7 @@ class InPlaceSymbol extends Zentinel {
 
               parentZocket.children.splice(textPointer, 1, ...newZym);
 
+              root.recursivelyReIndexChildren();
               return [
                 new BasicZymbolTreeTransformation(
                   {

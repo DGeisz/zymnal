@@ -87,6 +87,8 @@ class SuperSubTransform extends Zentinel {
                   parent.children.splice(superSub.getCursorIndex() + 1, 1);
                 }
 
+                root.recursivelyReIndexChildren();
+
                 return [
                   new BasicZymbolTreeTransformation({
                     newTreeRoot: root as Zocket,

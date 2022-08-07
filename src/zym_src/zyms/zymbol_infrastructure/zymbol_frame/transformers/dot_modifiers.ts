@@ -113,6 +113,7 @@ class DotModifiers extends Zentinel {
                 text.setText(remainingText);
 
                 cursorCopy.pop();
+                root.recursivelyReIndexChildren();
 
                 return [
                   new BasicZymbolTreeTransformation({

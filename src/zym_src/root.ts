@@ -14,6 +14,7 @@ import { fraction } from "./zyms/zymbol_infrastructure/zymbol_frame/transformers
 import { cashFunctions } from "./zyms/zymbol_infrastructure/zymbol_frame/transformers/cash_functions";
 import { superSubTransform } from "./zyms/zymbol_infrastructure/zymbol_frame/transformers/super_sub_transform";
 import { defaultUndoRedoImpl } from "../zym_lib/zy_god/undo_redo/undo_redo";
+import { defaultZymbolHtmlIdImpl } from "./zyms/zymbol/zymbol";
 
 const root = new Zage(0, undefined);
 
@@ -26,6 +27,7 @@ registerDefaultCmds([
   ...defaultKeyPressImpl,
   ...defaultCursorImpl,
   ...defaultUndoRedoImpl,
+  ...defaultZymbolHtmlIdImpl,
 ]);
 
 export const zyMasterList: ZyMaster[] = [

@@ -1,6 +1,11 @@
+import {
+  cursorToString,
+  wrapHtmlId,
+} from "../../../../../global_utils/latex_utils";
 import { safeHydrate } from "../../../../../zym_lib/zym/utils/hydrate";
 import { Zym } from "../../../../../zym_lib/zym/zym";
 import { ZyMaster } from "../../../../../zym_lib/zym/zy_master";
+import { implementPartialCmdGroup } from "../../../../../zym_lib/zy_commands/zy_command_types";
 import {
   Cursor,
   CursorIndex,
@@ -16,7 +21,12 @@ import {
   DeleteBehaviorType,
   normalDeleteBehavior,
 } from "../../delete_behavior";
-import { Zymbol, ZymbolRenderArgs } from "../../zymbol";
+import {
+  basicZymbolHtmlIdImpl,
+  Zymbol,
+  ZymbolHtmlIdCommandGroup,
+  ZymbolRenderArgs,
+} from "../../zymbol";
 import { extendZymbol } from "../../zymbol_cmd";
 import { TeX } from "../../zymbol_types";
 import { ZymbolModifier } from "../zocket/zocket";
@@ -92,7 +102,9 @@ export class SymbolZymbol extends Zymbol<SymbolZymbolPersist> {
   addCharacter = (_character: string, _cursor: Cursor) =>
     FAILED_CURSOR_MOVE_RESPONSE;
 
-  renderTex = (_opts: ZymbolRenderArgs) => {
+  renderTex = (opts: ZymbolRenderArgs) => {
+    const { excludeHtmlIds } = opts;
+
     let finalTex = this.texSymbol;
 
     /* Now wrap this in all the modifiers */
@@ -100,7 +112,11 @@ export class SymbolZymbol extends Zymbol<SymbolZymbolPersist> {
       finalTex = `${mod.pre}${finalTex}${mod.post}`;
     }
 
-    return finalTex;
+    if (excludeHtmlIds) {
+      return finalTex;
+    } else {
+      return wrapHtmlId(finalTex, cursorToString(this.getFullCursorPointer()));
+    }
   };
 
   getDeleteBehavior = () => normalDeleteBehavior(DeleteBehaviorType.ALLOWED);
@@ -131,3 +147,5 @@ export class SymbolZymbol extends Zymbol<SymbolZymbolPersist> {
 export function isSymbolZymbol(zym: Zym): zym is SymbolZymbol {
   return zym.getMasterId() === symbolZymbolMaster.zyId;
 }
+
+symbolZymbolMaster.registerCmds([...basicZymbolHtmlIdImpl]);

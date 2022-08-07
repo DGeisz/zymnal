@@ -2,6 +2,7 @@ import katex from "katex";
 import escape_latex from "escape-latex";
 import { palette } from "../global_styles/palette";
 import { TeX } from "../zym_src/zyms/zymbol/zymbol_types";
+import { Cursor } from "../zym_lib/zy_god/cursor/cursor";
 
 const renderToString = katex.renderToString;
 
@@ -24,7 +25,7 @@ export function create_tex_text(text: string) {
   return `{\\text{${escape_latex(text, { preserveFormatting: true })}}}`;
 }
 
-export function wrap_html_id(tex: string, html_id: string) {
+export function wrapHtmlId(tex: string, html_id: string) {
   return `\\htmlId{${html_id}}{${tex}}`;
 }
 
@@ -34,7 +35,6 @@ export const LATEX_NAME = "\\LaTeX";
 
 export const CURSOR_NAME = "cursor";
 export const CURSOR_LATEX: string = `\\htmlClass{${CURSOR_NAME}}{\\color{black}{\\boldsymbol{|}}}`;
-// export const CURSOR_LATEX: string = `\\htmlClass{${CURSOR_NAME}}{{\\boldsymbol{|}}}`;
 
 export function text_with_cursor(
   text: string,
@@ -109,4 +109,8 @@ export function checkLatex(tex: TeX): boolean {
   } catch (_e) {
     return false;
   }
+}
+
+export function cursorToString(cursor: Cursor): string {
+  return cursor.map((c) => c.toString()).join(":");
 }

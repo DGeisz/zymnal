@@ -126,6 +126,8 @@ class CashFunctions extends Zentinel {
 
                 cursorCopy.push(...[newTextPointer - 1, 0, 0]);
 
+                root.recursivelyReIndexChildren();
+
                 return [
                   new BasicZymbolTreeTransformation({
                     newTreeRoot: root as Zocket,

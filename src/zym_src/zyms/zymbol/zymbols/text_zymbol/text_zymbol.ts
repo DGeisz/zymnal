@@ -3,7 +3,9 @@ import { palette } from "../../../../../global_styles/palette";
 import {
   add_latex_color,
   create_tex_text,
+  cursorToString,
   text_with_cursor,
+  wrapHtmlId,
 } from "../../../../../global_utils/latex_utils";
 import { safeHydrate } from "../../../../../zym_lib/zym/utils/hydrate";
 import { Zym } from "../../../../../zym_lib/zym/zym";
@@ -25,7 +27,7 @@ import {
   DeleteBehaviorType,
   normalDeleteBehavior,
 } from "../../delete_behavior";
-import { Zymbol, ZymbolRenderArgs } from "../../zymbol";
+import { basicZymbolHtmlIdImpl, Zymbol, ZymbolRenderArgs } from "../../zymbol";
 import { extendZymbol } from "../../zymbol_cmd";
 
 const TZP_FIELDS: { CHARACTERS: "c" } = {
@@ -220,13 +222,21 @@ export class TextZymbol extends Zymbol<TextZymbolPersist> {
       opts.cursor
     );
 
-    return add_latex_color(() => {
+    const { excludeHtmlIds } = opts;
+
+    const finalTex = add_latex_color(() => {
       if (parentOfCursorElement) {
         return text_with_cursor(this.characters.join(""), nextCursorIndex);
       } else {
         return create_tex_text(this.characters.join(""));
       }
     }, palette.deepBlue);
+
+    if (excludeHtmlIds) {
+      return finalTex;
+    } else {
+      return wrapHtmlId(finalTex, cursorToString(this.getFullCursorPointer()));
+    }
   };
 
   persistData(): TextZymbolPersist {
@@ -254,3 +264,5 @@ export class TextZymbol extends Zymbol<TextZymbolPersist> {
     this.setCharacters(text.split(""));
   };
 }
+
+textZymbolMaster.registerCmds([...basicZymbolHtmlIdImpl]);

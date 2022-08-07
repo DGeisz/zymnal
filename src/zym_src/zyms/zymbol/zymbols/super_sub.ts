@@ -126,54 +126,6 @@ export class SuperSubZymbol extends Zymbol<SuperSubPersist> {
   };
 
   /* ==== Default Methods ==== */
-  defaultKeyPressHandler = (
-    keyPress: ZymKeyPress,
-    cursor: Cursor,
-    ctx: BasicContext
-  ): CursorMoveResponse => {
-    const { childRelativeCursor, nextCursorIndex, parentOfCursorElement } =
-      extractCursorInfo(cursor);
-
-    if (cursor.length === 0) {
-      return FAILED_CURSOR_MOVE_RESPONSE;
-    } else if (parentOfCursorElement) {
-      console.log(
-        "beta",
-        [this.children[nextCursorIndex].children.length],
-        childRelativeCursor
-      );
-    }
-
-    if (nextCursorIndex > -1) {
-      if (
-        _.isEqual(
-          [this.children[nextCursorIndex].children.length],
-          childRelativeCursor
-        ) &&
-        keyPress.type === KeyPressBasicType.Enter
-      ) {
-        console.log(
-          "nci",
-          nextCursorIndex,
-          this.children[nextCursorIndex].defaultKeyPressHandler
-        );
-
-        this.callHermes(
-          CreateZyGodMessage.queueSimulatedKeyPress({
-            type: KeyPressBasicType.ArrowRight,
-          })
-        );
-      }
-
-      return this.children[nextCursorIndex].defaultKeyPressHandler(
-        keyPress,
-        childRelativeCursor,
-        ctx
-      );
-    } else {
-      return FAILED_CURSOR_MOVE_RESPONSE;
-    }
-  };
 
   moveCursorLeft = (cursor: Cursor, ctx: BasicContext) => {
     const { childRelativeCursor, nextCursorIndex } = extractCursorInfo(cursor);
@@ -279,7 +231,7 @@ export class SuperSubZymbol extends Zymbol<SuperSubPersist> {
     const { cursor } = opts;
     const { childRelativeCursor, nextCursorIndex } = extractCursorInfo(cursor);
 
-    const newOpts = { cursor: childRelativeCursor };
+    const newOpts = { ...opts, cursor: childRelativeCursor };
 
     switch (this.status) {
       case SuperSubStatus.Neither: {
@@ -287,8 +239,10 @@ export class SuperSubZymbol extends Zymbol<SuperSubPersist> {
       }
       case SuperSubStatus.Both: {
         return `_{${this.children[1].renderTex({
+          ...opts,
           cursor: nextCursorIndex === 1 ? childRelativeCursor : [],
         })}}^{${this.children[0].renderTex({
+          ...opts,
           cursor: nextCursorIndex === 0 ? childRelativeCursor : [],
         })}}`;
       }

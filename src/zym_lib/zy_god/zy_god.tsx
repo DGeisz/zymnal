@@ -1,4 +1,3 @@
-import { last } from "../../global_utils/array_utils";
 import { ControlledAwaiter } from "../../global_utils/promise_utils";
 import { Hermes, HermesMessage, ZentinelMessage } from "../hermes/hermes";
 import { Zentinel } from "../zentinel/zentinel";
@@ -35,8 +34,6 @@ import {
   getZymChangeLinks,
   UndoRedoCommand,
   UndoRedoStack,
-  ZymChangeFrame,
-  ZymChangeLink,
 } from "./undo_redo/undo_redo";
 
 export const ZyGodId: ZyId = "zyGod";
@@ -45,6 +42,7 @@ enum ZyGodZentinelMessage {
   GetZymRoot = "gzr",
   HydratePersistedZym = "hpr",
   QueueSimulatedKeyPress = "qsk",
+  TakeCursor = "tk",
 }
 
 export const CreateZyGodMessage = {
@@ -60,6 +58,13 @@ export const CreateZyGodMessage = {
       zentinelId: ZyGodId,
       message: ZyGodZentinelMessage.QueueSimulatedKeyPress,
       content: keyPress,
+    };
+  },
+  takeCursor(cursor: Cursor): HermesMessage {
+    return {
+      zentinelId: ZyGodId,
+      message: ZyGodZentinelMessage.TakeCursor,
+      content: cursor,
     };
   },
 };
@@ -126,8 +131,6 @@ class ZyGod extends ZyMaster {
           zymLocation,
         } = link;
 
-        console.log("apply link", zymLocation, zymState);
-
         await this.root?.cmd<any, ModifyNodeAndReRenderArgs>(
           CursorCommand.modifyNodeAndReRender,
           {
@@ -178,8 +181,16 @@ class ZyGod extends ZyMaster {
         event.modifiers &&
         event.modifiers.includes(KeyPressModifier.Cmd)
       ) {
-        if (event.key === "z") {
+        if (
+          event.key === "z" &&
+          !event.modifiers.includes(KeyPressModifier.Shift)
+        ) {
           return await this.handleUndo();
+        } else if (
+          event.key === "z" &&
+          event.modifiers.includes(KeyPressModifier.Shift)
+        ) {
+          return await this.handleRedo();
         } else if (event.key === "y") {
           return await this.handleRedo();
         }
@@ -290,6 +301,11 @@ class ZyGod extends ZyMaster {
       }
       case ZyGodZentinelMessage.QueueSimulatedKeyPress: {
         this.simulatedKeyPressQueue.push(msg.content);
+
+        return ok(NONE);
+      }
+      case ZyGodZentinelMessage.TakeCursor: {
+        this.handleCursorChange(msg.content);
 
         return ok(NONE);
       }
