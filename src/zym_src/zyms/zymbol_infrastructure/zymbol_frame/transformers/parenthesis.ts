@@ -94,8 +94,6 @@ class CustomParenthesisTransformation extends ZymbolTreeTransformation {
     this.rootCopy = (
       await this.baseRoot.clone(1, this.baseRoot.parent)
     )[0] as Zocket;
-
-    console.log("baseroot finished");
   };
 
   init = this.makeCopy;
