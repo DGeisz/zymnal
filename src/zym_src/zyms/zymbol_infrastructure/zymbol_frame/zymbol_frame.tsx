@@ -140,6 +140,9 @@ export abstract class ZymbolTreeTransformation {
     an example of when we don't do this)  */
   checkKeypressConfirms = (_keyPress: ZymKeyPress): boolean => true;
 
+  /* Indicates whether the transformation did something with the keypress */
+  handleKeyPress = (_keyPress: ZymKeyPress): boolean => false;
+
   abstract setRootParent(parent: Zym): void;
 }
 
@@ -665,15 +668,19 @@ const keyPressImpl = implementPartialCmdGroup(KeyPressCommand, {
         } else if (frame.transformIndex > -1) {
           const trans = frame.transformations[frame.transformIndex];
 
-          if (trans && trans.checkKeypressConfirms(keyPress)) {
-            cursor = frame.takeSelectedTransformation(keyPressContext);
+          if (trans) {
+            if (trans.handleKeyPress(keyPress)) {
+              return successfulMoveResponse(cursor);
+            } else if (trans.checkKeypressConfirms(keyPress)) {
+              cursor = frame.takeSelectedTransformation(keyPressContext);
 
-            const { nextCursorIndex: n, childRelativeCursor: c } =
-              extractCursorInfo(cursor);
+              const { nextCursorIndex: n, childRelativeCursor: c } =
+                extractCursorInfo(cursor);
 
-            /* Reset mutable vars */
-            nextCursorIndex = n;
-            childRelativeCursor = c;
+              /* Reset mutable vars */
+              nextCursorIndex = n;
+              childRelativeCursor = c;
+            }
           }
         }
 
