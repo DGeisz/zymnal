@@ -2,6 +2,7 @@ import { last } from "../../../../../global_utils/array_utils";
 import { checkLatex } from "../../../../../global_utils/latex_utils";
 import { Zentinel } from "../../../../../zym_lib/zentinel/zentinel";
 import { Zymbol } from "../../../zymbol/zymbol";
+import { isSuperSub } from "../../../zymbol/zymbols/super_sub";
 import { isSymbolZymbol } from "../../../zymbol/zymbols/symbol_zymbol/symbol_zymbol";
 import {
   TextZymbol,
@@ -71,10 +72,7 @@ class DotModifiers extends Zentinel {
 
             const text = currZymbol as TextZymbol;
 
-            const firstWord = text
-              .getText()
-              .split(/\s+/)
-              .filter((t) => !!t)[0];
+            const firstWord = text.getText();
 
             if (firstWord && firstWord.startsWith(dot)) {
               let modWord = firstWord.slice(1);
@@ -92,6 +90,10 @@ class DotModifiers extends Zentinel {
               } else if (checkMod(modWord)) {
                 /* We default to suggested */
                 allowed = true;
+
+                if (modWord.length > 2) {
+                  rank = ZymbolTransformRank.Suggest;
+                }
               }
 
               if (allowed) {
@@ -104,13 +106,19 @@ class DotModifiers extends Zentinel {
                   post: "}",
                 };
 
-                const remainingText = text.getText().slice(firstWord.length);
+                parent.children.splice(zymbolIndex, 1);
 
                 if (isSymbolZymbol(prevZymbol)) {
                   prevZymbol.toggleModifier(mod);
-                }
+                } else if (isSuperSub(prevZymbol) && zymbolIndex > 1) {
+                  const prevPrevZymbol = parent.children[
+                    zymbolIndex - 2
+                  ] as Zymbol;
 
-                text.setText(remainingText);
+                  if (isSymbolZymbol(prevPrevZymbol)) {
+                    prevPrevZymbol.toggleModifier(mod);
+                  }
+                }
 
                 cursorCopy.pop();
                 root.recursivelyReIndexChildren();

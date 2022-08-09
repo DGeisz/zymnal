@@ -1,17 +1,16 @@
 import _ from "underscore";
-import { last } from "../../../../../global_utils/array_utils";
 import { backslash, checkLatex } from "../../../../../global_utils/latex_utils";
-import {
-  capitalizeFirstLetter,
-  splitCursorStringAtLastWord,
-} from "../../../../../global_utils/text_utils";
+import { capitalizeFirstLetter } from "../../../../../global_utils/text_utils";
 import { Zentinel } from "../../../../../zym_lib/zentinel/zentinel";
-import { extendParentCursor } from "../../../../../zym_lib/zy_god/cursor/cursor";
 import {
+  Cursor,
+  extendParentCursor,
+} from "../../../../../zym_lib/zy_god/cursor/cursor";
+import {
+  KeyPressBasicType,
   KeyPressComplexType,
   ZymKeyPress,
 } from "../../../../../zym_lib/zy_god/event_handler/key_press";
-import { NumberZymbol } from "../../../zymbol/zymbols/number_zymbol";
 import { SymbolZymbol } from "../../../zymbol/zymbols/symbol_zymbol/symbol_zymbol";
 import { TextZymbol } from "../../../zymbol/zymbols/text_zymbol/text_zymbol";
 import { Zocket } from "../../../zymbol/zymbols/zocket/zocket";
@@ -21,6 +20,7 @@ import {
   CreateTransformerMessage,
   KeyPressValidator,
   ZymbolTransformRank,
+  ZymbolTreeTransformation,
 } from "../zymbol_frame";
 import {
   getTransformTextZymbolAndParent,
@@ -35,8 +35,19 @@ type DirectMap = SlashMap;
 
 const slashes = ["\\", "/"];
 
-const comma = ",";
-const semiColon = ";";
+const SINGLE_DIRECT_SYMBOL_DELIM = ":";
+const MULTI_DIRECT_SYMBOL_DELIM = ";";
+
+const stringPrefixList = ["("];
+
+const STRING_TEST = /^[a-zA-Z,0-9]+$/;
+
+const alphaValidator = (keyPress: ZymKeyPress) =>
+  !(
+    keyPress.type === KeyPressBasicType.Delete ||
+    (keyPress.type === KeyPressComplexType.Key &&
+      /^[a-zA-Z,0-9]$/.test(keyPress.key))
+  );
 
 function checkSymbol(sym: TeX): boolean {
   return checkLatex(`\\${sym}`);
@@ -45,11 +56,16 @@ function checkSymbol(sym: TeX): boolean {
 /* +++ Basic binary operations +++ */
 const basicBinaryOperations: string[] = ["+", "=", "-"];
 
-const texBinaryOperations: string[] = ["cdot", "div", "times"];
+const texBinaryOperations: string[] = ["cdot", "div", "times", "pm"];
 
 const binDirectMap: DirectMap = {
   dot: "cdot",
   "*": "cdot",
+};
+
+/* +++ Calculus! +++ */
+const calcDirectMap: DirectMap = {
+  ptl: "partial",
 };
 
 /* +++ GREEK!! +++ */
@@ -116,7 +132,7 @@ const greekSlashMap: SlashMap = {
 /* +++ PHYSICS! +++ */
 
 const physSlash: SlashMap = {
-  hb: "hbar",
+  h: "hbar",
 };
 
 /* Full word matches */
@@ -131,7 +147,7 @@ const slashMap = { ...greekSlashMap, ...physSlash };
 const slashKeys = Object.keys(slashMap);
 
 /* Direct Matches */
-const directMap = { ...binDirectMap };
+const directMap = { ...binDirectMap, ...calcDirectMap };
 const directKeys = Object.keys(directMap);
 
 /* Direct words */
@@ -145,36 +161,105 @@ class InPlaceSymbol extends Zentinel {
       CreateTransformerMessage.registerTransformer({
         source: IN_PLACE_SYMBOL_TRANSFORM,
         name: "in-place",
-        transform: (root, cursor) => {
+        transform: async (root, cursor) => {
           cursor = makeHelperCursor(cursor, root);
-          const cursorCopy = [...cursor];
+          const cursorCopy: Cursor = [...cursor];
 
-          const transformText = getTransformTextZymbolAndParent(root, cursor);
+          const allTransformations: ZymbolTreeTransformation[] = [];
 
-          if (transformText.isTextZymbol) {
-            const { text } = transformText;
+          const rootCopy = (await root.clone(1, root.parent))[0] as Zocket;
 
-            const i = last(cursorCopy);
+          const tt1 = getTransformTextZymbolAndParent(rootCopy, cursor);
+          const tt2 = getTransformTextZymbolAndParent(root, cursor);
 
-            const { word, before, after } = splitCursorStringAtLastWord(
-              text.getText(),
-              i,
-              ["("]
-            );
+          if (tt1.isTextZymbol) {
+            const { text } = tt1;
+
+            const fullText = text.getText().trim();
+            let finalWord = fullText;
+
+            let prefix = undefined;
+
+            if (stringPrefixList.includes(fullText[0])) {
+              prefix = fullText[0];
+              finalWord = fullText.slice(1);
+            }
+
+            if (STRING_TEST.test(finalWord)) {
+              const cursorCopy = [...cursor];
+
+              cursorCopy.pop();
+              const textPointer = cursorCopy.pop()!;
+              const parentZocket = text.parent as Zocket;
+
+              let newTextPointer = textPointer + finalWord.length;
+
+              let prefixSymbol = undefined;
+
+              if (prefix) {
+                prefixSymbol = new TextZymbol(
+                  parentZocket.parentFrame,
+                  textPointer,
+                  parentZocket
+                );
+
+                prefixSymbol.setText(prefix);
+                newTextPointer++;
+              }
+
+              parentZocket.children.splice(
+                textPointer,
+                1,
+                ..._.compact([
+                  prefixSymbol,
+                  ...finalWord
+                    .split("")
+                    .map(
+                      (s) =>
+                        new SymbolZymbol(
+                          s,
+                          parentZocket.parentFrame,
+                          textPointer + 1,
+                          parentZocket
+                        )
+                    ),
+                ])
+              );
+
+              rootCopy.recursivelyReIndexChildren();
+              allTransformations.push(
+                new BasicZymbolTreeTransformation(
+                  {
+                    newTreeRoot: rootCopy as Zocket,
+                    cursor: recoverAllowedCursor(
+                      extendParentCursor(newTextPointer, cursorCopy),
+                      rootCopy
+                    ),
+                    priority: {
+                      rank: ZymbolTransformRank.Suggest,
+                      /* Super high cost so this is always suggested last */
+                      cost: 10000,
+                    },
+                  },
+                  alphaValidator
+                )
+              );
+            }
+          }
+
+          if (tt2.isTextZymbol) {
+            const { text } = tt2;
+
+            const word = text.getText().trim();
 
             let changed = false;
-            let symbol = "";
-            let number: number | undefined;
+            let symbol: string | string[] = "";
             let rank = ZymbolTransformRank.Include;
             let keyPressValidator: KeyPressValidator | undefined;
 
             if (directWords.includes(word)) {
               changed = true;
               symbol = word;
-              rank = ZymbolTransformRank.Suggest;
-            } else if (suggestedWords.includes(word)) {
-              changed = true;
-              symbol = backslash(word);
               rank = ZymbolTransformRank.Suggest;
             } else if (directKeys.includes(word)) {
               changed = true;
@@ -188,33 +273,29 @@ class InPlaceSymbol extends Zentinel {
                 symbol = backslash(slashMap[key]);
                 rank = ZymbolTransformRank.Suggest;
               }
-            } else if (word.length === 2 && word.startsWith(comma)) {
+            } else if (
+              word.length === 2 &&
+              word.startsWith(SINGLE_DIRECT_SYMBOL_DELIM)
+            ) {
               changed = true;
               symbol = word.slice(1);
               rank = ZymbolTransformRank.Suggest;
-            } else if (word.startsWith(semiColon) && word.length > 1) {
+            } else if (
+              word.startsWith(MULTI_DIRECT_SYMBOL_DELIM) &&
+              word.length > 1
+            ) {
               changed = true;
               symbol = word.slice(1);
               rank = ZymbolTransformRank.Suggest;
 
-              keyPressValidator = (keyPress: ZymKeyPress) =>
-                !(
-                  keyPress.type === KeyPressComplexType.Key &&
-                  /^[a-zA-Z]$/.test(keyPress.key)
-                );
-            } else if (/^(\d+.?\d*)|(r.\d+)$/.test(word)) {
-              changed = true;
-              number = parseFloat(word);
-              rank = ZymbolTransformRank.Suggest;
-
-              keyPressValidator = (keyPress: ZymKeyPress) =>
-                !(
-                  keyPress.type === KeyPressComplexType.Key &&
-                  /^[0-9.]$/.test(keyPress.key)
-                );
-            } else if (/^[a-zA-Z]/.test(word) && checkSymbol(word)) {
+              keyPressValidator = alphaValidator;
+            } else if (!word.includes(".") && checkSymbol(word)) {
               changed = true;
               symbol = backslash(word);
+
+              if (word.length > 1) {
+                rank = ZymbolTransformRank.Suggest;
+              }
             }
 
             if (changed) {
@@ -225,57 +306,37 @@ class InPlaceSymbol extends Zentinel {
               const newZym = [];
               let newTextPointer = textPointer + 1;
 
-              if (before) {
-                const txt1 = new TextZymbol(
-                  parentZocket.parentFrame,
-                  textPointer,
-                  parentZocket
+              let symZyms: SymbolZymbol[];
+
+              if (Array.isArray(symbol)) {
+                symZyms = symbol.map(
+                  (s) =>
+                    new SymbolZymbol(
+                      s,
+                      parentZocket.parentFrame,
+                      textPointer + 1,
+                      parentZocket
+                    )
                 );
 
-                txt1.setText(before);
-
-                newZym.push(txt1);
-                newTextPointer++;
-              }
-
-              /* Now either create a symbol or a number */
-              if (number !== undefined) {
-                const numZym = new NumberZymbol(
-                  number,
-
-                  parentZocket.parentFrame,
-                  textPointer + 1,
-                  parentZocket
-                );
-
-                newZym.push(numZym);
+                newTextPointer += symbol.length - 1;
               } else {
-                const sym = new SymbolZymbol(
-                  symbol,
-                  parentZocket.parentFrame,
-                  textPointer + 1,
-                  parentZocket
-                );
-
-                newZym.push(sym);
+                symZyms = [
+                  new SymbolZymbol(
+                    symbol,
+                    parentZocket.parentFrame,
+                    textPointer + 1,
+                    parentZocket
+                  ),
+                ];
               }
 
-              if (after) {
-                const txt2 = new TextZymbol(
-                  parentZocket.parentFrame,
-                  textPointer + 2,
-                  parentZocket
-                );
-
-                txt2.setText(after);
-
-                newZym.push(txt2);
-              }
+              newZym.push(...symZyms);
 
               parentZocket.children.splice(textPointer, 1, ...newZym);
 
               root.recursivelyReIndexChildren();
-              return [
+              allTransformations.push(
                 new BasicZymbolTreeTransformation(
                   {
                     newTreeRoot: root as Zocket,
@@ -289,12 +350,12 @@ class InPlaceSymbol extends Zentinel {
                     },
                   },
                   keyPressValidator
-                ),
-              ];
+                )
+              );
             }
           }
 
-          return [];
+          return allTransformations;
         },
       })
     );

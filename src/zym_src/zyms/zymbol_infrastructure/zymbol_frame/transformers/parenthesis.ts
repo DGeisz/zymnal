@@ -163,10 +163,6 @@ class CustomParenthesisTransformation extends ZymbolTreeTransformation {
       cc2.splice(cc2.length - 2, 2);
 
       rootCopy.recursivelyReIndexChildren();
-      console.log(
-        "rec 1",
-        recoverAllowedCursor([...cc2, this.startIndex + 1], rootCopy)
-      );
 
       this.memo = {
         newTreeRoot: rootCopy,
@@ -202,7 +198,6 @@ class Parenthesis extends Zentinel {
         source: PARENTHESIS_TRANSFORM,
         name: "par-trans",
         transform: async (root, cursor) => {
-          const iCursor = [...cursor];
           cursor = makeHelperCursor(cursor, root);
           const allTransformations: ZymbolTreeTransformation[] = [];
           const zymbolIndex = last(cursor, 2);

@@ -21,6 +21,10 @@ const CASH_FUNCTIONS = "cash-fractions";
 
 const cash = "$";
 
+const SPECIAL_COMMANDS: { [key: string]: string } = {
+  sr: "sqrt",
+};
+
 function getTexFunctionArgCount(fn: TeX): number {
   const operator = "{a}";
   let tex = `\\${fn}`;
@@ -63,82 +67,61 @@ class CashFunctions extends Zentinel {
           }
 
           if (currZymbol.getMasterId() === TEXT_ZYMBOL_NAME) {
-            const i = last(cursorCopy);
             const text = currZymbol as TextZymbol;
-
-            const { word, before, after } = splitCursorStringAtLastWord(
-              text.getText(),
-              i
-            );
+            const word = text.getText();
 
             let rank = ZymbolTransformRank.Include;
 
-            if (word.startsWith(cash)) {
-              const fn = word.slice(1);
+            let fn;
 
-              const numArgs = getTexFunctionArgCount(fn);
+            if (word in SPECIAL_COMMANDS) {
+              fn = SPECIAL_COMMANDS[word];
+              rank = ZymbolTransformRank.Suggest;
+            } else {
+              fn = word;
+            }
 
-              if (numArgs > 0) {
-                cursorCopy.pop();
+            if (fn.length > 2) {
+              rank = ZymbolTransformRank.Suggest;
+            }
 
-                const textPointer = cursorCopy.pop()!;
-                const parentZocket = text.parent as Zocket;
+            const numArgs = getTexFunctionArgCount(fn);
 
-                const newZym = [];
-                let newTextPointer = textPointer + 1;
+            if (numArgs > 0) {
+              cursorCopy.pop();
 
-                if (before) {
-                  const txt1 = new TextZymbol(
-                    parentZocket.parentFrame,
-                    textPointer,
-                    parentZocket
-                  );
+              const textPointer = cursorCopy.pop()!;
+              const parentZocket = text.parent as Zocket;
 
-                  txt1.setText(before);
+              const newZym = [];
+              let newTextPointer = textPointer + 1;
 
-                  newZym.push(txt1);
-                  newTextPointer++;
-                }
+              const fnZym = new FunctionZymbol(
+                fn,
+                numArgs,
+                root.parentFrame,
+                0,
+                parent
+              );
 
-                const fnZym = new FunctionZymbol(
-                  fn,
-                  numArgs,
-                  root.parentFrame,
-                  0,
-                  parent
-                );
+              newZym.push(fnZym);
 
-                newZym.push(fnZym);
+              parentZocket.children.splice(textPointer, 1, ...newZym);
 
-                if (after) {
-                  const txt2 = new TextZymbol(
-                    parentZocket.parentFrame,
-                    textPointer + 2,
-                    parentZocket
-                  );
+              cursorCopy.push(...[newTextPointer - 1, 0, 0]);
 
-                  txt2.setText(after);
+              root.recursivelyReIndexChildren();
 
-                  newZym.push(txt2);
-                }
-
-                parentZocket.children.splice(textPointer, 1, ...newZym);
-
-                cursorCopy.push(...[newTextPointer - 1, 0, 0]);
-
-                root.recursivelyReIndexChildren();
-
-                return [
-                  new BasicZymbolTreeTransformation({
-                    newTreeRoot: root as Zocket,
-                    cursor: recoverAllowedCursor(cursorCopy, root),
-                    priority: {
-                      rank: rank,
-                      cost: 100,
-                    },
-                  }),
-                ];
-              }
+              return [
+                new BasicZymbolTreeTransformation({
+                  newTreeRoot: root as Zocket,
+                  cursor: recoverAllowedCursor(cursorCopy, root),
+                  priority: {
+                    rank: rank,
+                    cost: 100,
+                  },
+                }),
+              ];
             }
           }
 

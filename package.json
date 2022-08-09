@@ -10,6 +10,7 @@
     "@types/node": "^16.7.13",
     "@types/react": "^18.0.0",
     "@types/react-dom": "^18.0.0",
+    "clsx": "^1.2.1",
     "escape-latex": "^1.2.0",
     "eventemitter3": "^4.0.7",
     "katex": "^0.15.6",

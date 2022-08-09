@@ -107,7 +107,7 @@ export const binaryOperatorTeX = [
   "+",
   "=",
   "-",
-  ...["cdot", "div", "times"].map((x) => `\\${x}`),
+  ...["cdot", "div", "times", "pm"].map((x) => `\\${x}`),
 ];
 
 export function zymbolIsBinaryOperator(zymbol: Zymbol): boolean {

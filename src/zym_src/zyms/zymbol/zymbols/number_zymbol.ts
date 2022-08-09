@@ -19,7 +19,11 @@ import {
   DUMMY_FRAME,
   ZymbolFrame,
 } from "../../zymbol_infrastructure/zymbol_frame/zymbol_frame";
-import { DeleteBehaviorType, normalDeleteBehavior } from "../delete_behavior";
+import {
+  deflectDeleteBehavior,
+  DeleteBehaviorType,
+  normalDeleteBehavior,
+} from "../delete_behavior";
 import { basicZymbolHtmlIdImpl, Zymbol, ZymbolRenderArgs } from "../zymbol";
 import { extendZymbol } from "../zymbol_cmd";
 
@@ -71,7 +75,28 @@ export class NumberZymbol extends Zymbol<NumberZymbolPersist> {
   addCharacter = (_character: string, _cursor: Cursor, _ctx: BasicContext) =>
     FAILED_CURSOR_MOVE_RESPONSE;
 
-  getDeleteBehavior = () => normalDeleteBehavior(DeleteBehaviorType.ALLOWED);
+  getStrLen = () => floatToReadableString(this.number).length;
+
+  getDeleteBehavior = () => {
+    if (this.getStrLen() > 1) {
+      return deflectDeleteBehavior(
+        normalDeleteBehavior(DeleteBehaviorType.ALLOWED)
+      );
+    } else {
+      return normalDeleteBehavior(DeleteBehaviorType.ALLOWED);
+    }
+  };
+
+  deflectDelete = () => {
+    if (this.getStrLen() > 1) {
+      this.number = parseFloat(this.number.toString().slice(0, -1));
+
+      return true;
+    } else {
+      return false;
+    }
+  };
+
   delete(_cursor: Cursor, _ctx: BasicContext): CursorMoveResponse {
     return FAILED_CURSOR_MOVE_RESPONSE;
   }

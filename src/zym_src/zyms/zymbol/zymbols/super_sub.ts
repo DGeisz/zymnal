@@ -13,12 +13,7 @@ import {
   FAILED_CURSOR_MOVE_RESPONSE,
   wrapChildCursorResponse,
 } from "../../../../zym_lib/zy_god/cursor/cursor";
-import {
-  KeyPressBasicType,
-  ZymKeyPress,
-} from "../../../../zym_lib/zy_god/event_handler/key_press";
 import { BasicContext } from "../../../../zym_lib/zy_god/types/context_types";
-import { CreateZyGodMessage } from "../../../../zym_lib/zy_god/zy_god";
 import { DUMMY_FRAME } from "../../zymbol_infrastructure/zymbol_frame/zymbol_frame";
 import { DeleteBehaviorType, normalDeleteBehavior } from "../delete_behavior";
 import { Zymbol, ZymbolRenderArgs } from "../zymbol";
@@ -276,4 +271,8 @@ export class SuperSubZymbol extends Zymbol<SuperSubPersist> {
 
     this.reConnectParentChildren();
   }
+}
+
+export function isSuperSub(zymbol: Zymbol): zymbol is SuperSubZymbol {
+  return zymbol.getMasterId() === SUPER_SUB_ID;
 }

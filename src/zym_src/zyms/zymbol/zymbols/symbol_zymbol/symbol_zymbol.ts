@@ -1,4 +1,6 @@
+import { last } from "../../../../../global_utils/array_utils";
 import {
+  backslash,
   cursorToString,
   wrapHtmlId,
 } from "../../../../../global_utils/latex_utils";
@@ -43,6 +45,22 @@ export interface SymbolZymbolPersist {
   [SZP_FIELDS.TEX_SYMBOL]: TeX;
   [SZP_FIELDS.MODIFIERS]: ZymbolModifier[];
 }
+
+let integralList = [];
+
+for (let i = 0; i < 3; i++) {
+  let prefix = "";
+  for (let j = 1; j < i + 1; j++) {
+    prefix += "i";
+  }
+
+  integralList.push(`${prefix}nt`);
+  integralList.push(`o${prefix}nt`);
+}
+
+integralList = integralList.map(backslash);
+
+const htmlIdBlacklist = [...integralList];
 
 class SymbolZymbolMaster extends ZyMaster {
   zyId: string = "symbol-zymbol";
@@ -107,12 +125,14 @@ export class SymbolZymbol extends Zymbol<SymbolZymbolPersist> {
 
     let finalTex = this.texSymbol;
 
+    console.log("ft", finalTex, this.texSymbol);
+
     /* Now wrap this in all the modifiers */
     for (const mod of this.modifiers) {
       finalTex = `${mod.pre}${finalTex}${mod.post}`;
     }
 
-    if (excludeHtmlIds) {
+    if (excludeHtmlIds || htmlIdBlacklist.includes(finalTex)) {
       return finalTex;
     } else {
       return wrapHtmlId(finalTex, cursorToString(this.getFullCursorPointer()));
@@ -148,4 +168,27 @@ export function isSymbolZymbol(zym: Zym): zym is SymbolZymbol {
   return zym.getMasterId() === symbolZymbolMaster.zyId;
 }
 
-symbolZymbolMaster.registerCmds([...basicZymbolHtmlIdImpl]);
+const symbolZymbolHtmlIdImpl = implementPartialCmdGroup(
+  ZymbolHtmlIdCommandGroup,
+  {
+    async getAllDescendentHTMLIds(zym) {
+      if (htmlIdBlacklist.includes((zym as SymbolZymbol).texSymbol)) {
+        return [];
+      }
+
+      const pointer = zym.getFullCursorPointer();
+
+      const nextPointer = [...pointer];
+      nextPointer.splice(nextPointer.length - 1, 1, last(nextPointer) + 1);
+
+      return [
+        {
+          loc: pointer,
+          clickCursor: nextPointer,
+        },
+      ];
+    },
+  }
+);
+
+symbolZymbolMaster.registerCmds([...symbolZymbolHtmlIdImpl]);

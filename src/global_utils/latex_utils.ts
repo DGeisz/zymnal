@@ -30,7 +30,8 @@ export function wrapHtmlId(tex: string, html_id: string) {
 }
 
 export const LATEX_SPACE = "\\;";
-export const LATEX_EMPTY_SOCKET = "□";
+// export const LATEX_EMPTY_SOCKET = "□";
+export const LATEX_EMPTY_SOCKET = "{\\footnotesize \\square}";
 export const LATEX_NAME = "\\LaTeX";
 
 export const CURSOR_NAME = "cursor";

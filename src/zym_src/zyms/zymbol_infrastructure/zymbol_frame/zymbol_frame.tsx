@@ -60,6 +60,7 @@ import { cursorToString } from "../../../../global_utils/latex_utils";
 import { palette } from "../../../../global_styles/palette";
 import { last } from "../../../../global_utils/array_utils";
 import { BasicContext } from "../../../../zym_lib/zy_god/types/context_types";
+import clsx from "clsx";
 
 const ZFP_FIELDS: {
   BASE_ZOCKET: "b";
@@ -494,26 +495,15 @@ export class ZymbolFrame extends Zyact<ZymbolFramePersist, FrameRenderProps> {
         <div className={Styles.FrameContainer}>
           <div className={Styles.MainFrameContainer}>
             <TexTransform tex={selectedTex} showSelector />
-            <div>{selectedTex}</div>
+            {/* <div>{selectedTex}</div> */}
           </div>
           <div className="shadow-lg shadow-gray-400 py-4 px-2 rounded-lg bg-gray-100">
             {allTex.map((t, i) => (
               <div
-                className={
-                  "p-2" +
-                  " " +
-                  (this.transformIndex + 1 === i
-                    ? Styles.SelectedTransContainer
-                    : "") +
-                  " " +
-                  (!(
-                    this.transformIndex + 1 === i ||
-                    this.transformIndex === i ||
-                    i === allTex.length - 1
-                  )
-                    ? "border-b"
-                    : "")
-                }
+                className={clsx(
+                  "p-2",
+                  this.transformIndex + 1 === i && Styles.SelectedTransContainer
+                )}
                 key={`tt::${i}`}
               >
                 <TexTransform
@@ -531,7 +521,7 @@ export class ZymbolFrame extends Zyact<ZymbolFramePersist, FrameRenderProps> {
         <div className={Styles.FrameContainer}>
           <div className={Styles.MainFrameContainer}>
             <TexTransform tex={frameTex} />
-            <div>{frameTex}</div>
+            {/* <div>{frameTex}</div> */}
           </div>
         </div>
       );

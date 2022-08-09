@@ -1,4 +1,6 @@
+import { isSymbol } from "underscore";
 import { last } from "../../../../../global_utils/array_utils";
+import { backslash } from "../../../../../global_utils/latex_utils";
 import { splitCursorStringAtLastWord } from "../../../../../global_utils/text_utils";
 import { Zentinel } from "../../../../../zym_lib/zentinel/zentinel";
 import { Zym } from "../../../../../zym_lib/zym/zym";
@@ -7,7 +9,10 @@ import {
   KeyPressBasicType,
   ZymKeyPress,
 } from "../../../../../zym_lib/zy_god/event_handler/key_press";
+import { Zymbol } from "../../../zymbol/zymbol";
 import { FunctionZymbol } from "../../../zymbol/zymbols/function_zymbol/function_zymbol";
+import { isSymbolZymbol } from "../../../zymbol/zymbols/symbol_zymbol/symbol_zymbol";
+import { TEXT_ZYMBOL_NAME } from "../../../zymbol/zymbols/text_zymbol/text_zymbol";
 import { Zocket } from "../../../zymbol/zymbols/zocket/zocket";
 import {
   BasicZymbolTreeTransformation,
@@ -24,8 +29,19 @@ import {
 } from "./transform_utils";
 
 const FRACTION = "fraction-transform";
+const FRAC_FUN = "cfrac";
 
 const fractionDelim = "//";
+
+const fractionStoppers = [...["partial"].map(backslash)];
+
+function isFractionStopper(z: Zymbol): boolean {
+  return zymbolIsBinaryOperator(z) || z.getMasterId() === TEXT_ZYMBOL_NAME;
+}
+
+function isPreFractionStopper(z: Zymbol): boolean {
+  return isSymbolZymbol(z) && fractionStoppers.includes(z.texSymbol);
+}
 
 class CustomFractionTransformation extends ZymbolTreeTransformation {
   baseRoot: Zocket;
@@ -101,28 +117,17 @@ class CustomFractionTransformation extends ZymbolTreeTransformation {
 
     /* Handle fractions */
     if (transformText.isTextZymbol) {
-      const { text, parent } = transformText;
-
-      const fullText = text.getText();
-
-      const { after } = splitCursorStringAtLastWord(
-        fullText,
-        last(this.initialCursor)
-      );
+      const { parent } = transformText;
 
       const fraction = new FunctionZymbol(
-        "frac",
+        FRAC_FUN,
         2,
         root.parentFrame,
         0,
         parent
       );
 
-      if (after) {
-        text.setText(after);
-      } else {
-        parent.children.splice(zymbolIndex, 1);
-      }
+      parent.children.splice(zymbolIndex, 1);
 
       /* Check if we want to do a full fraction, or a single symbol fraction */
       fraction.children[0].children = parent.children.slice(
@@ -189,14 +194,7 @@ class Fraction extends Zentinel {
           if (transformText.isTextZymbol) {
             const { text, parent } = transformText;
 
-            const fullText = text.getText();
-
-            const { before, word } = splitCursorStringAtLastWord(
-              fullText,
-              last(cursor)
-            );
-
-            if (before) return [];
+            const word = text.getText();
 
             if (word === fractionDelim) {
               if (zymbolIndex > 0) {
@@ -206,9 +204,12 @@ class Fraction extends Zentinel {
                 while (k >= 0) {
                   if (
                     k !== zymbolIndex - 1 &&
-                    zymbolIsBinaryOperator(parent.children[k])
+                    isFractionStopper(parent.children[k])
                   ) {
                     startIndex = k + 1;
+                    break;
+                  } else if (isPreFractionStopper(parent.children[k])) {
+                    startIndex = k;
                     break;
                   }
 
@@ -235,13 +236,7 @@ class Fraction extends Zentinel {
 
                 parent.children.unshift(fraction);
 
-                const newText = fullText.trimStart().slice(2);
-
-                if (newText) {
-                  text.setText(newText);
-                } else {
-                  parent.children.splice(1, 1);
-                }
+                parent.children.splice(1, 1);
 
                 cursorCopy.splice(cursorCopy.length - 2, 2, ...[0, 0, 0]);
 

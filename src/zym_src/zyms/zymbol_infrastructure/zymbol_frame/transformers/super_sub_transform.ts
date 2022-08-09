@@ -17,7 +17,7 @@ import {
   recoverAllowedCursor,
 } from "./transform_utils";
 
-const SUPER_DELIM = "^";
+const SUPER_DELIMS = ["^", "tt"];
 const SUB_DELIM = "_";
 
 const SUPER_SUB_TRANSFORM = "super-sub-transform";
@@ -37,22 +37,15 @@ class SuperSubTransform extends Zentinel {
           if (transformText.isTextZymbol) {
             const { text, parent } = transformText;
 
-            const fullText = text.getText();
+            const word = text.getText();
             const textIndex = last(cursor, 2);
 
             if (textIndex > 0) {
               const cursorCopy = [...cursor];
-              const { word, before, after } = splitCursorStringAtLastWord(
-                fullText,
-                last(cursor)
-              );
 
-              /* We only transform if the delim starts the text */
-              if (before) return [];
-
-              if ([SUB_DELIM, SUPER_DELIM].includes(word)) {
+              if ([SUB_DELIM, ...SUPER_DELIMS].includes(word)) {
                 let isSuper = false;
-                if (word === SUPER_DELIM) isSuper = true;
+                if (SUPER_DELIMS.includes(word)) isSuper = true;
 
                 const alreadySuperSub =
                   parent.children[textIndex - 1].getMasterId() === SUPER_SUB_ID;
@@ -81,11 +74,7 @@ class SuperSubTransform extends Zentinel {
                   ...newRelativeChildCursor
                 );
 
-                if (after) {
-                  text.setText(after);
-                } else {
-                  parent.children.splice(superSub.getCursorIndex() + 1, 1);
-                }
+                parent.children.splice(superSub.getCursorIndex() + 1, 1);
 
                 root.recursivelyReIndexChildren();
 

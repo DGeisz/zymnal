@@ -11,7 +11,7 @@ import { zymbolInfrastructureMasters } from "./zyms/zymbol_infrastructure/zymbol
 import { inPlaceSymbol } from "./zyms/zymbol_infrastructure/zymbol_frame/transformers/in_place_symbols";
 import { parenthesisModifiers } from "./zyms/zymbol_infrastructure/zymbol_frame/transformers/parenthesis";
 import { fraction } from "./zyms/zymbol_infrastructure/zymbol_frame/transformers/fraction_transform";
-import { cashFunctions } from "./zyms/zymbol_infrastructure/zymbol_frame/transformers/cash_functions";
+import { cashFunctions } from "./zyms/zymbol_infrastructure/zymbol_frame/transformers/function_transformer";
 import { superSubTransform } from "./zyms/zymbol_infrastructure/zymbol_frame/transformers/super_sub_transform";
 import { defaultUndoRedoImpl } from "../zym_lib/zy_god/undo_redo/undo_redo";
 import { defaultZymbolHtmlIdImpl } from "./zyms/zymbol/zymbol";
