@@ -5,17 +5,27 @@ export enum DeleteBehaviorType {
   ALLOWED = "allowed",
   /* Allows the child to perform a deflect delete, but the cursor position remains unchanged */
   DEFLECT = "deflect",
+  /* Takes the children and adds them to the underlying children */
+  SPLICE = "splice",
+  /* The prev zymbol wants the cursor */
+  ABSORB = "absorb",
+  MOVE_LEFT = "move_left",
 }
 
-type NormalBehavior = DeleteBehaviorType.FORBIDDEN | DeleteBehaviorType.ALLOWED;
+type NormalBehavior =
+  | DeleteBehaviorType.FORBIDDEN
+  | DeleteBehaviorType.MOVE_LEFT
+  | DeleteBehaviorType.ABSORB
+  | DeleteBehaviorType.ALLOWED
+  | DeleteBehaviorType.SPLICE;
 
-export function normalDeleteBehavior(behavior: NormalBehavior): DeleteBehavior {
+export function deleteBehaviorNormal(behavior: NormalBehavior): DeleteBehavior {
   return {
     type: behavior,
   };
 }
 
-type NormalDeleteBehavior = {
+type deleteBehaviorNormal = {
   type: NormalBehavior;
 };
 
@@ -33,4 +43,4 @@ export function deflectDeleteBehavior(
   };
 }
 
-export type DeleteBehavior = NormalDeleteBehavior | DeflectDeleteBehavior;
+export type DeleteBehavior = deleteBehaviorNormal | DeflectDeleteBehavior;

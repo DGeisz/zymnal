@@ -1,7 +1,5 @@
-import { isSymbol } from "underscore";
 import { last } from "../../../../../global_utils/array_utils";
 import { backslash } from "../../../../../global_utils/latex_utils";
-import { splitCursorStringAtLastWord } from "../../../../../global_utils/text_utils";
 import { Zentinel } from "../../../../../zym_lib/zentinel/zentinel";
 import { Zym } from "../../../../../zym_lib/zym/zym";
 import { Cursor } from "../../../../../zym_lib/zy_god/cursor/cursor";
@@ -10,7 +8,7 @@ import {
   ZymKeyPress,
 } from "../../../../../zym_lib/zy_god/event_handler/key_press";
 import { Zymbol } from "../../../zymbol/zymbol";
-import { FunctionZymbol } from "../../../zymbol/zymbols/function_zymbol/function_zymbol";
+import { StackZymbol } from "../../../zymbol/zymbols/stack_zymbol";
 import { isSymbolZymbol } from "../../../zymbol/zymbols/symbol_zymbol/symbol_zymbol";
 import { TEXT_ZYMBOL_NAME } from "../../../zymbol/zymbols/text_zymbol/text_zymbol";
 import { Zocket } from "../../../zymbol/zymbols/zocket/zocket";
@@ -119,13 +117,14 @@ class CustomFractionTransformation extends ZymbolTreeTransformation {
     if (transformText.isTextZymbol) {
       const { parent } = transformText;
 
-      const fraction = new FunctionZymbol(
-        FRAC_FUN,
-        2,
-        root.parentFrame,
-        0,
-        parent
-      );
+      // const fraction = new FunctionZymbol(
+      //   FRAC_FUN,
+      //   2,
+      //   root.parentFrame,
+      //   0,
+      //   parent
+      // );
+      const fraction = new StackZymbol(FRAC_FUN, root.parentFrame, 0, parent);
 
       parent.children.splice(zymbolIndex, 1);
 
@@ -194,7 +193,7 @@ class Fraction extends Zentinel {
           if (transformText.isTextZymbol) {
             const { text, parent } = transformText;
 
-            const word = text.getText();
+            const word = text.getText().trim();
 
             if (word === fractionDelim) {
               if (zymbolIndex > 0) {
@@ -226,9 +225,8 @@ class Fraction extends Zentinel {
 
                 return [t];
               } else {
-                const fraction = new FunctionZymbol(
-                  "frac",
-                  2,
+                const fraction = new StackZymbol(
+                  FRAC_FUN,
                   root.parentFrame,
                   0,
                   parent

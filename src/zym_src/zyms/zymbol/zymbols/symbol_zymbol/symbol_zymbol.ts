@@ -1,6 +1,5 @@
 import { last } from "../../../../../global_utils/array_utils";
 import {
-  backslash,
   cursorToString,
   wrapHtmlId,
 } from "../../../../../global_utils/latex_utils";
@@ -14,17 +13,18 @@ import {
   CursorMoveResponse,
   FAILED_CURSOR_MOVE_RESPONSE,
 } from "../../../../../zym_lib/zy_god/cursor/cursor";
+import { ZymbolDirection } from "../../../../../zym_lib/zy_god/event_handler/key_press";
 import { BasicContext } from "../../../../../zym_lib/zy_god/types/context_types";
+import { operatorList } from "../../../zymbol_infrastructure/zymbol_frame/transformers/transform_utils";
 import {
   DUMMY_FRAME,
   ZymbolFrame,
 } from "../../../zymbol_infrastructure/zymbol_frame/zymbol_frame";
 import {
   DeleteBehaviorType,
-  normalDeleteBehavior,
+  deleteBehaviorNormal,
 } from "../../delete_behavior";
 import {
-  basicZymbolHtmlIdImpl,
   Zymbol,
   ZymbolHtmlIdCommandGroup,
   ZymbolRenderArgs,
@@ -46,21 +46,8 @@ export interface SymbolZymbolPersist {
   [SZP_FIELDS.MODIFIERS]: ZymbolModifier[];
 }
 
-let integralList = [];
-
-for (let i = 0; i < 3; i++) {
-  let prefix = "";
-  for (let j = 1; j < i + 1; j++) {
-    prefix += "i";
-  }
-
-  integralList.push(`${prefix}nt`);
-  integralList.push(`o${prefix}nt`);
-}
-
-integralList = integralList.map(backslash);
-
-const htmlIdBlacklist = [...integralList];
+// const htmlIdBlacklist = [...integralList, ...["sum", "prod"].map(backslash)];
+const htmlIdBlacklist = operatorList;
 
 class SymbolZymbolMaster extends ZyMaster {
   zyId: string = "symbol-zymbol";
@@ -117,6 +104,19 @@ export class SymbolZymbol extends Zymbol<SymbolZymbolPersist> {
   moveCursorRight = (_cursor: Cursor) => FAILED_CURSOR_MOVE_RESPONSE;
   takeCursorFromRight = () => FAILED_CURSOR_MOVE_RESPONSE;
 
+  moveCursorUp = (_cursor: Cursor, _ctx: BasicContext): CursorMoveResponse =>
+    FAILED_CURSOR_MOVE_RESPONSE;
+  captureArrowUp = (
+    _fromSide: ZymbolDirection,
+    _ctx: BasicContext
+  ): CursorMoveResponse => FAILED_CURSOR_MOVE_RESPONSE;
+  moveCursorDown = (_cursor: Cursor, _ctx: BasicContext): CursorMoveResponse =>
+    FAILED_CURSOR_MOVE_RESPONSE;
+  captureArrowDown = (
+    _fromSide: ZymbolDirection,
+    _ctx: BasicContext
+  ): CursorMoveResponse => FAILED_CURSOR_MOVE_RESPONSE;
+
   addCharacter = (_character: string, _cursor: Cursor) =>
     FAILED_CURSOR_MOVE_RESPONSE;
 
@@ -124,8 +124,6 @@ export class SymbolZymbol extends Zymbol<SymbolZymbolPersist> {
     const { excludeHtmlIds } = opts;
 
     let finalTex = this.texSymbol;
-
-    console.log("ft", finalTex, this.texSymbol);
 
     /* Now wrap this in all the modifiers */
     for (const mod of this.modifiers) {
@@ -139,7 +137,7 @@ export class SymbolZymbol extends Zymbol<SymbolZymbolPersist> {
     }
   };
 
-  getDeleteBehavior = () => normalDeleteBehavior(DeleteBehaviorType.ALLOWED);
+  getDeleteBehavior = () => deleteBehaviorNormal(DeleteBehaviorType.ALLOWED);
 
   delete(_cursor: Cursor, _ctx: BasicContext): CursorMoveResponse {
     return FAILED_CURSOR_MOVE_RESPONSE;

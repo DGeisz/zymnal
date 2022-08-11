@@ -1,5 +1,9 @@
 import { last } from "../../../../../global_utils/array_utils";
-import { Cursor } from "../../../../../zym_lib/zy_god/cursor/cursor";
+import { backslash } from "../../../../../global_utils/latex_utils";
+import {
+  Cursor,
+  CursorIndex,
+} from "../../../../../zym_lib/zy_god/cursor/cursor";
 import { Zymbol } from "../../../zymbol/zymbol";
 import { isSymbolZymbol } from "../../../zymbol/zymbols/symbol_zymbol/symbol_zymbol";
 import {
@@ -15,7 +19,12 @@ export function getTransformTextZymbolAndParent(
   cursor: Cursor
 ):
   | { isTextZymbol: false }
-  | { isTextZymbol: true; text: TextZymbol; parent: Zymbol } {
+  | {
+      isTextZymbol: true;
+      text: TextZymbol;
+      parent: Zymbol;
+      zymbolIndex: CursorIndex;
+    } {
   let currZymbol = root;
   let parent = root;
 
@@ -28,8 +37,14 @@ export function getTransformTextZymbolAndParent(
     }
   }
 
+  /* Hey there */
   if (currZymbol.getMasterId() === TEXT_ZYMBOL_NAME) {
-    return { isTextZymbol: true, text: currZymbol as TextZymbol, parent };
+    return {
+      isTextZymbol: true,
+      text: currZymbol as TextZymbol,
+      parent,
+      zymbolIndex: cursor[cursor.length - 2],
+    };
   } else {
     return { isTextZymbol: false };
   }
@@ -113,3 +128,19 @@ export const binaryOperatorTeX = [
 export function zymbolIsBinaryOperator(zymbol: Zymbol): boolean {
   return isSymbolZymbol(zymbol) && binaryOperatorTeX.includes(zymbol.texSymbol);
 }
+
+let integralList = [];
+
+for (let i = 0; i < 3; i++) {
+  let prefix = "";
+  for (let j = 1; j < i + 1; j++) {
+    prefix += "i";
+  }
+
+  integralList.push(`${prefix}nt`);
+  integralList.push(`o${prefix}nt`);
+}
+
+export const operatorListKeys = [...integralList, "sum", "prod"];
+
+export const operatorList = operatorListKeys.map(backslash);

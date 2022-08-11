@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import katex from "katex";
+import { INVALID_TEX } from "../../global_utils/latex_utils";
 
 interface TexProps {
   tex: string;
@@ -18,6 +19,14 @@ function recursivelyRemovePointerEvents(e: HTMLElement) {
   }
 }
 
+const katexOpts: any = {
+  trust: true,
+  displayMode: true,
+  output: "html",
+  strict: false,
+  throwOnError: false,
+};
+
 const Tex: React.FC<TexProps> = (props) => {
   const cRef = useRef<HTMLDivElement>(null);
 
@@ -27,18 +36,25 @@ const Tex: React.FC<TexProps> = (props) => {
     }
   }, [props.tex]);
 
+  let renders = true;
+  try {
+    katex.renderToString(props.tex, {
+      ...katexOpts,
+      throwOnError: true,
+    });
+  } catch (_e) {
+    renders = false;
+  }
+
   return (
     <div
       ref={cRef}
       className={props.className}
       dangerouslySetInnerHTML={{
-        __html: katex.renderToString(props.tex, {
-          trust: true,
-          displayMode: true,
-          output: "html",
-          strict: false,
-          throwOnError: false,
-        }),
+        __html: katex.renderToString(
+          renders ? props.tex : INVALID_TEX,
+          katexOpts
+        ),
       }}
     />
   );

@@ -82,10 +82,10 @@ export function extractCursorInfo(cursor: Cursor): CursorInfo {
 }
 
 export function wrapChildCursorResponse(
-  res: CursorMoveResponse,
+  res: CursorMoveResponse | undefined,
   cursorIndex: CursorIndex
 ): CursorMoveResponse {
-  if (res.success) {
+  if (res && res.success) {
     return {
       success: true,
       newRelativeCursor: [cursorIndex, ...res.newRelativeCursor],

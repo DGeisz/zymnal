@@ -14,23 +14,21 @@ import {
   FAILED_CURSOR_MOVE_RESPONSE,
   wrapChildCursorResponse,
 } from "../../../../../zym_lib/zy_god/cursor/cursor";
-import {
-  KeyPressBasicType,
-  ZymKeyPress,
-} from "../../../../../zym_lib/zy_god/event_handler/key_press";
+import { ZymbolDirection } from "../../../../../zym_lib/zy_god/event_handler/key_press";
 import { BasicContext } from "../../../../../zym_lib/zy_god/types/context_types";
-import { CreateZyGodMessage } from "../../../../../zym_lib/zy_god/zy_god";
 import {
   DUMMY_FRAME,
   ZymbolFrame,
 } from "../../../zymbol_infrastructure/zymbol_frame/zymbol_frame";
 import {
   DeleteBehaviorType,
-  normalDeleteBehavior,
+  deleteBehaviorNormal,
+  DeleteBehavior,
 } from "../../delete_behavior";
 import { Zymbol, ZymbolRenderArgs } from "../../zymbol";
 import { TeX } from "../../zymbol_types";
 import { Zocket } from "../zocket/zocket";
+import { deflectMethodToChild } from "../zymbol_utils";
 
 const FZP_FIELDS: {
   CHILDREN: "c";
@@ -148,12 +146,44 @@ export class FunctionZymbol extends Zymbol<FunctionZymbolPersist> {
     }
   };
 
-  takeCursorFromRight = (ctx: BasicContext) => {
-    return wrapChildCursorResponse(
+  takeCursorFromRight = (ctx: BasicContext) =>
+    wrapChildCursorResponse(
       last(this.children).takeCursorFromRight(ctx),
       this.children.length - 1
     );
-  };
+
+  moveCursorUp = (cursor: Cursor, ctx: BasicContext): CursorMoveResponse =>
+    deflectMethodToChild(cursor, ({ childRelativeCursor, nextCursorIndex }) =>
+      wrapChildCursorResponse(
+        this.children[nextCursorIndex]?.moveCursorUp(childRelativeCursor, ctx),
+        nextCursorIndex
+      )
+    );
+
+  captureArrowUp(
+    _fromSide: ZymbolDirection,
+    _ctx: BasicContext
+  ): CursorMoveResponse {
+    return FAILED_CURSOR_MOVE_RESPONSE;
+  }
+
+  moveCursorDown = (cursor: Cursor, ctx: BasicContext): CursorMoveResponse =>
+    deflectMethodToChild(cursor, ({ childRelativeCursor, nextCursorIndex }) =>
+      wrapChildCursorResponse(
+        this.children[nextCursorIndex]?.moveCursorDown(
+          childRelativeCursor,
+          ctx
+        ),
+        nextCursorIndex
+      )
+    );
+
+  captureArrowDown(
+    _fromSide: ZymbolDirection,
+    _ctx: BasicContext
+  ): CursorMoveResponse {
+    return FAILED_CURSOR_MOVE_RESPONSE;
+  }
 
   addCharacter = (character: string, cursor: Cursor, ctx: BasicContext) => {
     const { nextCursorIndex, childRelativeCursor, parentOfCursorElement } =
@@ -179,19 +209,65 @@ export class FunctionZymbol extends Zymbol<FunctionZymbolPersist> {
     }
   };
 
-  getDeleteBehavior = () => normalDeleteBehavior(DeleteBehaviorType.ALLOWED);
+  checkAllChildrenEmpty = () =>
+    this.children.every((c) => c.children.length === 0);
 
-  delete(cursor: Cursor, ctx: BasicContext): CursorMoveResponse {
-    const { childRelativeCursor, nextCursorIndex } = extractCursorInfo(cursor);
+  letParentDeleteWithDeleteBehavior = (
+    cursor: Cursor,
+    _ctx: BasicContext
+  ): DeleteBehavior | undefined => {
+    const { nextCursorIndex, childRelativeCursor } = extractCursorInfo(cursor);
 
     if (nextCursorIndex > -1) {
-      return wrapChildCursorResponse(
-        this.children[nextCursorIndex].delete(childRelativeCursor, ctx),
-        nextCursorIndex
-      );
-    } else {
-      return FAILED_CURSOR_MOVE_RESPONSE;
+      if (nextCursorIndex === 0) {
+        if (this.checkAllChildrenEmpty()) {
+          return deleteBehaviorNormal(DeleteBehaviorType.ALLOWED);
+        } else if (_.isEqual(childRelativeCursor, [0])) {
+          return deleteBehaviorNormal(DeleteBehaviorType.MOVE_LEFT);
+        }
+      }
     }
+  };
+
+  getDeleteBehavior = () => {
+    if (this.checkAllChildrenEmpty()) {
+      return deleteBehaviorNormal(DeleteBehaviorType.ALLOWED);
+    } else {
+      return deleteBehaviorNormal(DeleteBehaviorType.ABSORB);
+    }
+  };
+
+  delete(cursor: Cursor, ctx: BasicContext): CursorMoveResponse {
+    return deflectMethodToChild(
+      cursor,
+      ({ childRelativeCursor, nextCursorIndex }) => {
+        const child = this.children[nextCursorIndex];
+
+        if (
+          child.children.length === 0 ||
+          _.isEqual([0], childRelativeCursor)
+        ) {
+          return wrapChildCursorResponse(
+            this.children[nextCursorIndex - 1]?.takeCursorFromRight(ctx),
+            nextCursorIndex - 1
+          );
+        }
+
+        return wrapChildCursorResponse(
+          child.delete(childRelativeCursor, ctx),
+          nextCursorIndex
+        );
+      }
+    );
+
+    // if (nextCursorIndex > -1) {
+    //   return wrapChildCursorResponse(
+    //     this.children[nextCursorIndex].delete(childRelativeCursor, ctx),
+    //     nextCursorIndex
+    //   );
+    // } else {
+    //   return FAILED_CURSOR_MOVE_RESPONSE;
+    // }
   }
 
   renderTex = (opts: ZymbolRenderArgs) => {

@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { hydrateChild, safeHydrate } from "../../../zym_lib/zym/utils/hydrate";
 import { Zym, ZymPersist } from "../../../zym_lib/zym/zym";
 import { useZymponent } from "../../../zym_lib/zym/zymplementations/zyact/hooks";
@@ -7,6 +8,7 @@ import {
   ZymbolContext,
   ZymbolContextPersist,
 } from "../zymbol_infrastructure/zymbol_context/zymbol_context";
+import { enable as enableDarkMode } from "darkreader";
 
 /* ==== PERSIST ====  */
 
@@ -41,6 +43,14 @@ export class Zage extends Zyact<ZagePersist> {
 
   component = () => {
     const BaseContextComponent = useZymponent(this.baseZymbolContext);
+
+    useEffect(() => {
+      enableDarkMode({
+        brightness: 100,
+        contrast: 100,
+        sepia: 10,
+      });
+    }, []);
 
     return (
       <div className="m-16">

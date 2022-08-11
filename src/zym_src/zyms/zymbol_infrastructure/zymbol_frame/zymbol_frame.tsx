@@ -41,6 +41,7 @@ import {
   KeyPressCommand,
   KeyPressComplexType,
   keyPressEqual,
+  KeyPressModifier,
   keyPressModifierToSymbol,
   ZymKeyPress,
 } from "../../../../zym_lib/zy_god/event_handler/key_press";
@@ -58,7 +59,6 @@ import {
 } from "../../../../zym_lib/zy_god/undo_redo/undo_redo";
 import { cursorToString } from "../../../../global_utils/latex_utils";
 import { palette } from "../../../../global_styles/palette";
-import { last } from "../../../../global_utils/array_utils";
 import { BasicContext } from "../../../../zym_lib/zy_god/types/context_types";
 import clsx from "clsx";
 
@@ -98,12 +98,13 @@ export const CreateTransformerMessage = {
       content: { factory },
     };
   },
-  getTransformer(cursor: Cursor): HermesMessage {
+  getTransformer(cursor: Cursor, keyPress: ZymKeyPress): HermesMessage {
     return {
       zentinelId: ZymbolFrameMasterId,
       message: TransformerMessage.GetTransformer,
       content: {
         cursor,
+        keyPress,
       },
     };
   },
@@ -111,6 +112,7 @@ export const CreateTransformerMessage = {
 
 export interface GetTransformerContent {
   cursor: Cursor;
+  keyPress: ZymKeyPress;
 }
 
 export enum ZymbolTransformRank {
@@ -177,7 +179,6 @@ export class BasicZymbolTreeTransformation extends ZymbolTreeTransformation {
       ...this,
     };
   }
-
   setRootParent(parent: Zym<any, any, any>): void {
     this.newTreeRoot.parent = parent;
   }
@@ -193,7 +194,8 @@ export class BasicZymbolTreeTransformation extends ZymbolTreeTransformation {
 
 export type ZymbolTransformer = (
   rootZymbol: Zymbol,
-  cursor: Cursor
+  cursor: Cursor,
+  keyPress: ZymKeyPress
 ) => Promise<ZymbolTreeTransformation[]> | ZymbolTreeTransformation[];
 
 export interface SourcedTransformer {
@@ -231,9 +233,9 @@ class ZymbolFrameMaster extends ZyMaster {
         return ok(true);
       }
       case TransformerMessage.GetTransformer: {
-        const { cursor } = msg.content as GetTransformerContent;
+        const { cursor, keyPress } = msg.content as GetTransformerContent;
 
-        return ok(await this.getZymbolTransformer(cursor));
+        return ok(await this.getZymbolTransformer(cursor, keyPress));
       }
       default: {
         /* Zentinel defaults to unimplemented for unhandled messages */
@@ -264,7 +266,7 @@ class ZymbolFrameMaster extends ZyMaster {
     this.transformerFactories.push(factory);
   };
 
-  getZymbolTransformer = async (cursor: Cursor) => {
+  getZymbolTransformer = async (cursor: Cursor, keyPress: ZymKeyPress) => {
     /* Get the zym root */
     const root = unwrap(await this.callHermes(GET_ZYM_ROOT)) as Zym;
 
@@ -287,7 +289,7 @@ class ZymbolFrameMaster extends ZyMaster {
       return _.flatten(
         await Promise.all(
           transformers.map((t, i) => {
-            return t(copies[i] as Zymbol, zymbolCursor);
+            return t(copies[i] as Zymbol, zymbolCursor, keyPress);
           })
         )
       );
@@ -427,8 +429,6 @@ export class ZymbolFrame extends Zyact<ZymbolFramePersist, FrameRenderProps> {
           )
         );
 
-        console.log("subTreePointers", subTreePointers);
-
         for (const pointer of subTreePointers) {
           const id = cursorToString(pointer.loc);
           const element = document.getElementById(id);
@@ -438,14 +438,13 @@ export class ZymbolFrame extends Zyact<ZymbolFramePersist, FrameRenderProps> {
             element.style.transitionDuration = "0.1s";
             element.style.cursor = "pointer";
 
-            console.log("pointer", pointer);
-
             element.onmouseover = () => {
               element.style.color = palette.mediumForestGreen;
             };
 
             element.onmouseout = () => {
-              element.style.color = palette.black;
+              // element.style.color = palette.black;
+              element.style.color = "";
             };
 
             element.onclick = () => {
@@ -570,8 +569,6 @@ export class ZymbolFrame extends Zyact<ZymbolFramePersist, FrameRenderProps> {
     this.rankTransactions();
     const topTrans = this.transformations[0];
 
-    console.log("tt", this.transformations);
-
     this.transformations.forEach((t) => {
       t.setRootParent(this);
     });
@@ -624,6 +621,21 @@ const keyPressImpl = implementPartialCmdGroup(KeyPressCommand, {
 
     const { keyPressContext, keyPress } = args;
     let { cursor } = args;
+
+    if (
+      keyPress.type === KeyPressComplexType.Key &&
+      keyPress.key === "c" &&
+      keyPress.modifiers?.includes(KeyPressModifier.Cmd)
+    ) {
+      const tex = frame.baseZocket.renderTex({
+        cursor: [],
+        excludeHtmlIds: true,
+      });
+
+      navigator.clipboard.writeText(tex);
+
+      return FAILED_CURSOR_MOVE_RESPONSE;
+    }
 
     let { nextCursorIndex, childRelativeCursor } = extractCursorInfo(cursor);
 
@@ -715,7 +727,8 @@ const keyPressImpl = implementPartialCmdGroup(KeyPressCommand, {
         const transformer = unwrap(
           await frame.callHermes(
             CreateTransformerMessage.getTransformer(
-              frame.getFullCursorPointer()
+              frame.getFullCursorPointer(),
+              keyPress
             )
           )
         ) as ZymbolTransformer;
@@ -723,7 +736,8 @@ const keyPressImpl = implementPartialCmdGroup(KeyPressCommand, {
         /* 2. Apply the transformer to get a list of potential transformations */
         const transformations = await transformer(
           frame.baseZocket,
-          childMove.newRelativeCursor
+          childMove.newRelativeCursor,
+          keyPress
         );
 
         /* 3. Set setting that indicates that we have a transformation for the next render event */

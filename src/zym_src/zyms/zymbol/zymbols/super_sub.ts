@@ -1,3 +1,4 @@
+import { collapseTextChangeRangesAcrossMultipleVersions } from "typescript";
 import _ from "underscore";
 import { last } from "../../../../global_utils/array_utils";
 import {
@@ -8,17 +9,25 @@ import { Zym, ZymPersist } from "../../../../zym_lib/zym/zym";
 import { ZyMaster } from "../../../../zym_lib/zym/zy_master";
 import {
   Cursor,
+  CursorIndex,
   CursorMoveResponse,
   extractCursorInfo,
   FAILED_CURSOR_MOVE_RESPONSE,
+  successfulMoveResponse,
   wrapChildCursorResponse,
 } from "../../../../zym_lib/zy_god/cursor/cursor";
+import { ZymbolDirection } from "../../../../zym_lib/zy_god/event_handler/key_press";
 import { BasicContext } from "../../../../zym_lib/zy_god/types/context_types";
 import { DUMMY_FRAME } from "../../zymbol_infrastructure/zymbol_frame/zymbol_frame";
-import { DeleteBehaviorType, normalDeleteBehavior } from "../delete_behavior";
+import {
+  DeleteBehavior,
+  DeleteBehaviorType,
+  deleteBehaviorNormal,
+} from "../delete_behavior";
 import { Zymbol, ZymbolRenderArgs } from "../zymbol";
 import { extendZymbol } from "../zymbol_cmd";
 import { Zocket } from "./zocket/zocket";
+import { deflectMethodToChild } from "./zymbol_utils";
 
 const SSP_FIELDS: {
   CHILDREN: "c";
@@ -54,6 +63,17 @@ enum SuperSubStatus {
   Both,
 }
 
+enum SuperSubPosition {
+  None,
+  Super,
+  Sub,
+}
+
+enum SuperSubBothIndex {
+  Super = 0,
+  Sub = 1,
+}
+
 export class SuperSubZymbol extends Zymbol<SuperSubPersist> {
   /* Super goes after sub */
   children: Zymbol[] = [];
@@ -73,6 +93,33 @@ export class SuperSubZymbol extends Zymbol<SuperSubPersist> {
       }
       case SuperSubStatus.Both: {
         return isSuper ? 0 : 1;
+      }
+    }
+  };
+
+  getIndexPosition = (index: CursorIndex): SuperSubPosition => {
+    switch (this.status) {
+      case SuperSubStatus.Neither: {
+        return SuperSubPosition.None;
+      }
+      case SuperSubStatus.OnlySub: {
+        return index === 0 ? SuperSubPosition.Sub : SuperSubPosition.None;
+      }
+      case SuperSubStatus.OnlySuper: {
+        return index === 0 ? SuperSubPosition.Super : SuperSubPosition.None;
+      }
+      case SuperSubStatus.Both: {
+        switch (index) {
+          case 0: {
+            return SuperSubPosition.Super;
+          }
+          case 1: {
+            return SuperSubPosition.Sub;
+          }
+          default: {
+            return SuperSubPosition.None;
+          }
+        }
       }
     }
   };
@@ -122,65 +169,170 @@ export class SuperSubZymbol extends Zymbol<SuperSubPersist> {
 
   /* ==== Default Methods ==== */
 
-  moveCursorLeft = (cursor: Cursor, ctx: BasicContext) => {
-    const { childRelativeCursor, nextCursorIndex } = extractCursorInfo(cursor);
-
-    if (nextCursorIndex > -1) {
-      const child = this.children[nextCursorIndex];
-
-      const res = child.moveCursorLeft(childRelativeCursor, ctx);
-
-      if (res.success) {
-        return wrapChildCursorResponse(res, nextCursorIndex);
-      } else {
-        if (nextCursorIndex > 0) {
-          return wrapChildCursorResponse(
-            this.children[nextCursorIndex - 1].takeCursorFromRight(ctx),
-            nextCursorIndex - 1
-          );
-        } else {
-          return FAILED_CURSOR_MOVE_RESPONSE;
-        }
-      }
-    } else {
-      return FAILED_CURSOR_MOVE_RESPONSE;
-    }
-  };
+  moveCursorLeft = (cursor: Cursor, ctx: BasicContext) =>
+    deflectMethodToChild(cursor, ({ childRelativeCursor, nextCursorIndex }) =>
+      wrapChildCursorResponse(
+        this.children[nextCursorIndex].moveCursorLeft(childRelativeCursor, ctx),
+        nextCursorIndex
+      )
+    );
 
   takeCursorFromLeft = (ctx: BasicContext) => {
     return wrapChildCursorResponse(this.children[0].takeCursorFromLeft(ctx), 0);
   };
 
-  moveCursorRight = (cursor: Cursor, ctx: BasicContext) => {
-    const { childRelativeCursor, nextCursorIndex } = extractCursorInfo(cursor);
-
-    if (nextCursorIndex > -1) {
-      const child = this.children[nextCursorIndex];
-
-      const res = child.moveCursorRight(childRelativeCursor, ctx);
-
-      if (res.success) {
-        return wrapChildCursorResponse(res, nextCursorIndex);
-      } else {
-        if (nextCursorIndex < this.children.length - 1) {
-          return wrapChildCursorResponse(
-            this.children[nextCursorIndex + 1].takeCursorFromLeft(ctx),
-            nextCursorIndex + 1
-          );
-        } else {
-          return FAILED_CURSOR_MOVE_RESPONSE;
-        }
-      }
-    } else {
-      return FAILED_CURSOR_MOVE_RESPONSE;
-    }
-  };
+  moveCursorRight = (cursor: Cursor, ctx: BasicContext) =>
+    deflectMethodToChild(cursor, ({ childRelativeCursor, nextCursorIndex }) =>
+      wrapChildCursorResponse(
+        this.children[nextCursorIndex].moveCursorRight(
+          childRelativeCursor,
+          ctx
+        ),
+        nextCursorIndex
+      )
+    );
 
   takeCursorFromRight = (ctx: BasicContext) => {
     return wrapChildCursorResponse(
-      last(this.children).takeCursorFromRight(ctx),
-      this.children.length - 1
+      this.children[0].takeCursorFromRight(ctx),
+      0
     );
+  };
+
+  moveCursorUp = (cursor: Cursor, ctx: BasicContext): CursorMoveResponse =>
+    deflectMethodToChild(cursor, ({ childRelativeCursor, nextCursorIndex }) => {
+      const res = wrapChildCursorResponse(
+        this.children[nextCursorIndex].moveCursorUp(childRelativeCursor, ctx),
+        nextCursorIndex
+      );
+
+      if (res.success) return res;
+
+      if (
+        this.status === SuperSubStatus.Both &&
+        this.getIndexPosition(nextCursorIndex) === SuperSubPosition.Sub
+      ) {
+        const { nextCursorIndex: nextChild } =
+          extractCursorInfo(childRelativeCursor);
+
+        return successfulMoveResponse([
+          SuperSubBothIndex.Super,
+          Math.min(
+            nextChild,
+            this.children[SuperSubBothIndex.Super].children.length
+          ),
+        ]);
+      }
+
+      return FAILED_CURSOR_MOVE_RESPONSE;
+    });
+
+  captureArrowUp = (
+    fromSide: ZymbolDirection,
+    _ctx: BasicContext
+  ): CursorMoveResponse => {
+    switch (fromSide) {
+      case ZymbolDirection.LEFT: {
+        switch (this.status) {
+          case SuperSubStatus.Both: {
+            return successfulMoveResponse([SuperSubBothIndex.Super, 0]);
+          }
+          case SuperSubStatus.OnlySuper: {
+            return successfulMoveResponse([0, 0]);
+          }
+        }
+        break;
+      }
+      case ZymbolDirection.RIGHT: {
+        switch (this.status) {
+          case SuperSubStatus.Both: {
+            return successfulMoveResponse([
+              SuperSubBothIndex.Super,
+              this.children[SuperSubBothIndex.Super].children.length,
+            ]);
+          }
+          case SuperSubStatus.OnlySuper: {
+            return successfulMoveResponse([
+              0,
+              this.children[0].children.length,
+            ]);
+          }
+        }
+        break;
+      }
+    }
+
+    return FAILED_CURSOR_MOVE_RESPONSE;
+  };
+
+  moveCursorDown = (cursor: Cursor, ctx: BasicContext): CursorMoveResponse => {
+    return deflectMethodToChild(
+      cursor,
+      ({ childRelativeCursor, nextCursorIndex }) => {
+        const res = wrapChildCursorResponse(
+          this.children[nextCursorIndex].moveCursorUp(childRelativeCursor, ctx),
+          nextCursorIndex
+        );
+
+        if (res.success) return res;
+
+        if (
+          this.status === SuperSubStatus.Both &&
+          this.getIndexPosition(nextCursorIndex) === SuperSubPosition.Super
+        ) {
+          const { nextCursorIndex: nextChild } =
+            extractCursorInfo(childRelativeCursor);
+
+          return successfulMoveResponse([
+            SuperSubBothIndex.Sub,
+            Math.min(
+              nextChild,
+              this.children[SuperSubBothIndex.Sub].children.length
+            ),
+          ]);
+        }
+
+        return FAILED_CURSOR_MOVE_RESPONSE;
+      }
+    );
+  };
+
+  captureArrowDown = (
+    fromSide: ZymbolDirection,
+    _ctx: BasicContext
+  ): CursorMoveResponse => {
+    switch (fromSide) {
+      case ZymbolDirection.LEFT: {
+        switch (this.status) {
+          case SuperSubStatus.Both: {
+            return successfulMoveResponse([SuperSubBothIndex.Sub, 0]);
+          }
+          case SuperSubStatus.OnlySub: {
+            return successfulMoveResponse([0, 0]);
+          }
+        }
+        break;
+      }
+      case ZymbolDirection.RIGHT: {
+        switch (this.status) {
+          case SuperSubStatus.Both: {
+            return successfulMoveResponse([
+              SuperSubBothIndex.Sub,
+              this.children[SuperSubBothIndex.Sub].children.length,
+            ]);
+          }
+          case SuperSubStatus.OnlySub: {
+            return successfulMoveResponse([
+              0,
+              this.children[0].children.length,
+            ]);
+          }
+        }
+        break;
+      }
+    }
+
+    return FAILED_CURSOR_MOVE_RESPONSE;
   };
 
   addCharacter = (character: string, cursor: Cursor, ctx: BasicContext) => {
@@ -207,19 +359,102 @@ export class SuperSubZymbol extends Zymbol<SuperSubPersist> {
     }
   };
 
-  getDeleteBehavior = () => normalDeleteBehavior(DeleteBehaviorType.ALLOWED);
+  getDeleteBehavior = () => {
+    if (this.children.every((c) => c.children.length === 0)) {
+      return deleteBehaviorNormal(DeleteBehaviorType.ALLOWED);
+    }
+
+    return deleteBehaviorNormal(DeleteBehaviorType.ABSORB);
+  };
+
+  letParentDeleteWithDeleteBehavior = (
+    cursor: Cursor,
+    _ctx: BasicContext
+  ): DeleteBehavior | undefined => {
+    if (this.status === SuperSubStatus.Neither) {
+      return deleteBehaviorNormal(DeleteBehaviorType.ALLOWED);
+    }
+
+    const { parentOfCursorElement, childRelativeCursor, nextCursorIndex } =
+      extractCursorInfo(cursor);
+
+    if (parentOfCursorElement) return undefined;
+
+    const child = this.children[nextCursorIndex];
+
+    if (child) {
+      if (child.children.length > 0 && childRelativeCursor[0] === 0) {
+        if (this.status === SuperSubStatus.Both) {
+          return deleteBehaviorNormal(DeleteBehaviorType.MOVE_LEFT);
+        } else {
+          return deleteBehaviorNormal(DeleteBehaviorType.SPLICE);
+        }
+      } else if (child.children.length === 0) {
+        if (this.status === SuperSubStatus.Both) {
+          switch (this.getIndexPosition(nextCursorIndex)) {
+            case SuperSubPosition.Super: {
+              this.status = SuperSubStatus.OnlySub;
+              this.children = [this.children[SuperSubBothIndex.Sub]];
+
+              return deleteBehaviorNormal(DeleteBehaviorType.MOVE_LEFT);
+            }
+            case SuperSubPosition.Sub: {
+              this.status = SuperSubStatus.OnlySuper;
+              this.children = [this.children[SuperSubBothIndex.Super]];
+
+              return deleteBehaviorNormal(DeleteBehaviorType.MOVE_LEFT);
+            }
+          }
+
+          if (this.getIndexPosition(nextCursorIndex)) {
+            return deleteBehaviorNormal(DeleteBehaviorType.MOVE_LEFT);
+          }
+        } else {
+          return deleteBehaviorNormal(DeleteBehaviorType.ALLOWED);
+        }
+      }
+    }
+
+    return undefined;
+  };
+
+  spliceDelete = (
+    _cursor: Cursor,
+    _ctx: BasicContext
+  ): { zymbols: Zymbol[]; putCursorAtEnd: boolean } => {
+    if (this.status === SuperSubStatus.Both) {
+      let usingSuperZymbols = true;
+      let zymbols;
+
+      if (this.children[SuperSubBothIndex.Super].children.length === 0) {
+        usingSuperZymbols = false;
+        zymbols = [...this.children[SuperSubBothIndex.Sub].children];
+      } else {
+        zymbols = [...this.children[SuperSubBothIndex.Super].children];
+      }
+
+      return {
+        zymbols,
+        putCursorAtEnd: usingSuperZymbols,
+      };
+    }
+
+    return {
+      zymbols: [...this.children[0].children],
+      putCursorAtEnd: false,
+    };
+  };
 
   delete(cursor: Cursor, ctx: BasicContext): CursorMoveResponse {
-    const { childRelativeCursor, nextCursorIndex } = extractCursorInfo(cursor);
-
-    if (nextCursorIndex > -1) {
-      return wrapChildCursorResponse(
-        this.children[nextCursorIndex].delete(childRelativeCursor, ctx),
-        nextCursorIndex
-      );
-    } else {
-      return FAILED_CURSOR_MOVE_RESPONSE;
-    }
+    return deflectMethodToChild(
+      cursor,
+      ({ childRelativeCursor, nextCursorIndex }) => {
+        return wrapChildCursorResponse(
+          this.children[nextCursorIndex].delete(childRelativeCursor, ctx),
+          nextCursorIndex
+        );
+      }
+    );
   }
 
   renderTex = (opts: ZymbolRenderArgs) => {
@@ -228,26 +463,47 @@ export class SuperSubZymbol extends Zymbol<SuperSubPersist> {
 
     const newOpts = { ...opts, cursor: childRelativeCursor };
 
+    let tex;
     switch (this.status) {
       case SuperSubStatus.Neither: {
-        return "";
+        tex = "";
+        break;
       }
       case SuperSubStatus.Both: {
-        return `_{${this.children[1].renderTex({
+        tex = `_{${this.children[1].renderTex({
           ...opts,
           cursor: nextCursorIndex === 1 ? childRelativeCursor : [],
         })}}^{${this.children[0].renderTex({
           ...opts,
           cursor: nextCursorIndex === 0 ? childRelativeCursor : [],
         })}}`;
+        break;
       }
       case SuperSubStatus.OnlySub: {
-        return `_{${this.children[0].renderTex(newOpts)}}`;
+        tex = `_{${this.children[0].renderTex(newOpts)}}`;
+        break;
       }
       case SuperSubStatus.OnlySuper: {
-        return `^{${this.children[0].renderTex(newOpts)}}`;
+        tex = `^{${this.children[0].renderTex(newOpts)}}`;
+        break;
       }
     }
+
+    if (this.prevZymbolIsSuperSub()) {
+      tex = `{${tex}}`;
+    }
+
+    return tex;
+  };
+
+  prevZymbolIsSuperSub = () => {
+    const i = this.getCursorIndex();
+
+    if (i > 0) {
+      return this.parent?.children[i - 1].getMasterId() === SUPER_SUB_ID;
+    }
+
+    return false;
   };
 
   persistData(): SuperSubPersist {

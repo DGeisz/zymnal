@@ -1,5 +1,4 @@
 import _ from "underscore";
-import { after } from "underscore";
 import {
   cursorToString,
   CURSOR_LATEX,
@@ -32,15 +31,17 @@ import {
   CursorCommand,
   GetInitialCursorReturn,
 } from "../../../../../zym_lib/zy_god/cursor/cursor_commands";
-import { KeyPressModifier } from "../../../../../zym_lib/zy_god/event_handler/key_press";
+import {
+  KeyPressModifier,
+  ZymbolDirection,
+} from "../../../../../zym_lib/zy_god/event_handler/key_press";
 import { BasicContext } from "../../../../../zym_lib/zy_god/types/context_types";
 import { addZymChangeLink } from "../../../../../zym_lib/zy_god/undo_redo/undo_redo";
-import { getFullContextCursor } from "../../../../../zym_lib/zy_god/zy_god";
 import { DUMMY_FRAME } from "../../../zymbol_infrastructure/zymbol_frame/zymbol_frame";
 import {
   DeleteBehavior,
   DeleteBehaviorType,
-  normalDeleteBehavior,
+  deleteBehaviorNormal,
 } from "../../delete_behavior";
 import {
   keyPressHasModifier,
@@ -161,7 +162,7 @@ export class Zocket extends Zymbol<ZocketPersist> {
     }
   };
 
-  takeCursorFromLeft = () => {
+  takeCursorFromLeft = (_ctx: BasicContext) => {
     return {
       success: true,
       newRelativeCursor: [0],
@@ -210,12 +211,121 @@ export class Zocket extends Zymbol<ZocketPersist> {
     }
   };
 
-  takeCursorFromRight = () => {
+  takeCursorFromRight = (_ctx: BasicContext) => {
     return {
       success: true,
       newRelativeCursor: [this.children.length],
     };
   };
+
+  moveCursorUp = (cursor: Cursor, ctx: BasicContext): CursorMoveResponse => {
+    const { parentOfCursorElement, childRelativeCursor, nextCursorIndex } =
+      extractCursorInfo(cursor);
+
+    if (parentOfCursorElement) {
+      if (nextCursorIndex === 0) {
+        return wrapChildCursorResponse(
+          this.children[0]?.captureArrowUp(ZymbolDirection.LEFT, ctx),
+          0
+        );
+      } else if (nextCursorIndex === this.children.length) {
+        return wrapChildCursorResponse(
+          this.children[this.children.length - 1]?.captureArrowUp(
+            ZymbolDirection.RIGHT,
+            ctx
+          ),
+          this.children.length - 1
+        );
+      } else {
+        /* Try right first, then left */
+        const res = wrapChildCursorResponse(
+          this.children[nextCursorIndex]?.captureArrowUp(
+            ZymbolDirection.LEFT,
+            ctx
+          ),
+          nextCursorIndex
+        );
+
+        if (res.success) return res;
+
+        return wrapChildCursorResponse(
+          this.children[nextCursorIndex - 1]?.captureArrowUp(
+            ZymbolDirection.RIGHT,
+            ctx
+          ),
+          nextCursorIndex - 1
+        );
+      }
+    } else {
+      return wrapChildCursorResponse(
+        this.children[nextCursorIndex]?.moveCursorUp(childRelativeCursor, ctx),
+        nextCursorIndex
+      );
+    }
+  };
+
+  captureArrowUp(
+    _fromSide: ZymbolDirection,
+    _ctx: BasicContext
+  ): CursorMoveResponse {
+    return FAILED_CURSOR_MOVE_RESPONSE;
+  }
+
+  moveCursorDown = (cursor: Cursor, ctx: BasicContext): CursorMoveResponse => {
+    const { parentOfCursorElement, childRelativeCursor, nextCursorIndex } =
+      extractCursorInfo(cursor);
+
+    if (parentOfCursorElement) {
+      if (nextCursorIndex === 0) {
+        return wrapChildCursorResponse(
+          this.children[0]?.captureArrowDown(ZymbolDirection.LEFT, ctx),
+          0
+        );
+      } else if (nextCursorIndex === this.children.length) {
+        return wrapChildCursorResponse(
+          this.children[this.children.length - 1]?.captureArrowDown(
+            ZymbolDirection.RIGHT,
+            ctx
+          ),
+          this.children.length - 1
+        );
+      } else {
+        /* Try left first, then right */
+        const res = wrapChildCursorResponse(
+          this.children[nextCursorIndex - 1]?.captureArrowDown(
+            ZymbolDirection.RIGHT,
+            ctx
+          ),
+          nextCursorIndex - 1
+        );
+
+        if (res.success) return res;
+
+        return wrapChildCursorResponse(
+          this.children[nextCursorIndex]?.captureArrowDown(
+            ZymbolDirection.LEFT,
+            ctx
+          ),
+          nextCursorIndex
+        );
+      }
+    } else {
+      return wrapChildCursorResponse(
+        this.children[nextCursorIndex]?.moveCursorDown(
+          childRelativeCursor,
+          ctx
+        ),
+        nextCursorIndex
+      );
+    }
+  };
+
+  captureArrowDown(
+    _fromSide: ZymbolDirection,
+    _ctx: BasicContext
+  ): CursorMoveResponse {
+    return FAILED_CURSOR_MOVE_RESPONSE;
+  }
 
   _addZymChangeLinks = (
     ctx: BasicContext,
@@ -442,7 +552,7 @@ export class Zocket extends Zymbol<ZocketPersist> {
   };
 
   getDeleteBehavior = (): DeleteBehavior =>
-    normalDeleteBehavior(DeleteBehaviorType.ALLOWED);
+    deleteBehaviorNormal(DeleteBehaviorType.ALLOWED);
 
   renderTex = (opts: ZymbolRenderArgs) => {
     const { cursor, excludeHtmlIds } = opts;
@@ -499,21 +609,37 @@ export class Zocket extends Zymbol<ZocketPersist> {
 
     /* Check if the immediate child is a text element */
 
+    let childCursorIndex;
+    let zymbol;
+    let deleteBehavior;
+
     if (parentOfCursorElement) {
       if (nextCursorIndex === 0) {
         return FAILED_CURSOR_MOVE_RESPONSE;
       }
 
-      const zymbol = this.children[nextCursorIndex - 1];
+      childCursorIndex = nextCursorIndex - 1;
+      zymbol = this.children[childCursorIndex];
+      deleteBehavior = zymbol.getDeleteBehavior();
+    } else if (nextCursorIndex > -1) {
+      const db = this.children[
+        nextCursorIndex
+      ]?.letParentDeleteWithDeleteBehavior(childRelativeCursor, ctx);
 
-      const deleteBehavior = zymbol.getDeleteBehavior();
+      if (db) {
+        deleteBehavior = db;
+        zymbol = this.children[nextCursorIndex];
+        childCursorIndex = nextCursorIndex;
+      }
+    }
 
+    if (zymbol && deleteBehavior && childCursorIndex !== undefined) {
       switch (deleteBehavior.type) {
         case DeleteBehaviorType.ALLOWED: {
           const beforeChildren = this.children.map((c) => c.persist());
 
-          this.children.splice(nextCursorIndex - 1, 1);
-          const mergeRes = this.mergeTextZymbols([nextCursorIndex - 1]);
+          this.children.splice(childCursorIndex, 1);
+          const mergeRes = this.mergeTextZymbols([childCursorIndex]);
 
           this._addZymChangeLinks(
             ctx,
@@ -523,6 +649,30 @@ export class Zocket extends Zymbol<ZocketPersist> {
 
           return mergeRes;
         }
+        case DeleteBehaviorType.SPLICE: {
+          const res = zymbol.spliceDelete(childRelativeCursor, ctx);
+          if (res) {
+            const { zymbols: newChildren, putCursorAtEnd } = res;
+            this.children.splice(childCursorIndex, 1, ...newChildren);
+
+            return successfulMoveResponse(
+              putCursorAtEnd
+                ? childCursorIndex + newChildren.length
+                : childCursorIndex
+            );
+          }
+
+          break;
+        }
+        case DeleteBehaviorType.MOVE_LEFT: {
+          return successfulMoveResponse(childCursorIndex);
+        }
+        case DeleteBehaviorType.ABSORB: {
+          return wrapChildCursorResponse(
+            zymbol.absorbCursor(ctx),
+            childCursorIndex
+          );
+        }
         case DeleteBehaviorType.FORBIDDEN: {
           break;
         }
@@ -530,7 +680,7 @@ export class Zocket extends Zymbol<ZocketPersist> {
           const success = zymbol.deflectDelete(ctx);
 
           if (success) {
-            return successfulMoveResponse(nextCursorIndex);
+            return successfulMoveResponse(childCursorIndex + 1);
           } else {
             return FAILED_CURSOR_MOVE_RESPONSE;
           }

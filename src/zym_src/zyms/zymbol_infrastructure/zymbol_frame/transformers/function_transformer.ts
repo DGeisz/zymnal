@@ -1,6 +1,4 @@
-import { last } from "../../../../../global_utils/array_utils";
 import { checkLatex } from "../../../../../global_utils/latex_utils";
-import { splitCursorStringAtLastWord } from "../../../../../global_utils/text_utils";
 import { Zentinel } from "../../../../../zym_lib/zentinel/zentinel";
 import { Zymbol } from "../../../zymbol/zymbol";
 import { FunctionZymbol } from "../../../zymbol/zymbols/function_zymbol/function_zymbol";
@@ -17,9 +15,7 @@ import {
 } from "../zymbol_frame";
 import { makeHelperCursor, recoverAllowedCursor } from "./transform_utils";
 
-const CASH_FUNCTIONS = "cash-fractions";
-
-const cash = "$";
+const FUNCTION_TRANSFORMER = "function-transformer";
 
 const SPECIAL_COMMANDS: { [key: string]: string } = {
   sr: "sqrt",
@@ -40,14 +36,14 @@ function getTexFunctionArgCount(fn: TeX): number {
   return -1;
 }
 
-class CashFunctions extends Zentinel {
-  zyId: string = CASH_FUNCTIONS;
+class FunctionTransformer extends Zentinel {
+  zyId: string = FUNCTION_TRANSFORMER;
 
   onRegistration = async () => {
     this.callHermes(
       CreateTransformerMessage.registerTransformer({
-        source: CASH_FUNCTIONS,
-        name: "cash-fn",
+        source: FUNCTION_TRANSFORMER,
+        name: "fn-trans",
         transform: (root, cursor) => {
           cursor = makeHelperCursor(cursor, root);
 
@@ -68,7 +64,7 @@ class CashFunctions extends Zentinel {
 
           if (currZymbol.getMasterId() === TEXT_ZYMBOL_NAME) {
             const text = currZymbol as TextZymbol;
-            const word = text.getText();
+            const word = text.getText().trim();
 
             let rank = ZymbolTransformRank.Include;
 
@@ -132,4 +128,4 @@ class CashFunctions extends Zentinel {
   };
 }
 
-export const cashFunctions = new CashFunctions();
+export const functionTransformer = new FunctionTransformer();

@@ -1,6 +1,11 @@
 import _ from "underscore";
-import { backslash, checkLatex } from "../../../../../global_utils/latex_utils";
-import { capitalizeFirstLetter } from "../../../../../global_utils/text_utils";
+import { last } from "../../../../../global_utils/array_utils";
+import {
+  backslash,
+  checkLatex,
+  LATEX_SPACE,
+} from "../../../../../global_utils/latex_utils";
+import { splitCursorStringAtLastWord } from "../../../../../global_utils/text_utils";
 import { Zentinel } from "../../../../../zym_lib/zentinel/zentinel";
 import {
   Cursor,
@@ -9,6 +14,7 @@ import {
 import {
   KeyPressBasicType,
   KeyPressComplexType,
+  KeyPressModifier,
   ZymKeyPress,
 } from "../../../../../zym_lib/zy_god/event_handler/key_press";
 import { SymbolZymbol } from "../../../zymbol/zymbols/symbol_zymbol/symbol_zymbol";
@@ -40,13 +46,13 @@ const MULTI_DIRECT_SYMBOL_DELIM = ";";
 
 const stringPrefixList = ["("];
 
-const STRING_TEST = /^[a-zA-Z,0-9]+$/;
+const STRING_TEST = /^[a-zA-Z,:0-9]+$/;
 
 const alphaValidator = (keyPress: ZymKeyPress) =>
   !(
     keyPress.type === KeyPressBasicType.Delete ||
     (keyPress.type === KeyPressComplexType.Key &&
-      /^[a-zA-Z,0-9]$/.test(keyPress.key))
+      /^[a-zA-Z,:0-9]$/.test(keyPress.key))
   );
 
 function checkSymbol(sym: TeX): boolean {
@@ -56,73 +62,93 @@ function checkSymbol(sym: TeX): boolean {
 /* +++ Basic binary operations +++ */
 const basicBinaryOperations: string[] = ["+", "=", "-"];
 
-const texBinaryOperations: string[] = ["cdot", "div", "times", "pm"];
-
 const binDirectMap: DirectMap = {
   dot: "cdot",
   "*": "cdot",
 };
 
+/* +++ Sets! +++ */
+const setSlashMap: SlashMap = {
+  R: "R",
+  C: "mathbb{C}",
+  Z: "mathbb{Z}",
+};
+
 /* +++ Calculus! +++ */
 const calcDirectMap: DirectMap = {
   ptl: "partial",
+  nab: "nabla",
+  dlmb: "square",
+};
+
+const differentialDelim = "dff";
+const diffSymbol = "\\text{d}";
+
+/* +++ Math +++ */
+const mathDirectMap: DirectMap = {
+  nft: "infty",
+  ift: "infty",
 };
 
 /* +++ GREEK!! +++ */
-const lowerGreek: string[] = [
-  "alpha",
-  "beta",
-  "gamma",
-  "delta",
-  "epsilon",
-  "zeta",
-  "eta",
-  "theta",
-  "iota",
-  "kappa",
-  "lambda",
-  "mu",
-  "nu",
-  "xi",
-  "omicron",
-  "pi",
-  "rho",
-  "sigma",
-  "tau",
-  "upsilon",
-  "phi",
-  "chi",
-  "psi",
-  "omega",
-];
-
-const greekCaps = lowerGreek.map(capitalizeFirstLetter);
-const greekLetters = lowerGreek.concat(greekCaps);
-
 const lowerGreekSlashMap: SlashMap = {
   a: "alpha",
   b: "beta",
   g: "gamma",
+  dg: "digamma",
   d: "delta",
   ep: "epsilon",
+  vep: "varepsilon",
   z: "zeta",
   th: "theta",
+  vth: "vartheta",
   i: "iota",
   k: "kappa",
+  vk: "varkappa",
   l: "lambda",
   oc: "omicron",
   s: "sigma",
+  vs: "varsigma",
   u: "upsilon",
   om: "omega",
   w: "omega",
+  m: "mu",
+  n: "nu",
+  vpi: "varpi",
+  vph: "varphi",
+  vro: "varrho",
 };
 
-let upperGreekSlashMap: { [key: string]: string } = {};
+const upperGreekSlashMap: SlashMap = {
+  G: "Gamma",
+  D: "Delta",
+  Th: "Theta",
+  L: "Lambda",
+  S: "Sigma",
+  E: "Sigma",
+  U: "Upsilon",
+  Om: "Omega",
+  W: "Omega",
+  vW: "varOmega",
+  vPh: "varPhi",
+  vPi: "varPi",
+  vPs: "varPsi",
+  vX: "varXi",
+  vU: "varUpsilon",
+  vE: "varSigma",
+  vS: "varSigma",
+  vL: "varLambda",
+  vG: "varGamma",
+  vD: "varDelta",
+  vTh: "varTheta",
+};
 
-for (const [key, value] of Object.entries(lowerGreekSlashMap)) {
-  upperGreekSlashMap[key.toUpperCase()] = capitalizeFirstLetter(value);
-  upperGreekSlashMap[capitalizeFirstLetter(key)] = capitalizeFirstLetter(value);
-}
+const greekDirectMap: DirectMap = {
+  moo: "mu",
+  noo: "nu",
+  Lm: "Lambda",
+  lm: "lambda",
+};
 
 const greekSlashMap: SlashMap = {
   ...lowerGreekSlashMap,
@@ -135,19 +161,22 @@ const physSlash: SlashMap = {
   h: "hbar",
 };
 
-/* Full word matches */
-const suggestedWords = _.uniq([
-  ...greekLetters,
-  ...Object.values(physSlash),
-  ...texBinaryOperations,
-]);
+const physDirectMap: DirectMap = {
+  hb: "hbar",
+};
 
 /* Slash matches */
-const slashMap = { ...greekSlashMap, ...physSlash };
+const slashMap = { ...setSlashMap, ...greekSlashMap, ...physSlash };
 const slashKeys = Object.keys(slashMap);
 
 /* Direct Matches */
-const directMap = { ...binDirectMap, ...calcDirectMap };
+const directMap = {
+  ...binDirectMap,
+  ...calcDirectMap,
+  ...mathDirectMap,
+  ...physDirectMap,
+  ...greekDirectMap,
+};
 const directKeys = Object.keys(directMap);
 
 /* Direct words */
@@ -161,7 +190,7 @@ class InPlaceSymbol extends Zentinel {
       CreateTransformerMessage.registerTransformer({
         source: IN_PLACE_SYMBOL_TRANSFORM,
         name: "in-place",
-        transform: async (root, cursor) => {
+        transform: async (root, cursor, keyPress) => {
           cursor = makeHelperCursor(cursor, root);
           const cursorCopy: Cursor = [...cursor];
 
@@ -172,8 +201,46 @@ class InPlaceSymbol extends Zentinel {
           const tt1 = getTransformTextZymbolAndParent(rootCopy, cursor);
           const tt2 = getTransformTextZymbolAndParent(root, cursor);
 
+          /* If the keypress is a power space, we're going to steal and return with tt1 */
+          if (
+            keyPress.type === KeyPressComplexType.Key &&
+            keyPress.key === " " &&
+            keyPress.modifiers?.includes(KeyPressModifier.Shift) &&
+            tt1.isTextZymbol
+          ) {
+            const { parent, zymbolIndex } = tt1;
+
+            parent.children.splice(
+              zymbolIndex,
+              1,
+              new SymbolZymbol(
+                LATEX_SPACE,
+                parent.parentFrame,
+                zymbolIndex,
+                parent
+              )
+            );
+
+            parent.recursivelyReIndexChildren();
+
+            cursorCopy.splice(cursorCopy.length - 2, 2, zymbolIndex + 1);
+
+            return [
+              new BasicZymbolTreeTransformation({
+                newTreeRoot: rootCopy as Zocket,
+                cursor: recoverAllowedCursor(cursorCopy, rootCopy),
+                priority: {
+                  rank: ZymbolTransformRank.Suggest,
+                  cost: 100,
+                },
+              }),
+            ];
+          }
+
           if (tt1.isTextZymbol) {
-            const { text } = tt1;
+            const { text, parent, zymbolIndex } = tt1;
+
+            console.log("yee", parent, zymbolIndex);
 
             const fullText = text.getText().trim();
             let finalWord = fullText;
@@ -250,14 +317,36 @@ class InPlaceSymbol extends Zentinel {
           if (tt2.isTextZymbol) {
             const { text } = tt2;
 
-            const word = text.getText().trim();
+            const i = last(cursorCopy);
+
+            const fullText = text.getText();
+
+            const { word, before, after } = splitCursorStringAtLastWord(
+              fullText,
+              i,
+              ["("]
+            );
 
             let changed = false;
             let symbol: string | string[] = "";
             let rank = ZymbolTransformRank.Include;
             let keyPressValidator: KeyPressValidator | undefined;
 
-            if (directWords.includes(word)) {
+            console.log(word, differentialDelim, word === differentialDelim);
+
+            /* First check for the differential deliminator */
+            /* TODO: This should probably be it's own transformer */
+            if (word === differentialDelim && !before) {
+              changed = true;
+
+              if (/^\s/.test(fullText)) {
+                symbol = [LATEX_SPACE, diffSymbol];
+              } else {
+                symbol = diffSymbol;
+              }
+
+              rank = ZymbolTransformRank.Suggest;
+            } else if (directWords.includes(word)) {
               changed = true;
               symbol = word;
               rank = ZymbolTransformRank.Suggest;
@@ -296,6 +385,13 @@ class InPlaceSymbol extends Zentinel {
               if (word.length > 1) {
                 rank = ZymbolTransformRank.Suggest;
               }
+
+              keyPressValidator = (keyPress: ZymKeyPress) =>
+                !(
+                  keyPress.type === KeyPressComplexType.Key &&
+                  /[a-zA-Z]+/.test(keyPress.key) &&
+                  checkSymbol(word + keyPress.key)
+                );
             }
 
             if (changed) {
@@ -307,6 +403,21 @@ class InPlaceSymbol extends Zentinel {
               let newTextPointer = textPointer + 1;
 
               let symZyms: SymbolZymbol[];
+
+              if (before) {
+                const txt1 = new TextZymbol(
+                  parentZocket.parentFrame,
+                  textPointer,
+                  parentZocket
+                );
+
+                txt1.setText(before);
+
+                newZym.push(txt1);
+                newTextPointer++;
+              }
+
+              /* Now either create a symbol or a number */
 
               if (Array.isArray(symbol)) {
                 symZyms = symbol.map(
@@ -329,6 +440,18 @@ class InPlaceSymbol extends Zentinel {
                     parentZocket
                   ),
                 ];
+              }
+
+              if (after) {
+                const txt2 = new TextZymbol(
+                  parentZocket.parentFrame,
+                  textPointer + 2,
+                  parentZocket
+                );
+
+                txt2.setText(after);
+
+                newZym.push(txt2);
               }
 
               newZym.push(...symZyms);

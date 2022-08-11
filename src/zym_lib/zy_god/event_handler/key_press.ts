@@ -21,6 +21,11 @@ import _ from "underscore";
 
 /* === Basic keypress types ===  */
 
+export enum ZymbolDirection {
+  LEFT = "left",
+  RIGHT = "right",
+}
+
 export enum KeyPressComplexType {
   Key,
 }

@@ -27,6 +27,9 @@ const dotMap: { [key: string]: string } = {
   ddt: "ddot",
   ul: "underline",
   bd: "bold",
+  scr: "mathscr",
+  cal: "mathcal",
+  tt: "text",
 };
 
 const suggestedMods = Object.values(dotMap);

@@ -30,12 +30,12 @@ export function wrapHtmlId(tex: string, html_id: string) {
 }
 
 export const LATEX_SPACE = "\\;";
-// export const LATEX_EMPTY_SOCKET = "□";
 export const LATEX_EMPTY_SOCKET = "{\\footnotesize \\square}";
 export const LATEX_NAME = "\\LaTeX";
 
 export const CURSOR_NAME = "cursor";
-export const CURSOR_LATEX: string = `\\htmlClass{${CURSOR_NAME}}{\\color{black}{\\boldsymbol{|}}}`;
+// export const CURSOR_LATEX: string = `\\htmlClass{${CURSOR_NAME}}{\\color{black}{\\boldsymbol{|}}}`;
+export const CURSOR_LATEX: string = `\\htmlClass{${CURSOR_NAME}}{\\color{none} \\boldsymbol{|}}`;
 
 export function text_with_cursor(
   text: string,
@@ -46,9 +46,14 @@ export function text_with_cursor(
   )}${CURSOR_LATEX}${create_tex_text(text.slice(cursor_position))}`;
 }
 
-export const INVALID_TEX = add_color_box(
-  add_latex_color(create_tex_text("Invalid TeX"), palette.danger),
-  palette.dangerLight
+// export const INVALID_TEX = add_color_box(
+//   add_latex_color(create_tex_text("Invalid TeX"), palette.danger),
+//   palette.dangerLight
+// );
+
+export const INVALID_TEX = add_latex_color(
+  create_tex_text("Invalid TeX"),
+  palette.danger
 );
 
 export const ALLOWED_NON_ALPHA_NUMERIC_CHARS = [

@@ -9,12 +9,13 @@ import { Zage, zageMaster } from "./zyms/zage/zage";
 import { zymbolMasterList } from "./zyms/zymbol/zymbols/zymbol_list";
 import { zymbolInfrastructureMasters } from "./zyms/zymbol_infrastructure/zymbol_infrastructure";
 import { inPlaceSymbol } from "./zyms/zymbol_infrastructure/zymbol_frame/transformers/in_place_symbols";
-import { parenthesisModifiers } from "./zyms/zymbol_infrastructure/zymbol_frame/transformers/parenthesis";
+import { parenthesisModifiers } from "./zyms/zymbol_infrastructure/zymbol_frame/transformers/parenthesis_transform";
 import { fraction } from "./zyms/zymbol_infrastructure/zymbol_frame/transformers/fraction_transform";
-import { cashFunctions } from "./zyms/zymbol_infrastructure/zymbol_frame/transformers/function_transformer";
 import { superSubTransform } from "./zyms/zymbol_infrastructure/zymbol_frame/transformers/super_sub_transform";
 import { defaultUndoRedoImpl } from "../zym_lib/zy_god/undo_redo/undo_redo";
 import { defaultZymbolHtmlIdImpl } from "./zyms/zymbol/zymbol";
+import { functionTransformer } from "./zyms/zymbol_infrastructure/zymbol_frame/transformers/function_transformer";
+import { cashStack } from "./zyms/zymbol_infrastructure/zymbol_frame/transformers/cash_stack";
 
 const root = new Zage(0, undefined);
 
@@ -40,7 +41,8 @@ export const zentinelList: Zentinel[] = [
   inPlaceSymbol,
   dotModifiers,
   parenthesisModifiers,
-  cashFunctions,
+  functionTransformer,
   fraction,
   superSubTransform,
+  cashStack,
 ];

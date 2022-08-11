@@ -8,9 +8,11 @@ import {
 } from "../../../../../zym_lib/zy_god/cursor/cursor";
 import {
   KeyPressBasicType,
+  KeyPressComplexType,
   ZymKeyPress,
 } from "../../../../../zym_lib/zy_god/event_handler/key_press";
 import { Zymbol } from "../../../zymbol/zymbol";
+import { ParenthesisZymbol } from "../../../zymbol/zymbols/parenthesis_zymbol";
 import {
   TextZymbol,
   TEXT_ZYMBOL_NAME,
@@ -33,17 +35,11 @@ import {
 const LEFT_PARENTHESIS = "(";
 const RIGHT_PARENTHESIS = ")";
 
-const ParenthesisMod: ZymbolModifier = {
-  id: {
-    group: "wrap",
-    item: "parenthesis",
-  },
-  pre: "\\left(",
-  post: "\\right)",
-};
+const BIG_RIGHT_PARENTHESIS = "))";
+
+const rightPar = [RIGHT_PARENTHESIS, BIG_RIGHT_PARENTHESIS];
 
 export const PARENTHESIS_TRANSFORM = "par-trans-t23dki";
-
 class CustomParenthesisTransformation extends ZymbolTreeTransformation {
   baseRoot: Zocket;
   rootCopy: Zocket;
@@ -117,8 +113,6 @@ class CustomParenthesisTransformation extends ZymbolTreeTransformation {
     const zymbolIndex = last(cursor, 2);
     const i = last(cursor);
 
-    console.log("baseroot", rootCopy);
-
     /* Handle the parenthesis that groups by operators */
     const cursorCopy = [...cursor];
     const transformText = getTransformTextZymbolAndParent(rootCopy, cursorCopy);
@@ -151,13 +145,13 @@ class CustomParenthesisTransformation extends ZymbolTreeTransformation {
         parent.children.splice(Math.max(this.startIndex - 1, 0), 0, txt);
       }
 
-      const newZocket = new Zocket(parent.parentFrame, 0, parent);
-      newZocket.children = newChildren as Zymbol[];
-      newZocket.reConnectParentChildren();
+      const parenthesis = new ParenthesisZymbol(parent.parentFrame, 0, parent);
 
-      newZocket.toggleModifier(ParenthesisMod);
+      parenthesis.baseZocket.children = newChildren;
+      parenthesis.baseZocket.reConnectParentChildren();
+      parenthesis.bigParenthesis = true;
 
-      parent.children.splice(this.startIndex, 0, newZocket);
+      parent.children.splice(this.startIndex, 0, parenthesis);
 
       const cc2 = [...cursorCopy];
       cc2.splice(cc2.length - 2, 2);
@@ -270,7 +264,7 @@ class Parenthesis extends Zentinel {
 
                 const cursorCopy = [...cursor];
 
-                if (word === RIGHT_PARENTHESIS) {
+                if (rightPar.includes(word)) {
                   /* Check if there's a left parenthesis that we're missing */
                   for (let k = 0; k < zymbolIndex; k++) {
                     const child = parent.children[k];
@@ -334,14 +328,17 @@ class Parenthesis extends Zentinel {
                           parent.children.splice(k, 0, txt);
                         }
 
-                        const newZocket = new Zocket(
+                        const parenthesis = new ParenthesisZymbol(
                           parent.parentFrame,
                           0,
                           parent
                         );
-                        newZocket.children = newChildren as Zymbol[];
 
-                        parent.children.splice(k, 0, newZocket);
+                        parenthesis.baseZocket.children =
+                          newChildren as Zymbol[];
+                        parenthesis.baseZocket.reConnectParentChildren();
+
+                        parent.children.splice(k, 0, parenthesis);
 
                         if (leftBefore) {
                           const txt = new TextZymbol(
@@ -355,25 +352,30 @@ class Parenthesis extends Zentinel {
                           parent.children.splice(k, 0, txt);
                         }
 
-                        parent.reIndexChildren();
-                        newZocket.reIndexChildren();
-
-                        newZocket.toggleModifier(ParenthesisMod);
+                        parenthesis.bigParenthesis = word !== RIGHT_PARENTHESIS;
 
                         root.recursivelyReIndexChildren();
 
                         allTransformations.push(
-                          new BasicZymbolTreeTransformation({
-                            newTreeRoot: root as Zocket,
-                            cursor: recoverAllowedCursor(
-                              extendParentCursor(newPointer, cursorCopy),
-                              root
-                            ),
-                            priority: {
-                              rank: ZymbolTransformRank.Suggest,
-                              cost: 100,
+                          new BasicZymbolTreeTransformation(
+                            {
+                              newTreeRoot: root as Zocket,
+                              cursor: recoverAllowedCursor(
+                                extendParentCursor(newPointer, cursorCopy),
+                                root
+                              ),
+                              priority: {
+                                rank: ZymbolTransformRank.Suggest,
+                                cost: 100,
+                              },
                             },
-                          })
+                            (keyPress: ZymKeyPress) =>
+                              !(
+                                word !== BIG_RIGHT_PARENTHESIS &&
+                                keyPress.type === KeyPressComplexType.Key &&
+                                keyPress.key === RIGHT_PARENTHESIS
+                              )
+                          )
                         );
 
                         break;

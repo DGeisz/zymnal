@@ -1,4 +1,3 @@
-import { before } from "underscore";
 import { palette } from "../../../../../global_styles/palette";
 import {
   add_latex_color,
@@ -12,12 +11,12 @@ import { Zym } from "../../../../../zym_lib/zym/zym";
 import { ZyMaster } from "../../../../../zym_lib/zym/zy_master";
 import {
   Cursor,
-  CursorIndex,
   CursorMoveResponse,
   extractCursorInfo,
   FAILED_CURSOR_MOVE_RESPONSE,
   successfulMoveResponse,
 } from "../../../../../zym_lib/zy_god/cursor/cursor";
+import { ZymbolDirection } from "../../../../../zym_lib/zy_god/event_handler/key_press";
 import { BasicContext } from "../../../../../zym_lib/zy_god/types/context_types";
 import { addZymChangeLink } from "../../../../../zym_lib/zy_god/undo_redo/undo_redo";
 import { getFullContextCursor } from "../../../../../zym_lib/zy_god/zy_god";
@@ -25,7 +24,7 @@ import { DUMMY_FRAME } from "../../../zymbol_infrastructure/zymbol_frame/zymbol_
 import {
   deflectDeleteBehavior,
   DeleteBehaviorType,
-  normalDeleteBehavior,
+  deleteBehaviorNormal,
 } from "../../delete_behavior";
 import { basicZymbolHtmlIdImpl, Zymbol, ZymbolRenderArgs } from "../../zymbol";
 import { extendZymbol } from "../../zymbol_cmd";
@@ -125,6 +124,25 @@ export class TextZymbol extends Zymbol<TextZymbolPersist> {
     }
   };
 
+  moveCursorUp(_cursor: Cursor, _ctx: BasicContext): CursorMoveResponse {
+    return FAILED_CURSOR_MOVE_RESPONSE;
+  }
+  captureArrowUp(
+    _fromSide: ZymbolDirection,
+    _ctx: BasicContext
+  ): CursorMoveResponse {
+    return FAILED_CURSOR_MOVE_RESPONSE;
+  }
+  moveCursorDown(_cursor: Cursor, _ctx: BasicContext): CursorMoveResponse {
+    return FAILED_CURSOR_MOVE_RESPONSE;
+  }
+  captureArrowDown(
+    _fromSide: ZymbolDirection,
+    _ctx: BasicContext
+  ): CursorMoveResponse {
+    return FAILED_CURSOR_MOVE_RESPONSE;
+  }
+
   private _addZymChangeLink = (
     ctx: BasicContext,
     beforeChars: string[],
@@ -171,11 +189,11 @@ export class TextZymbol extends Zymbol<TextZymbolPersist> {
   getDeleteBehavior = () => {
     if (this.characters.length > 1) {
       return deflectDeleteBehavior(
-        normalDeleteBehavior(DeleteBehaviorType.ALLOWED)
+        deleteBehaviorNormal(DeleteBehaviorType.ALLOWED)
       );
     }
 
-    return normalDeleteBehavior(DeleteBehaviorType.ALLOWED);
+    return deleteBehaviorNormal(DeleteBehaviorType.ALLOWED);
   };
 
   delete = (cursor: Cursor, ctx: BasicContext) => {

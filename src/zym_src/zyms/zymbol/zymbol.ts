@@ -20,6 +20,7 @@ import {
   KeyPressBasicType,
   KeyPressComplexType,
   KeyPressModifier,
+  ZymbolDirection,
   ZymKeyPress,
 } from "../../../zym_lib/zy_god/event_handler/key_press";
 import { BasicContext } from "../../../zym_lib/zy_god/types/context_types";
@@ -47,6 +48,11 @@ export function keyPressHasModifier(
   const { modifiers } = getKeyPress(ctx);
 
   return !!modifiers && modifiers.includes(mod);
+}
+
+export interface SpliceDeleteResponse {
+  zymbols: Zymbol[];
+  putCursorAtEnd: boolean;
 }
 
 export abstract class Zymbol<P = any> extends Zym<TeX, P> {
@@ -89,6 +95,12 @@ export abstract class Zymbol<P = any> extends Zym<TeX, P> {
         break;
       case KeyPressBasicType.ArrowRight:
         res = this.moveCursorRight(cursor, ctx);
+        break;
+      case KeyPressBasicType.ArrowUp:
+        res = this.moveCursorUp(cursor, ctx);
+        break;
+      case KeyPressBasicType.ArrowDown:
+        res = this.moveCursorDown(cursor, ctx);
         break;
       case KeyPressBasicType.Delete:
         res = this.delete(cursor, ctx);
@@ -134,27 +146,44 @@ export abstract class Zymbol<P = any> extends Zym<TeX, P> {
     }
   };
 
-  abstract moveCursorLeft: (
+  abstract moveCursorLeft(
     cursor: Cursor,
     ctx: BasicContext
-  ) => CursorMoveResponse;
-  abstract takeCursorFromLeft: (ctx: BasicContext) => CursorMoveResponse;
+  ): CursorMoveResponse;
+  abstract takeCursorFromLeft(ctx: BasicContext): CursorMoveResponse;
 
-  abstract moveCursorRight: (
+  abstract moveCursorRight(
     cursor: Cursor,
     ctx: BasicContext
-  ) => CursorMoveResponse;
-  abstract takeCursorFromRight: (ctx: BasicContext) => CursorMoveResponse;
+  ): CursorMoveResponse;
+  abstract takeCursorFromRight(ctx: BasicContext): CursorMoveResponse;
 
-  abstract addCharacter: (
+  absorbCursor = (ctx: BasicContext) => this.takeCursorFromRight(ctx);
+
+  abstract moveCursorUp(cursor: Cursor, ctx: BasicContext): CursorMoveResponse;
+
+  abstract captureArrowUp(
+    fromSide: ZymbolDirection,
+    ctx: BasicContext
+  ): CursorMoveResponse;
+
+  abstract moveCursorDown(
+    cursor: Cursor,
+    ctx: BasicContext
+  ): CursorMoveResponse;
+
+  abstract captureArrowDown(
+    fromSide: ZymbolDirection,
+    ctx: BasicContext
+  ): CursorMoveResponse;
+
+  abstract addCharacter(
     character: string,
     cursor: Cursor,
     ctx: BasicContext
-  ) => CursorMoveResponse;
+  ): CursorMoveResponse;
 
-  abstract getDeleteBehavior: () => DeleteBehavior;
-
-  primeDelete = () => {};
+  abstract getDeleteBehavior(): DeleteBehavior;
 
   /* This needs to be overloaded for any more complex zymbol */
   abstract delete(cursor: Cursor, ctx: BasicContext): CursorMoveResponse;
@@ -163,7 +192,24 @@ export abstract class Zymbol<P = any> extends Zym<TeX, P> {
   @return: Indicates whether the deflect delete was successful */
   deflectDelete = (_ctx: BasicContext): boolean => false;
 
-  abstract renderTex: (opts: ZymbolRenderArgs) => TeX;
+  spliceDelete = (
+    _cursor: Cursor,
+    _ctx: BasicContext
+  ): SpliceDeleteResponse | undefined => ({
+    zymbols: [],
+    putCursorAtEnd: true,
+  });
+
+  /** 
+  If this returns something defined, it indicates
+  we want to delete the zymbol using the given delete behavior 
+  */
+  letParentDeleteWithDeleteBehavior = (
+    _cursor: Cursor,
+    _ctx: BasicContext
+  ): DeleteBehavior | undefined => undefined;
+
+  abstract renderTex(opts: ZymbolRenderArgs): TeX;
 
   getRenderContent = (opts: ZymbolRenderArgs) => this.renderTex(opts);
 
@@ -174,6 +220,7 @@ export abstract class Zymbol<P = any> extends Zym<TeX, P> {
 
   recursivelyReIndexChildren = () => {
     this.reIndexChildren();
+    this.reConnectParentChildren();
 
     this.children.forEach((c) => (c as Zymbol).recursivelyReIndexChildren());
   };

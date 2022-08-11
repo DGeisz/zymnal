@@ -219,8 +219,6 @@ class ZyGod extends ZyMaster {
 
       const links = getZymChangeLinks(ctx);
 
-      console.log("links::", links);
-
       if (links)
         this.undoRedoStack.addChangeFrame({
           links,
