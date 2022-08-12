@@ -66,6 +66,7 @@ export class ParenthesisZymbol extends Zymbol<ParenthesisPersist> {
     super(parentFrame, cursorIndex, parent);
 
     this.baseZocket = new Zocket(parentFrame, 0, this);
+    this.children = [this.baseZocket];
   }
 
   moveCursorLeft = (cursor: Cursor, ctx: BasicContext) =>

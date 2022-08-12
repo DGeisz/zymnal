@@ -19,6 +19,7 @@ import {
   ZymbolTreeTransformation,
   ZymbolTreeTransformationPriority,
 } from "../zymbol_frame";
+import { diffSymbol } from "./in_place_symbols";
 import {
   getTransformTextZymbolAndParent,
   makeHelperCursor,
@@ -27,11 +28,11 @@ import {
 } from "./transform_utils";
 
 const FRACTION = "fraction-transform";
-const FRAC_FUN = "cfrac";
+const FRAC_FUN = "frac";
 
 const fractionDelim = "//";
 
-const fractionStoppers = [...["partial"].map(backslash)];
+const fractionStoppers = [...["partial"].map(backslash), "d", diffSymbol];
 
 function isFractionStopper(z: Zymbol): boolean {
   return zymbolIsBinaryOperator(z) || z.getMasterId() === TEXT_ZYMBOL_NAME;

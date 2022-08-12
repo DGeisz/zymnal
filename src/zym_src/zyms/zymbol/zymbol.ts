@@ -15,6 +15,7 @@ import {
   CursorMoveResponse,
   extractCursorInfo,
   FAILED_CURSOR_MOVE_RESPONSE,
+  wrapChildCursorResponse,
 } from "../../../zym_lib/zy_god/cursor/cursor";
 import {
   KeyPressBasicType,
@@ -126,9 +127,10 @@ export abstract class Zymbol<P = any> extends Zym<TeX, P> {
     const { childRelativeCursor, nextCursorIndex } = extractCursorInfo(cursor);
 
     if (
-      cursor.length === 0 ||
-      nextCursorIndex <= -1 ||
-      nextCursorIndex >= this.children.length
+      keyPress.type === KeyPressBasicType.Enter &&
+      (cursor.length === 0 ||
+        nextCursorIndex <= -1 ||
+        nextCursorIndex >= this.children.length)
     ) {
       this.callHermes(
         CreateZyGodMessage.queueSimulatedKeyPress({
@@ -138,10 +140,13 @@ export abstract class Zymbol<P = any> extends Zym<TeX, P> {
 
       return FAILED_CURSOR_MOVE_RESPONSE;
     } else {
-      return this.children[nextCursorIndex].defaultKeyPressHandler(
-        keyPress,
-        childRelativeCursor,
-        ctx
+      return wrapChildCursorResponse(
+        this.children[nextCursorIndex].defaultKeyPressHandler(
+          keyPress,
+          childRelativeCursor,
+          ctx
+        ),
+        nextCursorIndex
       );
     }
   };

@@ -14,8 +14,13 @@ import {
   successfulMoveResponse,
   wrapChildCursorResponse,
 } from "../../../../zym_lib/zy_god/cursor/cursor";
-import { ZymbolDirection } from "../../../../zym_lib/zy_god/event_handler/key_press";
+import {
+  KeyPressBasicType,
+  ZymbolDirection,
+  ZymKeyPress,
+} from "../../../../zym_lib/zy_god/event_handler/key_press";
 import { BasicContext } from "../../../../zym_lib/zy_god/types/context_types";
+import { CreateZyGodMessage } from "../../../../zym_lib/zy_god/zy_god";
 import {
   DUMMY_FRAME,
   ZymbolFrame,
@@ -225,6 +230,48 @@ export class StackZymbol extends Zymbol<StackZymbolPersist> {
         nextCursorIndex
       )
     );
+
+  defaultKeyPressHandler = (
+    keyPress: ZymKeyPress,
+    cursor: Cursor,
+    ctx: BasicContext
+  ): CursorMoveResponse => {
+    const { childRelativeCursor, nextCursorIndex } = extractCursorInfo(cursor);
+
+    if (keyPress.type === KeyPressBasicType.Enter) {
+      if (
+        nextCursorIndex === StackPosition.TOP &&
+        _.isEqual(childRelativeCursor, [
+          this.children[StackPosition.TOP].children.length,
+        ])
+      ) {
+        return wrapChildCursorResponse(
+          this.children[StackPosition.BOTTOM].takeCursorFromLeft(ctx),
+          StackPosition.BOTTOM
+        );
+      } else if (
+        cursor.length === 0 ||
+        nextCursorIndex <= -1 ||
+        nextCursorIndex >= this.children.length
+      ) {
+        this.callHermes(
+          CreateZyGodMessage.queueSimulatedKeyPress({
+            type: KeyPressBasicType.ArrowRight,
+          })
+        );
+
+        return FAILED_CURSOR_MOVE_RESPONSE;
+      }
+    }
+    return wrapChildCursorResponse(
+      this.children[nextCursorIndex].defaultKeyPressHandler(
+        keyPress,
+        childRelativeCursor,
+        ctx
+      ),
+      nextCursorIndex
+    );
+  };
 
   bothChildrenEmpty = () => this.children.every((c) => c.children.length === 0);
 

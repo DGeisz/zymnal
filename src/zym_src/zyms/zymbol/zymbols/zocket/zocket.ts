@@ -620,7 +620,9 @@ export class Zocket extends Zymbol<ZocketPersist> {
 
       childCursorIndex = nextCursorIndex - 1;
       zymbol = this.children[childCursorIndex];
-      deleteBehavior = zymbol.getDeleteBehavior();
+      deleteBehavior = keyPressHasModifier(ctx, KeyPressModifier.Shift)
+        ? deleteBehaviorNormal(DeleteBehaviorType.ALLOWED)
+        : zymbol.getDeleteBehavior();
     } else if (nextCursorIndex > -1) {
       const db = this.children[
         nextCursorIndex

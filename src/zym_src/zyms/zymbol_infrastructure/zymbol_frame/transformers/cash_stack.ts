@@ -22,7 +22,11 @@ const CASH_STACK = "cash-stack-trans";
 const CASH_DELIM = "$";
 
 function checkStackOperator(op: TeX): boolean {
-  return checkLatex(`\\${op}{a}{a}`);
+  return (
+    checkLatex(`\\${op}{a}{a}`) &&
+    !checkLatex(`\\${op}{a}`) &&
+    !checkLatex(`\\${op}`)
+  );
 }
 
 class CashStack extends Zentinel {

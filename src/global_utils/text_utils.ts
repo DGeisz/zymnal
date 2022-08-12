@@ -48,3 +48,20 @@ export function floatToReadableString(n: number): string {
 export function firstWord(s: string): string {
   return s.split(/\s+/).filter((t) => !!t)[0];
 }
+
+const hintKeys = "sadfjklewcmpgh".split("");
+
+/**
+ * Proudly stole this right from Vimium
+ */
+export function vimiumHintKeys(linkCount: number): string[] {
+  let hints: string[] = [""];
+  let offset: number = 0;
+  while (hints.length - offset < linkCount || hints.length === 1) {
+    const hint = hints[offset++];
+    for (let ch of hintKeys) hints.push(ch + hint);
+  }
+  hints = hints.slice(offset, offset + linkCount);
+
+  return hints.sort().map((str) => str.split("").reverse().join(""));
+}

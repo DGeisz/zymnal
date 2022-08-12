@@ -1,4 +1,5 @@
 import React, { useEffect } from "react";
+import ReactDOM from "react-dom/client";
 import Tex from "../../../../global_building_blocks/tex/tex";
 import {
   HermesMessage,
@@ -50,7 +51,7 @@ import {
   ZymbolHtmlClickInfo,
   ZymbolHtmlIdCommandGroup,
 } from "../../zymbol/zymbol";
-import { Zocket } from "../../zymbol/zymbols/zocket/zocket";
+import { Zocket, ZocketPersist } from "../../zymbol/zymbols/zocket/zocket";
 import { TeX } from "../../zymbol/zymbol_types";
 import _ from "underscore";
 import {
@@ -58,9 +59,10 @@ import {
   UndoRedoCommand,
 } from "../../../../zym_lib/zy_god/undo_redo/undo_redo";
 import { cursorToString } from "../../../../global_utils/latex_utils";
-import { palette } from "../../../../global_styles/palette";
 import { BasicContext } from "../../../../zym_lib/zy_god/types/context_types";
 import clsx from "clsx";
+import { palette } from "../../../../global_styles/palette";
+import { vimiumHintKeys } from "../../../../global_utils/text_utils";
 
 const ZFP_FIELDS: {
   BASE_ZOCKET: "b";
@@ -69,8 +71,7 @@ const ZFP_FIELDS: {
 };
 
 export interface ZymbolFramePersist {
-  /* TODO: Add base zocket */
-  [ZFP_FIELDS.BASE_ZOCKET]: ZymPersist<any>;
+  [ZFP_FIELDS.BASE_ZOCKET]: ZymPersist<ZocketPersist>;
 }
 
 /* === MASTER ===  */
@@ -210,6 +211,90 @@ export interface TransformerFactory {
   factory: (root: Zym, cursor: Cursor) => ZymbolTransformer[];
 }
 
+enum VimiumState {
+  None,
+  Active,
+}
+
+export const VimiumHint: React.FC<{ hint: string; str: string }> = ({
+  hint,
+  str,
+}) => {
+  return (
+    <span
+      className={clsx(
+        // "bg-lime-600",
+        "bg-green-100",
+        "px-[3px]",
+        "rounded-sm",
+        // "text-sm text-white font-bold",
+        "text-sm font-semibold text-green-600",
+        "z-50"
+      )}
+    >
+      {hint.startsWith(str) ? (
+        <>
+          <span className="text-gray-300">{str}</span>
+          {hint.substring(str.length)}
+        </>
+      ) : (
+        hint
+      )}
+    </span>
+  );
+};
+
+const HINT_PERIOD = 2;
+
+export class VimiumMode {
+  private chars = "";
+  private state = VimiumState.None;
+
+  /* Return true if the keypress was intercepted and handled*/
+  handleKeyPress = (keyPress: ZymKeyPress): boolean => {
+    switch (this.state) {
+      case VimiumState.None: {
+        if (
+          keyPressEqual(keyPress, {
+            type: KeyPressComplexType.Key,
+            key: "f",
+            modifiers: [KeyPressModifier.Cmd],
+          })
+        ) {
+          this.state = VimiumState.Active;
+          this.chars = "";
+          return true;
+        }
+
+        break;
+      }
+      case VimiumState.Active: {
+        if (keyPress.type === KeyPressComplexType.Key) {
+          if (/^[a-zA-Z]$/.test(keyPress.key)) {
+            this.chars += keyPress.key;
+            return true;
+          }
+        } else if (keyPress.type === KeyPressBasicType.Escape) {
+          this.escapeVimiumMode();
+          return false;
+        }
+
+        break;
+      }
+    }
+
+    return false;
+  };
+
+  escapeVimiumMode = () => {
+    this.state = VimiumState.None;
+    this.chars = "";
+  };
+
+  isActive = () => this.state === VimiumState.Active;
+  getChars = () => this.chars;
+}
+
 class ZymbolFrameMaster extends ZyMaster {
   zyId = "zymbol_frame";
 
@@ -306,8 +391,12 @@ interface FrameRenderProps {
 /* Helper class */
 const Styles = {
   FrameContainer: "items-start",
-  SelectionKey:
-    "bg-green-200 rounded-md px-2 py-1 text-sm font-semibold text-green-600 shadow-sm shadow-gray",
+  SelectionKey: clsx(
+    "bg-green-200",
+    "rounded-md px-2 py-1",
+    "text-sm font-semibold text-green-600",
+    "shadow-sm shadow-gray"
+  ),
   MainFrameContainer: "m-4 mt-0",
   TransContainer: "p-2 border-b ",
   SelectedTransContainer: "bg-gray-200 rounded-md",
@@ -379,6 +468,8 @@ export class ZymbolFrame extends Zyact<ZymbolFramePersist, FrameRenderProps> {
   transformations: ZymbolTreeTransformation[] = [];
   transformIndex = -1;
 
+  vimiumMode = new VimiumMode();
+
   setBaseZocket = (baseZocket: Zocket) => {
     this.baseZocket = baseZocket;
     this.baseZocket.parent = this;
@@ -399,6 +490,9 @@ export class ZymbolFrame extends Zyact<ZymbolFramePersist, FrameRenderProps> {
     const frameTex = this.baseZocket.renderTex({
       cursor: relativeCursor,
     });
+
+    const vimiumActive = this.vimiumMode.isActive();
+    const vimiumChars = this.vimiumMode.getChars();
 
     useEffect(() => {
       (async () => {
@@ -429,11 +523,50 @@ export class ZymbolFrame extends Zyact<ZymbolFramePersist, FrameRenderProps> {
           )
         );
 
-        for (const pointer of subTreePointers) {
+        let vimiumHints: string[] = [];
+
+        if (vimiumActive) {
+          vimiumHints = vimiumHintKeys(
+            Math.floor(subTreePointers.length / HINT_PERIOD) + 1
+          );
+        }
+
+        for (let i = 0; i < subTreePointers.length; i++) {
+          const pointer = subTreePointers[i];
+
           const id = cursorToString(pointer.loc);
           const element = document.getElementById(id);
 
           if (element) {
+            element.style.position = "relative";
+
+            const hintElementId = id + "v";
+            const oldHint = document.getElementById(hintElementId);
+
+            oldHint && oldHint.remove();
+
+            if (vimiumActive && i % HINT_PERIOD === 0) {
+              const hint = vimiumHints[Math.floor(i / HINT_PERIOD)];
+
+              if (hint === vimiumChars) {
+                this.vimiumMode.escapeVimiumMode();
+                usingTransformation && this.takeSelectedTransformation();
+
+                this.callHermes(
+                  CreateZyGodMessage.takeCursor(pointer.clickCursor)
+                );
+              } else if (hint.startsWith(vimiumChars)) {
+                const d = document.createElement("span");
+                d.classList.add("vimium-container");
+                d.id = hintElementId;
+
+                ReactDOM.createRoot(d).render(
+                  <VimiumHint hint={hint} str={vimiumChars} />
+                );
+                element.appendChild(d);
+              }
+            }
+
             element.style.pointerEvents = "auto";
             element.style.transitionDuration = "0.1s";
             element.style.cursor = "pointer";
@@ -443,7 +576,6 @@ export class ZymbolFrame extends Zyact<ZymbolFramePersist, FrameRenderProps> {
             };
 
             element.onmouseout = () => {
-              // element.style.color = palette.black;
               element.style.color = "";
             };
 
@@ -457,7 +589,7 @@ export class ZymbolFrame extends Zyact<ZymbolFramePersist, FrameRenderProps> {
           }
         }
       })();
-    }, [frameTex]);
+    }, [frameTex, vimiumActive, vimiumChars]);
 
     if (this.transformations.length > 0) {
       let selectedTex: string;
@@ -621,6 +753,10 @@ const keyPressImpl = implementPartialCmdGroup(KeyPressCommand, {
 
     const { keyPressContext, keyPress } = args;
     let { cursor } = args;
+
+    if (frame.vimiumMode.handleKeyPress(keyPress)) {
+      return successfulMoveResponse(cursor);
+    }
 
     if (
       keyPress.type === KeyPressComplexType.Key &&

@@ -38,6 +38,7 @@ export enum KeyPressBasicType {
   ArrowUp,
   ArrowDown,
   Delete,
+  Escape,
 }
 
 export enum KeyPressModifier {

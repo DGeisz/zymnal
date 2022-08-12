@@ -500,7 +500,7 @@ export class SuperSubZymbol extends Zymbol<SuperSubPersist> {
     const i = this.getCursorIndex();
 
     if (i > 0) {
-      return this.parent?.children[i - 1].getMasterId() === SUPER_SUB_ID;
+      return this.parent?.children[i - 1]?.getMasterId() === SUPER_SUB_ID;
     }
 
     return false;

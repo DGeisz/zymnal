@@ -82,7 +82,7 @@ const calcDirectMap: DirectMap = {
 };
 
 const differentialDelim = "dff";
-const diffSymbol = "\\text{d}";
+export const diffSymbol = "\\text{d}";
 
 /* +++ Math +++ */
 const mathDirectMap: DirectMap = {
@@ -238,9 +238,7 @@ class InPlaceSymbol extends Zentinel {
           }
 
           if (tt1.isTextZymbol) {
-            const { text, parent, zymbolIndex } = tt1;
-
-            console.log("yee", parent, zymbolIndex);
+            const { text } = tt1;
 
             const fullText = text.getText().trim();
             let finalWord = fullText;
@@ -332,10 +330,7 @@ class InPlaceSymbol extends Zentinel {
             let rank = ZymbolTransformRank.Include;
             let keyPressValidator: KeyPressValidator | undefined;
 
-            console.log(word, differentialDelim, word === differentialDelim);
-
             /* First check for the differential deliminator */
-            /* TODO: This should probably be it's own transformer */
             if (word === differentialDelim && !before) {
               changed = true;
 

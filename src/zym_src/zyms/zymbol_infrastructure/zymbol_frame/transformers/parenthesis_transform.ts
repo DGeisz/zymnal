@@ -102,8 +102,6 @@ class CustomParenthesisTransformation extends ZymbolTreeTransformation {
   getCurrentTransformation(): { newTreeRoot: Zocket; cursor: Cursor } {
     if (!this.changedIndex && this.memo) return this.memo;
 
-    // debugger;
-
     const rootCopy = this.baseRoot;
 
     /* Make a copy for the next run */

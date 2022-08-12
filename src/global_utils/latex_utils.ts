@@ -34,7 +34,6 @@ export const LATEX_EMPTY_SOCKET = "{\\footnotesize \\square}";
 export const LATEX_NAME = "\\LaTeX";
 
 export const CURSOR_NAME = "cursor";
-// export const CURSOR_LATEX: string = `\\htmlClass{${CURSOR_NAME}}{\\color{black}{\\boldsymbol{|}}}`;
 export const CURSOR_LATEX: string = `\\htmlClass{${CURSOR_NAME}}{\\color{none} \\boldsymbol{|}}`;
 
 export function text_with_cursor(
@@ -45,11 +44,6 @@ export function text_with_cursor(
     text.slice(0, cursor_position)
   )}${CURSOR_LATEX}${create_tex_text(text.slice(cursor_position))}`;
 }
-
-// export const INVALID_TEX = add_color_box(
-//   add_latex_color(create_tex_text("Invalid TeX"), palette.danger),
-//   palette.dangerLight
-// );
 
 export const INVALID_TEX = add_latex_color(
   create_tex_text("Invalid TeX"),
