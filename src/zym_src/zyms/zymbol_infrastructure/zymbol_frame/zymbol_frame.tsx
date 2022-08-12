@@ -32,6 +32,7 @@ import {
   extractCursorInfo,
   FAILED_CURSOR_MOVE_RESPONSE,
   successfulMoveResponse,
+  wrapChildCursorResponse,
 } from "../../../../zym_lib/zy_god/cursor/cursor";
 import { CursorCommand } from "../../../../zym_lib/zy_god/cursor/cursor_commands";
 import { getRelativeCursor } from "../../../../zym_lib/zy_god/divine_api/divine_accessors";
@@ -223,11 +224,9 @@ export const VimiumHint: React.FC<{ hint: string; str: string }> = ({
   return (
     <span
       className={clsx(
-        // "bg-lime-600",
-        "bg-green-100",
+        "bg-green-200",
         "px-[3px]",
         "rounded-sm",
-        // "text-sm text-white font-bold",
         "text-sm font-semibold text-green-600",
         "z-50"
       )}
@@ -825,18 +824,20 @@ const keyPressImpl = implementPartialCmdGroup(KeyPressCommand, {
         if (keyPress.type === KeyPressBasicType.Enter) {
           frame.setNewTransformations([]);
 
-          unwrap(
-            await zym.children[nextCursorIndex].cmd<
-              CursorMoveResponse,
-              KeyPressArgs
-            >(KeyPressCommand.handleKeyPress, {
-              cursor: childRelativeCursor,
-              keyPressContext,
-              keyPress,
-            })
-          );
+          return wrapChildCursorResponse(
+            unwrap(
+              await zym.children[nextCursorIndex].cmd<
+                CursorMoveResponse,
+                KeyPressArgs
+              >(KeyPressCommand.handleKeyPress, {
+                cursor: childRelativeCursor,
+                keyPressContext,
+                keyPress,
+              })
+            ),
 
-          return successfulMoveResponse(cursor);
+            nextCursorIndex
+          );
         }
       }
 

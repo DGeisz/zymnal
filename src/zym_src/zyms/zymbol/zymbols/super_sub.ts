@@ -32,14 +32,17 @@ import { deflectMethodToChild } from "./zymbol_utils";
 const SSP_FIELDS: {
   CHILDREN: "c";
   STATUS: "s";
+  STANDALONE: "a";
 } = {
   CHILDREN: "c",
   STATUS: "s",
+  STANDALONE: "a",
 };
 
 export interface SuperSubPersist {
   [SSP_FIELDS.CHILDREN]: ZymPersist<any>[];
   [SSP_FIELDS.STATUS]: SuperSubStatus;
+  [SSP_FIELDS.STANDALONE]: boolean;
 }
 
 export const SUPER_SUB_ID = "super-sub";
@@ -79,6 +82,8 @@ export class SuperSubZymbol extends Zymbol<SuperSubPersist> {
   children: Zymbol[] = [];
   zyMaster: ZyMaster = superSubMaster;
   status: SuperSubStatus = SuperSubStatus.Neither;
+
+  standalone = false;
 
   getChildPosition = (isSuper: boolean) => {
     switch (this.status) {
@@ -489,7 +494,7 @@ export class SuperSubZymbol extends Zymbol<SuperSubPersist> {
       }
     }
 
-    if (this.prevZymbolIsSuperSub()) {
+    if (this.prevZymbolIsSuperSub() || this.standalone) {
       tex = `{${tex}}`;
     }
 
@@ -510,6 +515,7 @@ export class SuperSubZymbol extends Zymbol<SuperSubPersist> {
     return {
       [SSP_FIELDS.CHILDREN]: this.children.map((c) => c.persist()),
       [SSP_FIELDS.STATUS]: this.status,
+      [SSP_FIELDS.STANDALONE]: this.standalone,
     };
   }
 
@@ -522,6 +528,9 @@ export class SuperSubZymbol extends Zymbol<SuperSubPersist> {
       },
       [SSP_FIELDS.STATUS]: (s) => {
         this.status = s;
+      },
+      [SSP_FIELDS.STANDALONE]: (s) => {
+        this.standalone = s;
       },
     });
 

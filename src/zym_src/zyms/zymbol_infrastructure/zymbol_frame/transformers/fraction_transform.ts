@@ -1,3 +1,4 @@
+import { createJsxJsxClosingFragment } from "typescript";
 import { last } from "../../../../../global_utils/array_utils";
 import { backslash } from "../../../../../global_utils/latex_utils";
 import { Zentinel } from "../../../../../zym_lib/zentinel/zentinel";
@@ -194,10 +195,38 @@ class Fraction extends Zentinel {
           if (transformText.isTextZymbol) {
             const { text, parent } = transformText;
 
-            const word = text.getText().trim();
+            const fullText = text.getText();
+            const word = fullText.trim();
 
             if (word === fractionDelim) {
-              if (zymbolIndex > 0) {
+              if (zymbolIndex === 0 || /^\s/.test(fullText)) {
+                const fraction = new StackZymbol(
+                  FRAC_FUN,
+                  root.parentFrame,
+                  0,
+                  parent
+                );
+
+                parent.children.splice(zymbolIndex, 1, fraction);
+
+                cursorCopy.splice(
+                  cursorCopy.length - 2,
+                  2,
+                  ...[zymbolIndex, 0, 0]
+                );
+
+                root.recursivelyReIndexChildren();
+                return [
+                  new BasicZymbolTreeTransformation({
+                    newTreeRoot: root as Zocket,
+                    cursor: recoverAllowedCursor(cursorCopy, root),
+                    priority: {
+                      rank: ZymbolTransformRank.Suggest,
+                      cost: 100,
+                    },
+                  }),
+                ];
+              } else {
                 let k = zymbolIndex - 1;
                 let startIndex = 0;
 
@@ -225,31 +254,6 @@ class Fraction extends Zentinel {
                 await t.init();
 
                 return [t];
-              } else {
-                const fraction = new StackZymbol(
-                  FRAC_FUN,
-                  root.parentFrame,
-                  0,
-                  parent
-                );
-
-                parent.children.unshift(fraction);
-
-                parent.children.splice(1, 1);
-
-                cursorCopy.splice(cursorCopy.length - 2, 2, ...[0, 0, 0]);
-
-                root.recursivelyReIndexChildren();
-                return [
-                  new BasicZymbolTreeTransformation({
-                    newTreeRoot: root as Zocket,
-                    cursor: recoverAllowedCursor(cursorCopy, root),
-                    priority: {
-                      rank: ZymbolTransformRank.Suggest,
-                      cost: 100,
-                    },
-                  }),
-                ];
               }
             }
           }
