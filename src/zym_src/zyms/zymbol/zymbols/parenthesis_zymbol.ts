@@ -1,3 +1,4 @@
+import { checkLatex } from "../../../../global_utils/latex_utils";
 import {
   hydrateChild,
   safeHydrate,
@@ -5,7 +6,11 @@ import {
 import { Zym, ZymPersist } from "../../../../zym_lib/zym/zym";
 import { ZyMaster } from "../../../../zym_lib/zym/zy_master";
 import {
-  chainMoveResponse,
+  implementPartialCmdGroup,
+  NONE,
+  some,
+} from "../../../../zym_lib/zy_commands/zy_command_types";
+import {
   Cursor,
   CursorIndex,
   CursorMoveResponse,
@@ -15,6 +20,7 @@ import {
 } from "../../../../zym_lib/zy_god/cursor/cursor";
 import { ZymbolDirection } from "../../../../zym_lib/zy_god/event_handler/key_press";
 import { BasicContext } from "../../../../zym_lib/zy_god/types/context_types";
+import { DotModifierCommand } from "../../zymbol_infrastructure/zymbol_frame/transformers/dot_modifiers";
 import {
   DUMMY_FRAME,
   ZymbolFrame,
@@ -28,14 +34,20 @@ import { deflectMethodToChild } from "./zymbol_utils";
 const PZP_FIELDS: {
   BASE_ZOCKET: "b";
   BIG_PARENTHESIS: "p";
+  LEFT: "l";
+  RIGHT: "r";
 } = {
   BASE_ZOCKET: "b",
   BIG_PARENTHESIS: "p",
+  LEFT: "l",
+  RIGHT: "r",
 };
 
 export interface ParenthesisPersist {
   [PZP_FIELDS.BASE_ZOCKET]: ZymPersist<ZocketPersist>;
   [PZP_FIELDS.BIG_PARENTHESIS]: boolean;
+  [PZP_FIELDS.LEFT]: string;
+  [PZP_FIELDS.RIGHT]: string;
 }
 
 export const PARENTHESIS_ZYMBOL_ID = "parenthesis-zymbol";
@@ -52,11 +64,18 @@ export const parenthesisZymbolMaster = new ParenthesisZymbolMaster();
 
 extendZymbol(parenthesisZymbolMaster);
 
+function checkParenthesisType(t: string) {
+  return checkLatex(`\\l${t} a \\r${t}`);
+}
+
 export class ParenthesisZymbol extends Zymbol<ParenthesisPersist> {
   baseZocket: Zocket;
   children: Zymbol<any>[] = [];
   zyMaster: ZyMaster = parenthesisZymbolMaster;
   bigParenthesis = false;
+
+  left = "(";
+  right = ")";
 
   constructor(
     parentFrame: ZymbolFrame,
@@ -145,8 +164,8 @@ export class ParenthesisZymbol extends Zymbol<ParenthesisPersist> {
   });
 
   renderTex = (opts: ZymbolRenderArgs) => {
-    const left = this.bigParenthesis ? "\\left(" : "(";
-    const right = this.bigParenthesis ? "\\right)" : ")";
+    const left = this.bigParenthesis ? `\\left${this.left}` : this.left;
+    const right = this.bigParenthesis ? `\\right${this.right}` : this.right;
 
     const { childRelativeCursor } = extractCursorInfo(opts.cursor);
 
@@ -160,6 +179,8 @@ export class ParenthesisZymbol extends Zymbol<ParenthesisPersist> {
     return {
       [PZP_FIELDS.BASE_ZOCKET]: this.baseZocket.persist(),
       [PZP_FIELDS.BIG_PARENTHESIS]: this.bigParenthesis,
+      [PZP_FIELDS.LEFT]: this.left,
+      [PZP_FIELDS.RIGHT]: this.right,
     };
   }
 
@@ -172,6 +193,67 @@ export class ParenthesisZymbol extends Zymbol<ParenthesisPersist> {
       [PZP_FIELDS.BIG_PARENTHESIS]: (p) => {
         this.bigParenthesis = p;
       },
+      [PZP_FIELDS.LEFT]: (l) => {
+        this.left = l;
+      },
+      [PZP_FIELDS.RIGHT]: (r) => {
+        this.right = r;
+      },
     });
   }
 }
+
+const dotModMap: { [key: string]: string } = {
+  abs: "vert",
+  Abs: "Vert",
+  v: "vert",
+  V: "Vert",
+  c: "ceil",
+  f: "floor",
+  brc: "brace",
+  brk: "brack",
+  p: "paren",
+  m: "moustache",
+  g: "group",
+};
+
+const dotModImpl = implementPartialCmdGroup(DotModifierCommand, {
+  getNodeTransforms() {
+    return {
+      id: {
+        group: "parenthesis",
+        item: "basic",
+      },
+      cost: 100,
+      transform: ({ zymbol, word }) => {
+        const parenthesis = zymbol as ParenthesisZymbol;
+
+        if (word in dotModMap) {
+          word = dotModMap[word];
+        }
+
+        let changed = false;
+        if (word === "big") {
+          parenthesis.bigParenthesis = true;
+          changed = true;
+        } else if (word === "sm") {
+          parenthesis.bigParenthesis = false;
+          changed = true;
+        } else if (checkParenthesisType(word)) {
+          parenthesis.left = `\\l${word}`;
+          parenthesis.right = `\\r${word}`;
+
+          changed = true;
+        }
+
+        if (changed) {
+          return some(parenthesis);
+        } else {
+          return NONE;
+        }
+      },
+    };
+  },
+});
+
+parenthesisZymbolMaster.registerCmds([...dotModImpl]);

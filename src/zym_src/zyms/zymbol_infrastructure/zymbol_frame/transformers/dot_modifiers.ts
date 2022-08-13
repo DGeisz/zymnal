@@ -174,8 +174,10 @@ class DotModifiers extends Zentinel {
 
                     parent.children.splice(zymbolIndex, 1);
 
+                    let changed = false;
                     if (isSymbolZymbol(prevZymbol!)) {
                       prevZymbol.toggleModifier(mod);
+                      changed = true;
                     } else if (isSuperSub(prevZymbol!) && zymbolIndex > 1) {
                       const prevPrevZymbol = parent.children[
                         zymbolIndex - 2
@@ -183,22 +185,25 @@ class DotModifiers extends Zentinel {
 
                       if (isSymbolZymbol(prevPrevZymbol)) {
                         prevPrevZymbol.toggleModifier(mod);
+                        changed = true;
                       }
                     }
 
-                    cursorCopy.pop();
-                    root.recursivelyReIndexChildren();
+                    if (changed) {
+                      cursorCopy.pop();
+                      root.recursivelyReIndexChildren();
 
-                    allTreeTransformations.push(
-                      new BasicZymbolTreeTransformation({
-                        newTreeRoot: root as Zocket,
-                        cursor: recoverAllowedCursor(cursorCopy, root),
-                        priority: {
-                          rank,
-                          cost: 100,
-                        },
-                      })
-                    );
+                      allTreeTransformations.push(
+                        new BasicZymbolTreeTransformation({
+                          newTreeRoot: root as Zocket,
+                          cursor: recoverAllowedCursor(cursorCopy, root),
+                          priority: {
+                            rank,
+                            cost: 100,
+                          },
+                        })
+                      );
+                    }
                   }
 
                   this.globalDotMap.forEach((dotModifierMap) => {
@@ -234,8 +239,10 @@ class DotModifiers extends Zentinel {
 
                       parent.children.splice(zymbolIndex, 1);
 
+                      let changed = false;
                       if (isSymbolZymbol(prevZymbol!)) {
                         prevZymbol.toggleModifier(mod);
+                        changed = true;
                       } else if (isSuperSub(prevZymbol!) && zymbolIndex > 1) {
                         const prevPrevZymbol = parent.children[
                           zymbolIndex - 2
@@ -243,22 +250,25 @@ class DotModifiers extends Zentinel {
 
                         if (isSymbolZymbol(prevPrevZymbol)) {
                           prevPrevZymbol.toggleModifier(mod);
+                          changed = true;
                         }
                       }
 
-                      cursor.pop();
-                      rootCopy.recursivelyReIndexChildren();
+                      if (changed) {
+                        cursor.pop();
+                        rootCopy.recursivelyReIndexChildren();
 
-                      allTreeTransformations.push(
-                        new BasicZymbolTreeTransformation({
-                          newTreeRoot: rootCopy as Zocket,
-                          cursor: recoverAllowedCursor(cursor, rootCopy),
-                          priority: {
-                            rank: ZymbolTransformRank.Suggest,
-                            cost,
-                          },
-                        })
-                      );
+                        allTreeTransformations.push(
+                          new BasicZymbolTreeTransformation({
+                            newTreeRoot: rootCopy as Zocket,
+                            cursor: recoverAllowedCursor(cursor, rootCopy),
+                            priority: {
+                              rank: ZymbolTransformRank.Suggest,
+                              cost,
+                            },
+                          })
+                        );
+                      }
                     }
                   });
 
