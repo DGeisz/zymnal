@@ -1,3 +1,4 @@
+import _ from "underscore";
 import { last } from "../../../../../global_utils/array_utils";
 import { checkLatex } from "../../../../../global_utils/latex_utils";
 import { Zentinel } from "../../../../../zym_lib/zentinel/zentinel";
@@ -8,13 +9,17 @@ import {
   TextZymbol,
   TEXT_ZYMBOL_NAME,
 } from "../../../zymbol/zymbols/text_zymbol/text_zymbol";
-import { Zocket } from "../../../zymbol/zymbols/zocket/zocket";
+import { Zocket, ZymbolModifier } from "../../../zymbol/zymbols/zocket/zocket";
 import {
   BasicZymbolTreeTransformation,
-  CreateTransformerMessage,
+  TransformerMessage,
   ZymbolTransformRank,
 } from "../zymbol_frame";
-import { makeHelperCursor, recoverAllowedCursor } from "./transform_utils";
+import {
+  getTransformTextZymbolAndParent,
+  makeHelperCursor,
+  recoverAllowedCursor,
+} from "./transform_utils";
 
 export const DOT_MODIFIERS_TRANSFORM = "dot-modifiers-e1125";
 
@@ -32,6 +37,26 @@ const dotMap: { [key: string]: string } = {
   tt: "text",
 };
 
+const PRIME_GROUP = "prime";
+
+function genPrimeMod(numPrime: number): ZymbolModifier {
+  let post = "";
+  _.range(numPrime).forEach((i) => (post += "'"));
+  post += "}";
+
+  return {
+    id: {
+      group: "prime",
+      item: numPrime,
+    },
+    pre: "{",
+    post,
+  };
+}
+
+const PRIME_DELIM = "'";
+const UN_PRIME_DELIM = '"';
+
 const suggestedMods = Object.values(dotMap);
 
 const dotKeys = Object.keys(dotMap);
@@ -45,7 +70,7 @@ class DotModifiers extends Zentinel {
 
   onRegistration = async () => {
     this.callHermes(
-      CreateTransformerMessage.registerTransformer({
+      TransformerMessage.registerTransformer({
         source: DOT_MODIFIERS_TRANSFORM,
         name: "dot-mod",
         transform: (root, cursor) => {
@@ -53,31 +78,15 @@ class DotModifiers extends Zentinel {
           const cursorCopy = [...cursor];
 
           /* First we want to get to the parent */
-          let currZymbol = root;
-          let parent = root;
-
-          for (let i = 0; i < cursorCopy.length - 1; i++) {
-            parent = currZymbol;
-            currZymbol = parent.children[cursorCopy[i]] as Zymbol;
-
-            if (!currZymbol) {
-              return [];
-            }
-          }
+          const textTransform = getTransformTextZymbolAndParent(root, cursor);
 
           const zymbolIndex: number = last(cursorCopy, 2);
 
-          if (
-            zymbolIndex > 0 &&
-            currZymbol.getMasterId() === TEXT_ZYMBOL_NAME
-          ) {
-            const prevZymbol = parent.children[zymbolIndex - 1] as Zymbol;
-
-            const text = currZymbol as TextZymbol;
-
+          if (zymbolIndex > 0 && textTransform.isTextZymbol) {
+            const { text, parent, prevZymbol } = textTransform;
             const firstWord = text.getText();
 
-            if (firstWord && firstWord.startsWith(dot)) {
+            if (firstWord.startsWith(dot)) {
               let modWord = firstWord.slice(1);
 
               let allowed = false;
@@ -111,9 +120,9 @@ class DotModifiers extends Zentinel {
 
                 parent.children.splice(zymbolIndex, 1);
 
-                if (isSymbolZymbol(prevZymbol)) {
+                if (isSymbolZymbol(prevZymbol!)) {
                   prevZymbol.toggleModifier(mod);
-                } else if (isSuperSub(prevZymbol) && zymbolIndex > 1) {
+                } else if (isSuperSub(prevZymbol!) && zymbolIndex > 1) {
                   const prevPrevZymbol = parent.children[
                     zymbolIndex - 2
                   ] as Zymbol;
@@ -137,6 +146,43 @@ class DotModifiers extends Zentinel {
                   }),
                 ];
               }
+            } else if ([PRIME_DELIM, UN_PRIME_DELIM].includes(firstWord)) {
+              parent.children.splice(zymbolIndex, 1);
+
+              if (isSymbolZymbol(prevZymbol!)) {
+                const lastPrime = prevZymbol.getModsByGroup(PRIME_GROUP)[0];
+                prevZymbol.removeGroupMods(PRIME_GROUP);
+
+                if (firstWord === PRIME_DELIM) {
+                  if (lastPrime) {
+                    const lastNum = lastPrime.id.item as number;
+
+                    prevZymbol.addModifier(genPrimeMod(lastNum + 1));
+                  } else {
+                    prevZymbol.addModifier(genPrimeMod(1));
+                  }
+                } else {
+                  if (lastPrime && lastPrime.id.item > 0) {
+                    const lastNum = lastPrime.id.item as number;
+
+                    prevZymbol.addModifier(genPrimeMod(lastNum - 1));
+                  }
+                }
+              }
+
+              cursorCopy.pop();
+              root.recursivelyReIndexChildren();
+
+              return [
+                new BasicZymbolTreeTransformation({
+                  newTreeRoot: root as Zocket,
+                  cursor: recoverAllowedCursor(cursorCopy, root),
+                  priority: {
+                    rank: ZymbolTransformRank.Suggest,
+                    cost: 100,
+                  },
+                }),
+              ];
             }
           }
 

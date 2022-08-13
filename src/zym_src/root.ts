@@ -8,7 +8,6 @@ import { dotModifiers } from "./zyms/zymbol_infrastructure/zymbol_frame/transfor
 import { Zage, zageMaster } from "./zyms/zage/zage";
 import { zymbolMasterList } from "./zyms/zymbol/zymbols/zymbol_list";
 import { zymbolInfrastructureMasters } from "./zyms/zymbol_infrastructure/zymbol_infrastructure";
-import { inPlaceSymbol } from "./zyms/zymbol_infrastructure/zymbol_frame/transformers/in_place_symbols";
 import { parenthesisModifiers } from "./zyms/zymbol_infrastructure/zymbol_frame/transformers/parenthesis_transform";
 import { fraction } from "./zyms/zymbol_infrastructure/zymbol_frame/transformers/fraction_transform";
 import { superSubTransform } from "./zyms/zymbol_infrastructure/zymbol_frame/transformers/super_sub_transform";
@@ -16,6 +15,8 @@ import { defaultUndoRedoImpl } from "../zym_lib/zy_god/undo_redo/undo_redo";
 import { defaultZymbolHtmlIdImpl } from "./zyms/zymbol/zymbol";
 import { functionTransformer } from "./zyms/zymbol_infrastructure/zymbol_frame/transformers/function_transformer";
 import { cashStack } from "./zyms/zymbol_infrastructure/zymbol_frame/transformers/cash_stack";
+import { inPlaceSymbols } from "./zyms/zymbol_infrastructure/zymbol_frame/transformers/in_place_symbols/in_place_symbols";
+import { standardInPlaceSymbols } from "./zyms/zymbol_infrastructure/zymbol_frame/transformers/in_place_symbols/standard_in_place_symbols/standard_in_place_symbols";
 
 const root = new Zage(0, undefined);
 
@@ -38,7 +39,9 @@ export const zyMasterList: ZyMaster[] = [
 ];
 
 export const zentinelList: Zentinel[] = [
-  inPlaceSymbol,
+  // inPlaceSymbol,
+  inPlaceSymbols,
+  standardInPlaceSymbols,
   dotModifiers,
   parenthesisModifiers,
   functionTransformer,

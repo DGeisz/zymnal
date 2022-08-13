@@ -10,7 +10,7 @@ import { Zocket } from "../../../zymbol/zymbols/zocket/zocket";
 import { TeX } from "../../../zymbol/zymbol_types";
 import {
   BasicZymbolTreeTransformation,
-  CreateTransformerMessage,
+  TransformerMessage,
   ZymbolTransformRank,
 } from "../zymbol_frame";
 import { makeHelperCursor, recoverAllowedCursor } from "./transform_utils";
@@ -41,7 +41,7 @@ class FunctionTransformer extends Zentinel {
 
   onRegistration = async () => {
     this.callHermes(
-      CreateTransformerMessage.registerTransformer({
+      TransformerMessage.registerTransformer({
         source: FUNCTION_TRANSFORMER,
         name: "fn-trans",
         transform: (root, cursor) => {

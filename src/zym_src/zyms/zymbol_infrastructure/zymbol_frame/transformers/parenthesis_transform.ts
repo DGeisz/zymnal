@@ -20,7 +20,7 @@ import {
 import { Zocket, ZymbolModifier } from "../../../zymbol/zymbols/zocket/zocket";
 import {
   BasicZymbolTreeTransformation,
-  CreateTransformerMessage,
+  TransformerMessage,
   ZymbolTransformRank,
   ZymbolTreeTransformation,
   ZymbolTreeTransformationPriority,
@@ -186,7 +186,7 @@ class Parenthesis extends Zentinel {
 
   onRegistration = async () => {
     this.callHermes(
-      CreateTransformerMessage.registerTransformer({
+      TransformerMessage.registerTransformer({
         source: PARENTHESIS_TRANSFORM,
         name: "par-trans",
         transform: async (root, cursor) => {

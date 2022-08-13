@@ -1,4 +1,3 @@
-import { createJsxJsxClosingFragment } from "typescript";
 import { last } from "../../../../../global_utils/array_utils";
 import { backslash } from "../../../../../global_utils/latex_utils";
 import { Zentinel } from "../../../../../zym_lib/zentinel/zentinel";
@@ -15,12 +14,11 @@ import { TEXT_ZYMBOL_NAME } from "../../../zymbol/zymbols/text_zymbol/text_zymbo
 import { Zocket } from "../../../zymbol/zymbols/zocket/zocket";
 import {
   BasicZymbolTreeTransformation,
-  CreateTransformerMessage,
+  TransformerMessage,
   ZymbolTransformRank,
   ZymbolTreeTransformation,
   ZymbolTreeTransformationPriority,
 } from "../zymbol_frame";
-import { diffSymbol } from "./in_place_symbols";
 import {
   getTransformTextZymbolAndParent,
   makeHelperCursor,
@@ -33,7 +31,7 @@ const FRAC_FUN = "frac";
 
 const fractionDelim = "//";
 
-const fractionStoppers = [...["partial"].map(backslash), "d", diffSymbol];
+const fractionStoppers = [...["partial", "text{d}"].map(backslash), "d"];
 
 function isFractionStopper(z: Zymbol): boolean {
   return zymbolIsBinaryOperator(z) || z.getMasterId() === TEXT_ZYMBOL_NAME;
@@ -176,7 +174,7 @@ class Fraction extends Zentinel {
 
   onRegistration = async () => {
     this.callHermes(
-      CreateTransformerMessage.registerTransformer({
+      TransformerMessage.registerTransformer({
         source: FRACTION,
         name: "fraction",
         transform: async (root, cursor) => {

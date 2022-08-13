@@ -46,7 +46,6 @@ export interface SymbolZymbolPersist {
   [SZP_FIELDS.MODIFIERS]: ZymbolModifier[];
 }
 
-// const htmlIdBlacklist = [...integralList, ...["sum", "prod"].map(backslash)];
 const htmlIdBlacklist = operatorList;
 
 class SymbolZymbolMaster extends ZyMaster {
@@ -91,6 +90,13 @@ export class SymbolZymbol extends Zymbol<SymbolZymbolPersist> {
 
   addModifier = (mod: ZymbolModifier) => {
     this.modifiers.push(mod);
+  };
+
+  getModsByGroup = (group: string) =>
+    this.modifiers.filter((m) => m.id.group === group);
+
+  removeGroupMods = (group: string) => {
+    this.modifiers = this.modifiers.filter((m) => !(m.id.group === group));
   };
 
   removeModifier = (mod: ZymbolModifier) => {

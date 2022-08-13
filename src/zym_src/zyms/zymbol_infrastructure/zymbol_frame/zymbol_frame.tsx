@@ -79,31 +79,31 @@ export interface ZymbolFramePersist {
 
 export const ZymbolFrameMasterId = "zymbol_frame";
 
-enum TransformerMessage {
+enum TransformerMessageType {
   RegisterTransformer = "rt",
   RegisterTransformerFactory = "rtf",
   GetTransformer = "gt",
 }
 
-export const CreateTransformerMessage = {
+export const TransformerMessage = {
   registerTransformer(transformer: SourcedTransformer): HermesMessage {
     return {
       zentinelId: ZymbolFrameMasterId,
-      message: TransformerMessage.RegisterTransformer,
+      message: TransformerMessageType.RegisterTransformer,
       content: { transformer },
     };
   },
   registerTransformerFactory(factory: TransformerFactory): HermesMessage {
     return {
       zentinelId: ZymbolFrameMasterId,
-      message: TransformerMessage.RegisterTransformerFactory,
+      message: TransformerMessageType.RegisterTransformerFactory,
       content: { factory },
     };
   },
   getTransformer(cursor: Cursor, keyPress: ZymKeyPress): HermesMessage {
     return {
       zentinelId: ZymbolFrameMasterId,
-      message: TransformerMessage.GetTransformer,
+      message: TransformerMessageType.GetTransformer,
       content: {
         cursor,
         keyPress,
@@ -209,7 +209,10 @@ export interface SourcedTransformer {
 export interface TransformerFactory {
   source: string;
   name: string;
-  factory: (root: Zym, cursor: Cursor) => ZymbolTransformer[];
+  factory: (
+    root: Zym,
+    cursor: Cursor
+  ) => Promise<ZymbolTransformer[]> | ZymbolTransformer[];
 }
 
 enum VimiumState {
@@ -306,17 +309,17 @@ class ZymbolFrameMaster extends ZyMaster {
 
   handleMessage = async (msg: ZentinelMessage) => {
     switch (msg.message) {
-      case TransformerMessage.RegisterTransformerFactory: {
+      case TransformerMessageType.RegisterTransformerFactory: {
         this.registerTransformerFactory(msg.content.factory);
 
         return ok(true);
       }
-      case TransformerMessage.RegisterTransformer: {
+      case TransformerMessageType.RegisterTransformer: {
         this.registerSourcedTransformer(msg.content.transformer);
 
         return ok(true);
       }
-      case TransformerMessage.GetTransformer: {
+      case TransformerMessageType.GetTransformer: {
         const { cursor, keyPress } = msg.content as GetTransformerContent;
 
         return ok(await this.getZymbolTransformer(cursor, keyPress));
@@ -354,8 +357,12 @@ class ZymbolFrameMaster extends ZyMaster {
     /* Get the zym root */
     const root = unwrap(await this.callHermes(GET_ZYM_ROOT)) as Zym;
 
-    const transformers = _.flatten(
-      this.transformerFactories.map((factory) => factory.factory(root, cursor))
+    const transformers = await _.flatten(
+      await Promise.all(
+        this.transformerFactories.map((factory) =>
+          factory.factory(root, cursor)
+        )
+      )
     );
 
     transformers.push(...this.transformers.map((t) => t.transform));
@@ -863,7 +870,7 @@ const keyPressImpl = implementPartialCmdGroup(KeyPressCommand, {
         /* 1. Ask Hermes for the Transformer */
         const transformer = unwrap(
           await frame.callHermes(
-            CreateTransformerMessage.getTransformer(
+            TransformerMessage.getTransformer(
               frame.getFullCursorPointer(),
               keyPress
             )

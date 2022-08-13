@@ -24,6 +24,7 @@ export function getTransformTextZymbolAndParent(
       text: TextZymbol;
       parent: Zymbol;
       zymbolIndex: CursorIndex;
+      prevZymbol?: Zymbol;
     } {
   let currZymbol = root;
   let parent = root;
@@ -37,13 +38,16 @@ export function getTransformTextZymbolAndParent(
     }
   }
 
-  /* Hey there */
   if (currZymbol.getMasterId() === TEXT_ZYMBOL_NAME) {
+    const zymbolIndex = cursor[cursor.length - 2];
+
     return {
       isTextZymbol: true,
       text: currZymbol as TextZymbol,
       parent,
-      zymbolIndex: cursor[cursor.length - 2],
+      zymbolIndex,
+      prevZymbol:
+        zymbolIndex > 0 ? parent.children[zymbolIndex - 1] : undefined,
     };
   } else {
     return { isTextZymbol: false };

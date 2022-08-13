@@ -7,7 +7,7 @@ import {
 import { Zocket } from "../../../zymbol/zymbols/zocket/zocket";
 import {
   BasicZymbolTreeTransformation,
-  CreateTransformerMessage,
+  TransformerMessage,
   ZymbolTransformRank,
 } from "../zymbol_frame";
 import {
@@ -26,7 +26,7 @@ class SuperSubTransform extends Zentinel {
 
   onRegistration = async () => {
     this.callHermes(
-      CreateTransformerMessage.registerTransformer({
+      TransformerMessage.registerTransformer({
         source: SUPER_SUB_TRANSFORM,
         name: "super-sub-transform",
         transform: (root, cursor) => {

@@ -19,6 +19,22 @@ export function extendParentCursor(
   return [...parentCursor, childCursorIndex];
 }
 
+export async function cursorForEach(
+  root: Zym,
+  cursor: Cursor,
+  fn: (zym: Zym) => Promise<void> | void
+) {
+  let currZym = root;
+
+  for (const i of cursor) {
+    if (!currZym) return;
+
+    await fn(currZym);
+
+    currZym = currZym.children[i];
+  }
+}
+
 export function getZymAtCursor(root: Zym, cursor: Cursor): ZyOption<Zym> {
   let curr = root;
 

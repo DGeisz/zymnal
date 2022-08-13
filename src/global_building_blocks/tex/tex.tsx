@@ -47,17 +47,33 @@ const Tex: React.FC<TexProps> = (props) => {
   }
 
   return (
-    <div
-      ref={cRef}
-      className={props.className}
-      dangerouslySetInnerHTML={{
-        __html: katex.renderToString(
-          renders ? props.tex : INVALID_TEX,
-          katexOpts
-        ),
-      }}
-    />
+    <div className="flex flex-col items-start">
+      <div
+        ref={cRef}
+        className={props.className}
+        dangerouslySetInnerHTML={{
+          __html: katex.renderToString(
+            renders ? props.tex : INVALID_TEX,
+            katexOpts
+          ),
+        }}
+      />
+      <div>{props.tex}</div>
+    </div>
   );
+
+  // return (
+  //   <div
+  //     ref={cRef}
+  //     className={props.className}
+  //     dangerouslySetInnerHTML={{
+  //       __html: katex.renderToString(
+  //         renders ? props.tex : INVALID_TEX,
+  //         katexOpts
+  //       ),
+  //     }}
+  //   />
+  // );
 };
 
 export default React.memo(

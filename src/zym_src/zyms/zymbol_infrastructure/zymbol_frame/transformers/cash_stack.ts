@@ -8,7 +8,7 @@ import { Zocket } from "../../../zymbol/zymbols/zocket/zocket";
 import { TeX } from "../../../zymbol/zymbol_types";
 import {
   BasicZymbolTreeTransformation,
-  CreateTransformerMessage,
+  TransformerMessage,
   ZymbolTransformRank,
 } from "../zymbol_frame";
 import {
@@ -34,7 +34,7 @@ class CashStack extends Zentinel {
 
   onRegistration = async () => {
     this.callHermes(
-      CreateTransformerMessage.registerTransformer({
+      TransformerMessage.registerTransformer({
         source: CASH_STACK,
         name: "cash-stack",
         transform: (root, cursor) => {
