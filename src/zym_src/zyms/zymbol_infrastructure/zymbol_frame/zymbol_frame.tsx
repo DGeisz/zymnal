@@ -831,20 +831,18 @@ const keyPressImpl = implementPartialCmdGroup(KeyPressCommand, {
         if (keyPress.type === KeyPressBasicType.Enter) {
           frame.setNewTransformations([]);
 
-          return wrapChildCursorResponse(
-            unwrap(
-              await zym.children[nextCursorIndex].cmd<
-                CursorMoveResponse,
-                KeyPressArgs
-              >(KeyPressCommand.handleKeyPress, {
-                cursor: childRelativeCursor,
-                keyPressContext,
-                keyPress,
-              })
-            ),
-
-            nextCursorIndex
+          unwrap(
+            await zym.children[nextCursorIndex].cmd<
+              CursorMoveResponse,
+              KeyPressArgs
+            >(KeyPressCommand.handleKeyPress, {
+              cursor: childRelativeCursor,
+              keyPressContext,
+              keyPress,
+            })
           );
+
+          return successfulMoveResponse(cursor);
         }
       }
 

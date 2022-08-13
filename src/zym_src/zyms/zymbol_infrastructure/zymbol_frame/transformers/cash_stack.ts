@@ -1,11 +1,10 @@
-import { checkLatex } from "../../../../../global_utils/latex_utils";
 import { Zentinel } from "../../../../../zym_lib/zentinel/zentinel";
 import {
+  checkStackOperator,
   StackPosition,
   StackZymbol,
 } from "../../../zymbol/zymbols/stack_zymbol";
 import { Zocket } from "../../../zymbol/zymbols/zocket/zocket";
-import { TeX } from "../../../zymbol/zymbol_types";
 import {
   BasicZymbolTreeTransformation,
   TransformerMessage,
@@ -20,14 +19,6 @@ import {
 const CASH_STACK = "cash-stack-trans";
 
 const CASH_DELIM = "$";
-
-function checkStackOperator(op: TeX): boolean {
-  return (
-    checkLatex(`\\${op}{a}{a}`) &&
-    !checkLatex(`\\${op}{a}`) &&
-    !checkLatex(`\\${op}`)
-  );
-}
 
 class CashStack extends Zentinel {
   zyId: string = CASH_STACK;

@@ -1,10 +1,16 @@
 import _ from "underscore";
+import { checkLatex } from "../../../../global_utils/latex_utils";
 import {
   hydrateChild,
   safeHydrate,
 } from "../../../../zym_lib/zym/utils/hydrate";
 import { Zym, ZymPersist } from "../../../../zym_lib/zym/zym";
 import { ZyMaster } from "../../../../zym_lib/zym/zy_master";
+import {
+  implementPartialCmdGroup,
+  NONE,
+  some,
+} from "../../../../zym_lib/zy_commands/zy_command_types";
 import {
   Cursor,
   CursorIndex,
@@ -21,6 +27,7 @@ import {
 } from "../../../../zym_lib/zy_god/event_handler/key_press";
 import { BasicContext } from "../../../../zym_lib/zy_god/types/context_types";
 import { CreateZyGodMessage } from "../../../../zym_lib/zy_god/zy_god";
+import { DotModifierCommand } from "../../zymbol_infrastructure/zymbol_frame/transformers/dot_modifiers";
 import {
   DUMMY_FRAME,
   ZymbolFrame,
@@ -35,6 +42,14 @@ import { extendZymbol } from "../zymbol_cmd";
 import { TeX } from "../zymbol_types";
 import { Zocket } from "./zocket/zocket";
 import { deflectMethodToChild } from "./zymbol_utils";
+
+export function checkStackOperator(op: TeX): boolean {
+  return (
+    checkLatex(`\\${op}{a}{a}`) &&
+    !checkLatex(`\\${op}{a}`) &&
+    !checkLatex(`\\${op}`)
+  );
+}
 
 const SZP_FIELDS: {
   CHILDREN: "c";
@@ -371,3 +386,42 @@ export class StackZymbol extends Zymbol<StackZymbolPersist> {
     });
   };
 }
+
+const dotModMap: { [key: string]: string } = {
+  c: "cfrac",
+  f: "frac",
+  tf: "tfrac",
+  df: "dfrac",
+  b: "binom",
+  tb: "tbinom",
+  db: "dbinom",
+};
+
+const dotModImpl = implementPartialCmdGroup(DotModifierCommand, {
+  getNodeTransforms: () => {
+    return {
+      id: {
+        group: "stack",
+        item: "toggle",
+      },
+      transform: ({ zymbol, word }) => {
+        const stack = zymbol as StackZymbol;
+
+        if (word in dotModMap) {
+          word = dotModMap[word];
+        }
+
+        if (checkStackOperator(word)) {
+          stack.setOperator(word);
+
+          return some(stack);
+        }
+
+        return NONE;
+      },
+      cost: 100,
+    };
+  },
+});
+
+stackZymbolMaster.registerCmds([...dotModImpl]);

@@ -15,8 +15,8 @@ import { defaultUndoRedoImpl } from "../zym_lib/zy_god/undo_redo/undo_redo";
 import { defaultZymbolHtmlIdImpl } from "./zyms/zymbol/zymbol";
 import { functionTransformer } from "./zyms/zymbol_infrastructure/zymbol_frame/transformers/function_transformer";
 import { cashStack } from "./zyms/zymbol_infrastructure/zymbol_frame/transformers/cash_stack";
-import { inPlaceSymbols } from "./zyms/zymbol_infrastructure/zymbol_frame/transformers/in_place_symbols/in_place_symbols";
-import { standardInPlaceSymbols } from "./zyms/zymbol_infrastructure/zymbol_frame/transformers/in_place_symbols/standard_in_place_symbols/standard_in_place_symbols";
+import { inPlaceSymbols } from "./zyms/zymbol_infrastructure/zymbol_frame/transformers/in_place_symbols";
+import { stdLibZentinel } from "./zyms/zymbol_infrastructure/zymbol_frame/transformers/std_lib/std_lib_zentinel";
 
 const root = new Zage(0, undefined);
 
@@ -39,13 +39,12 @@ export const zyMasterList: ZyMaster[] = [
 ];
 
 export const zentinelList: Zentinel[] = [
-  // inPlaceSymbol,
   inPlaceSymbols,
-  standardInPlaceSymbols,
   dotModifiers,
   parenthesisModifiers,
   functionTransformer,
   fraction,
   superSubTransform,
   cashStack,
+  stdLibZentinel,
 ];
