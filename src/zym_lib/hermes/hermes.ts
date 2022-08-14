@@ -1,5 +1,14 @@
+import { useEffect, useState } from "react";
 import { Zentinel } from "../zentinel/zentinel";
-import { ZyResult } from "../zy_commands/zy_command_types";
+import { Zym } from "../zym/zym";
+import { Zyact } from "../zym/zymplementations/zyact/zyact";
+import {
+  unwrap,
+  ZyBool,
+  ZyBoolCheck,
+  ZyBoolVal,
+  ZyResult,
+} from "../zy_commands/zy_command_types";
 import { ZyId } from "../zy_types/basic_types";
 
 export interface ZentinelMessage<T = any> {
@@ -75,4 +84,29 @@ export class Hermes {
       });
     }
   };
+}
+
+export function useHermesValue<T, G extends ZyBool>(
+  zyact: Zyact,
+  message: HermesMessage<T>,
+  unwrapValue: G,
+  depArray?: any[]
+): (typeof unwrapValue extends ZyBoolVal.True ? T : ZyResult<T>) | undefined {
+  type superType = typeof unwrapValue extends ZyBoolVal.True ? T : ZyResult<T>;
+
+  const [value, setValue] = useState<superType>();
+
+  const renderCount = zyact.getRenderCount();
+
+  useEffect(() => {
+    (async () => {
+      if (ZyBoolCheck.isZyBoolTrue(unwrapValue)) {
+        setValue(unwrap(await zyact.callHermes(message)) as superType);
+      } else {
+        setValue((await zyact.callHermes(message)) as superType);
+      }
+    })();
+  }, [renderCount, ...(depArray ? depArray : [])]);
+
+  return value;
 }

@@ -6,11 +6,17 @@ export abstract class Zyact<
   Persist = any,
   Props extends object = {}
 > extends Zym<React.FC<Props>, Persist, Props> {
+  private renderCount = 0;
+
+  getRenderCount = () => this.renderCount;
+
   rerender: (opts?: Props) => void = () => {};
 
   abstract component: React.FC<Props & Props>;
 
   render(opts?: Props): void {
+    this.renderCount++;
+
     this.rerender(opts);
   }
 

@@ -14,7 +14,7 @@ export const physicsSlash: InPlaceSymbolMap = {
 
 export const physicsDirect: InPlaceSymbolMap = {
   symMap: {
-    hb: "hbar",
+    hb: backslash("hbar"),
   },
   id: {
     group: "physics",

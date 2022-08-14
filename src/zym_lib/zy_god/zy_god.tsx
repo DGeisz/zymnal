@@ -21,7 +21,7 @@ import {
   GetInitialCursorReturn,
   ModifyNodeAndReRenderArgs,
 } from "./cursor/cursor_commands";
-import { docEventHandler } from "./event_handler/document_event_handler";
+import { keyEventHandler } from "./event_handler/key_event_handler";
 import {
   KeyPressArgs,
   KeyPressCommand,
@@ -29,6 +29,7 @@ import {
   KeyPressModifier,
   ZymKeyPress,
 } from "./event_handler/key_press";
+import { WindowEventHandler } from "./event_handler/window_event_handler";
 import { BasicContext, newContext } from "./types/context_types";
 import {
   getZymChangeLinks,
@@ -43,9 +44,10 @@ enum ZyGodZentinelMessage {
   HydratePersistedZym = "hpr",
   QueueSimulatedKeyPress = "qsk",
   TakeCursor = "tk",
+  GetFullCursor = "gfc",
 }
 
-export const CreateZyGodMessage = {
+export const ZyGodMessage = {
   hydrateZym(p: ZymPersist<any>): HermesMessage {
     return {
       zentinelId: ZyGodId,
@@ -67,11 +69,19 @@ export const CreateZyGodMessage = {
       content: cursor,
     };
   },
+  getZymRoot: {
+    zentinelId: ZyGodId,
+    message: ZyGodZentinelMessage.GetZymRoot,
+  },
+  getFullCursor: {
+    zentinelId: ZyGodId,
+    message: ZyGodZentinelMessage.GetFullCursor,
+  },
 };
 
-export const GET_ZYM_ROOT: HermesMessage = {
+export const GET_FULL_CURSOR: HermesMessage<Cursor> = {
   zentinelId: ZyGodId,
-  message: ZyGodZentinelMessage.GetZymRoot,
+  message: ZyGodZentinelMessage.GetFullCursor,
 };
 
 export const CONTEXT_CURSOR = "content-cursor-f4994b65";
@@ -91,6 +101,8 @@ class ZyGod extends ZyMaster {
   private root?: Zyact;
   private rootAwaiter = new ControlledAwaiter();
 
+  private cursorAvailable = true;
+
   simulatedKeyPressQueue: ZymKeyPress[] = [];
   undoRedoStack: UndoRedoStack = new UndoRedoStack();
 
@@ -99,8 +111,11 @@ class ZyGod extends ZyMaster {
 
     // @ts-ignore
     window.undo = this.undoRedoStack;
+    keyEventHandler.addKeyHandler(this.handleKeyPress);
 
-    docEventHandler.addKeyHandler(this.handleKeyPress);
+    /* Add our window blur and window focus events */
+    WindowEventHandler.addEventListener("blur", this.onWindowBlur);
+    WindowEventHandler.addEventListener("focus", this.onWindowFocus);
 
     /* 
     We have to add this line because the zy god is both the 
@@ -116,6 +131,26 @@ class ZyGod extends ZyMaster {
     });
 
     this.cursor = newCursor;
+  };
+
+  onWindowBlur = () => {
+    console.log("window blur!");
+    this.cursorAvailable = false;
+
+    this.root?.cmd<any, CursorRenderArgs>(CursorCommand.cursorRender, {
+      oldCursor: some(this.cursor),
+      newCursor: NONE,
+    });
+  };
+
+  onWindowFocus = () => {
+    console.log("window focus!");
+    this.cursorAvailable = true;
+
+    this.root?.cmd<any, CursorRenderArgs>(CursorCommand.cursorRender, {
+      oldCursor: NONE,
+      newCursor: some(this.cursor),
+    });
   };
 
   handleUndo = async () => {
@@ -306,6 +341,9 @@ class ZyGod extends ZyMaster {
         this.handleCursorChange(msg.content);
 
         return ok(NONE);
+      }
+      case ZyGodZentinelMessage.GetFullCursor: {
+        return ok(this.cursorAvailable ? this.cursor : []);
       }
       default: {
         return UNIMPLEMENTED;

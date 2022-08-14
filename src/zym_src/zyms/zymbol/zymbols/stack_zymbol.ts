@@ -26,7 +26,7 @@ import {
   ZymKeyPress,
 } from "../../../../zym_lib/zy_god/event_handler/key_press";
 import { BasicContext } from "../../../../zym_lib/zy_god/types/context_types";
-import { CreateZyGodMessage } from "../../../../zym_lib/zy_god/zy_god";
+import { ZyGodMessage } from "../../../../zym_lib/zy_god/zy_god";
 import { DotModifierCommand } from "../../zymbol_infrastructure/zymbol_frame/transformers/dot_modifiers";
 import {
   DUMMY_FRAME,
@@ -270,7 +270,7 @@ export class StackZymbol extends Zymbol<StackZymbolPersist> {
         nextCursorIndex >= this.children.length
       ) {
         this.callHermes(
-          CreateZyGodMessage.queueSimulatedKeyPress({
+          ZyGodMessage.queueSimulatedKeyPress({
             type: KeyPressBasicType.ArrowRight,
           })
         );

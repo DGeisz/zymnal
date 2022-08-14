@@ -15,7 +15,7 @@ enum KeyLock {
 type HandlerId = number;
 type KeyPressHandler = (keyPress: ZymKeyPress) => void;
 
-class DocumentEventHandler {
+class KeyEventHandler {
   keyLock: KeyLock = KeyLock.NONE;
   keyEventHandlers: Map<HandlerId, KeyPressHandler> = new Map();
 
@@ -58,7 +58,7 @@ class DocumentEventHandler {
     }
   };
 
-  private genKeyPressModifierList = (
+  private static genKeyPressModifierList = (
     event: KeyboardEvent
   ): KeyPressModifier[] => {
     const mods: KeyPressModifier[] = [];
@@ -75,7 +75,7 @@ class DocumentEventHandler {
     this.acquireKeyLock(KeyLock.KEYDOWN);
 
     const key = event.key;
-    const modifiers = this.genKeyPressModifierList(event);
+    const modifiers = KeyEventHandler.genKeyPressModifierList(event);
 
     let keyPressType: KeyPressBasicType | undefined = undefined;
 
@@ -125,7 +125,7 @@ class DocumentEventHandler {
     this.acquireKeyLock(KeyLock.KEYPRESS);
 
     const char = e.key === " " ? e.key : e.key.trim();
-    const modifiers = this.genKeyPressModifierList(e);
+    const modifiers = KeyEventHandler.genKeyPressModifierList(e);
 
     if (char.length === 1) {
       this.invokeKeyEventHandlers({
@@ -139,4 +139,4 @@ class DocumentEventHandler {
   };
 }
 
-export const docEventHandler = new DocumentEventHandler();
+export const keyEventHandler = new KeyEventHandler();

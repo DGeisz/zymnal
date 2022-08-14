@@ -1,6 +1,24 @@
 import { Zym } from "../zym/zym";
 import { ZyId } from "../zy_types/basic_types";
 
+/* This is used in some places where we can't use normal boolean for advanced typescript types  */
+export enum ZyBoolVal {
+  True = "true",
+  False = "false",
+}
+
+export const ZyBoolCheck = {
+  isZyBoolTrue(b: ZyBoolVal): b is ZyBoolVal.True {
+    return b === ZyBoolVal.True;
+  },
+
+  isZyBoolFalse(b: ZyBoolVal): b is ZyBoolVal.False {
+    return b === ZyBoolVal.False;
+  },
+};
+
+export type ZyBool = ZyBoolVal.True | ZyBoolVal.False;
+
 /* PATH */
 export type ZyGroupCmdPathNode = {
   groupId: ZyId;

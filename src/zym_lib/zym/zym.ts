@@ -16,7 +16,7 @@ import {
   checkGlobalImplementation,
   defaultCmd,
 } from "../zy_god/divine_api/zy_global_cmds";
-import { CreateZyGodMessage } from "../zy_god/zy_god";
+import { ZyGodMessage } from "../zy_god/zy_god";
 import { ZyId } from "../zy_types/basic_types";
 import { ZyMaster } from "./zy_master";
 
@@ -140,7 +140,7 @@ export abstract class Zym<T = any, P = any, RenderOptions = any> {
     for (let i = 0; i < copies; i++) {
       finalCopies.push(
         unwrapOption(
-          unwrap(await this.callHermes(CreateZyGodMessage.hydrateZym(p)))
+          unwrap(await this.callHermes(ZyGodMessage.hydrateZym(p)))
         ) as Zym
       );
     }

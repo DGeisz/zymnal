@@ -25,7 +25,7 @@ import {
   ZymKeyPress,
 } from "../../../zym_lib/zy_god/event_handler/key_press";
 import { BasicContext } from "../../../zym_lib/zy_god/types/context_types";
-import { CreateZyGodMessage } from "../../../zym_lib/zy_god/zy_god";
+import { ZyGodMessage } from "../../../zym_lib/zy_god/zy_god";
 import { ZymbolFrame } from "../zymbol_infrastructure/zymbol_frame/zymbol_frame";
 import { DeleteBehavior } from "./delete_behavior";
 import { TeX } from "./zymbol_types";
@@ -133,7 +133,7 @@ export abstract class Zymbol<P = any> extends Zym<TeX, P> {
         nextCursorIndex >= this.children.length)
     ) {
       this.callHermes(
-        CreateZyGodMessage.queueSimulatedKeyPress({
+        ZyGodMessage.queueSimulatedKeyPress({
           type: KeyPressBasicType.ArrowRight,
         })
       );

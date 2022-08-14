@@ -121,6 +121,21 @@ export function successfulMoveResponse(
   };
 }
 
+export function getRelativeCursor(
+  zymCursor: Cursor,
+  fullCursor: Cursor
+): ZyOption<Cursor> {
+  if (zymCursor.length > fullCursor.length) return NONE;
+
+  for (let i = 0; i < zymCursor.length; i++) {
+    if (fullCursor[i] !== zymCursor[i]) {
+      return NONE;
+    }
+  }
+
+  return some(fullCursor.slice(zymCursor.length));
+}
+
 class CursorBlink {
   blinkInterval: NodeJS.Timer;
   cursorVisible: boolean = true;

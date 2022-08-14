@@ -10,6 +10,7 @@ import {
   ZyCommandGroupType,
   ZyOption,
 } from "../../zy_commands/zy_command_types";
+import { addZymChangeLink } from "../undo_redo/undo_redo";
 import { Cursor, extendChildCursor, extractCursorInfo } from "./cursor";
 
 /* ==== LOCAL COMMANDS ==== */
@@ -43,6 +44,11 @@ export interface CursorCommandType extends ZyCommandGroupType {
     args: CursorRenderArgs;
     return: void;
   };
+  /* Renders just the node from a cursor render */
+  renderNode: {
+    args: undefined;
+    return: void;
+  };
   /* Re-renders a tree node without the cursor (for undo-redo) */
   modifyNodeAndReRender: {
     args: ModifyNodeAndReRenderArgs;
@@ -60,6 +66,7 @@ export const CursorCommand: ZyCommandGroup<CursorCommandType> = {
   canHandleCursorBranchRender: justPath(lcc("bcr")),
   cursorRender: justPath(lcc("cr")),
   modifyNodeAndReRender: justPath(lcc("mnr")),
+  renderNode: justPath(lcc("rn")),
 };
 
 /* ==== DEFAULT IMPL ====  */
@@ -96,10 +103,13 @@ export const defaultCursorImpl = implementPartialCmdGroup(CursorCommand, {
       );
     }
   },
+  renderNode: async (zym) => {
+    zym.render();
+  },
   cursorRender: async (zym, args: CursorRenderArgs) => {
     const { oldCursor, newCursor } = args;
 
-    zym.render();
+    await zym.cmd(CursorCommand.renderNode);
 
     const canHandleChildren = await zym.cmd<boolean>(
       CursorCommand.canHandleCursorBranchRender

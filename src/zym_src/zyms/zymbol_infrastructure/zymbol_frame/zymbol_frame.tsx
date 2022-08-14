@@ -3,11 +3,12 @@ import ReactDOM from "react-dom/client";
 import Tex from "../../../../global_building_blocks/tex/tex";
 import {
   HermesMessage,
+  useHermesValue,
   ZentinelMessage,
 } from "../../../../zym_lib/hermes/hermes";
 import {
-  CreateZyGodMessage,
-  GET_ZYM_ROOT,
+  GET_FULL_CURSOR,
+  ZyGodMessage,
 } from "../../../../zym_lib/zy_god/zy_god";
 import {
   hydrateChild,
@@ -19,9 +20,11 @@ import { ZyMaster } from "../../../../zym_lib/zym/zy_master";
 import {
   implementPartialCmdGroup,
   isSome,
+  NONE,
   ok,
   UNIMPLEMENTED,
   unwrap,
+  ZyBoolVal,
   ZyOption,
 } from "../../../../zym_lib/zy_commands/zy_command_types";
 import {
@@ -31,11 +34,10 @@ import {
   extendChildCursor,
   extractCursorInfo,
   FAILED_CURSOR_MOVE_RESPONSE,
+  getRelativeCursor,
   successfulMoveResponse,
-  wrapChildCursorResponse,
 } from "../../../../zym_lib/zy_god/cursor/cursor";
 import { CursorCommand } from "../../../../zym_lib/zy_god/cursor/cursor_commands";
-import { getRelativeCursor } from "../../../../zym_lib/zy_god/divine_api/divine_accessors";
 import {
   DEFAULT_SELECTOR,
   KeyPressArgs,
@@ -355,7 +357,7 @@ class ZymbolFrameMaster extends ZyMaster {
 
   getZymbolTransformer = async (cursor: Cursor, keyPress: ZymKeyPress) => {
     /* Get the zym root */
-    const root = unwrap(await this.callHermes(GET_ZYM_ROOT)) as Zym;
+    const root = unwrap(await this.callHermes(ZyGodMessage.getZymRoot)) as Zym;
 
     const transformers = await _.flatten(
       await Promise.all(
@@ -391,7 +393,7 @@ class ZymbolFrameMaster extends ZyMaster {
 export const zymbolFrameMaster = new ZymbolFrameMaster();
 
 interface FrameRenderProps {
-  relativeCursor?: ZyOption<Cursor>;
+  cursor?: ZyOption<Cursor>;
 }
 
 /* Helper class */
@@ -482,19 +484,34 @@ export class ZymbolFrame extends Zyact<ZymbolFramePersist, FrameRenderProps> {
     this.children = [this.baseZocket];
   };
 
-  component: React.FC<FrameRenderProps> = (props) => {
-    let cursorOpt;
+  component: React.FC<FrameRenderProps> = () => {
+    let zocketCursor: Cursor = [];
 
-    if (props.relativeCursor) {
-      cursorOpt = props.relativeCursor;
-    } else {
-      cursorOpt = getRelativeCursor(this.baseZocket);
+    const fullCursorResult = useHermesValue(
+      this,
+      GET_FULL_CURSOR,
+      ZyBoolVal.True
+    );
+
+    if (fullCursorResult) {
+      const opt = getRelativeCursor(
+        this.getFullCursorPointer(),
+        fullCursorResult
+      );
+
+      if (isSome(opt)) {
+        const { childRelativeCursor, nextCursorIndex } = extractCursorInfo(
+          opt.val
+        );
+
+        if (nextCursorIndex === 0) {
+          zocketCursor = childRelativeCursor;
+        }
+      }
     }
 
-    const relativeCursor = isSome(cursorOpt) ? cursorOpt.val : [];
-
     const frameTex = this.baseZocket.renderTex({
-      cursor: relativeCursor,
+      cursor: zocketCursor,
     });
 
     const vimiumActive = this.vimiumMode.isActive();
@@ -558,9 +575,7 @@ export class ZymbolFrame extends Zyact<ZymbolFramePersist, FrameRenderProps> {
                 this.vimiumMode.escapeVimiumMode();
                 usingTransformation && this.takeSelectedTransformation();
 
-                this.callHermes(
-                  CreateZyGodMessage.takeCursor(pointer.clickCursor)
-                );
+                this.callHermes(ZyGodMessage.takeCursor(pointer.clickCursor));
               } else if (hint.startsWith(vimiumChars)) {
                 const d = document.createElement("span");
                 d.classList.add("vimium-container");
@@ -588,9 +603,7 @@ export class ZymbolFrame extends Zyact<ZymbolFramePersist, FrameRenderProps> {
             element.onclick = () => {
               usingTransformation && this.takeSelectedTransformation();
 
-              this.callHermes(
-                CreateZyGodMessage.takeCursor(pointer.clickCursor)
-              );
+              this.callHermes(ZyGodMessage.takeCursor(pointer.clickCursor));
             };
           }
         }
@@ -623,7 +636,7 @@ export class ZymbolFrame extends Zyact<ZymbolFramePersist, FrameRenderProps> {
 
       allTex.unshift(
         this.baseZocket.renderTex({
-          cursor: relativeCursor,
+          cursor: zocketCursor,
           excludeHtmlIds: true,
         })
       );
