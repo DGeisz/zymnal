@@ -1,4 +1,4 @@
-import { unwrapOption, unwrap } from "../../zy_commands/zy_command_types";
+import { unwrapOption, unwrap } from "../../zy_trait/zy_command_types";
 import { ZyGodMessage } from "../../zy_god/zy_god";
 import { Zym, ZymPersist } from "../zym";
 

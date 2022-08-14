@@ -17,7 +17,7 @@ import {
   ZyCommandGroupType,
   ZyOption,
   ZyResult,
-} from "../../../../../zym_lib/zy_commands/zy_command_types";
+} from "../../../../../zym_lib/zy_trait/zy_command_types";
 import { cursorForEach } from "../../../../../zym_lib/zy_god/cursor/cursor";
 import { Zymbol } from "../../../zymbol/zymbol";
 import { isSuperSub } from "../../../zymbol/zymbols/super_sub";

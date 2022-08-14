@@ -4,7 +4,7 @@ import {
   justPath,
   ZyCommandGroup,
   ZyCommandGroupType,
-} from "../../zy_commands/zy_command_types";
+} from "../../zy_trait/zy_command_types";
 import { Cursor } from "../cursor/cursor";
 import { BasicContext } from "../types/context_types";
 

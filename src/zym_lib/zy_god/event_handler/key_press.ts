@@ -6,7 +6,7 @@ import {
   unwrap,
   ZyCommandGroup,
   ZyCommandGroupType,
-} from "../../zy_commands/zy_command_types";
+} from "../../zy_trait/zy_command_types";
 import {
   chainMoveResponse,
   Cursor,

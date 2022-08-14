@@ -6,7 +6,7 @@ import {
 import { safeHydrate } from "../../../../../zym_lib/zym/utils/hydrate";
 import { Zym } from "../../../../../zym_lib/zym/zym";
 import { ZyMaster } from "../../../../../zym_lib/zym/zy_master";
-import { implementPartialCmdGroup } from "../../../../../zym_lib/zy_commands/zy_command_types";
+import { implementPartialCmdGroup } from "../../../../../zym_lib/zy_trait/zy_command_types";
 import {
   Cursor,
   CursorIndex,

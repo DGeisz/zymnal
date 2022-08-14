@@ -4,7 +4,7 @@ import {
   ZyCmdPath,
   ZyCommandRegistration,
   ZyResult,
-} from "../../zy_commands/zy_command_types";
+} from "../../zy_trait/zy_command_types";
 import { zyGod } from "../zy_god";
 
 export function checkGlobalImplementation(path: ZyCmdPath): boolean {

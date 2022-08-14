@@ -1,0 +1,65 @@
+import { Zym } from "../zym/zym";
+
+export type TraitId = string;
+export type MethodId = string;
+
+export type ZyTraitSchema = {
+  [key: string]: {
+    args: any;
+    return: any;
+  };
+};
+
+export type ZyTraitPointer<
+  Schema extends ZyTraitSchema,
+  _method extends keyof Schema
+> = string;
+
+export type ZyTrait<Schema extends ZyTraitSchema> = {
+  [key in keyof Schema]: ZyTraitPointer<Schema, key>;
+};
+
+export function createZyTrait<Schema extends ZyTraitSchema>(
+  traitId: TraitId,
+  schema: { [key in keyof Schema]: MethodId }
+): ZyTrait<Schema> {
+  const trait: Partial<ZyTrait<Schema>> = {};
+
+  const tester = /:/;
+
+  if (tester.test(traitId)) {
+    throw new Error(`Trait id ${traitId} must not contain ':'!!`);
+  }
+  for (const key in schema) {
+    if (tester.test(schema[key])) {
+      throw new Error(`Schema key ${schema[key]} must not contain ':'!!`);
+    }
+
+    trait[key] = `${traitId}:${schema[key]}`;
+  }
+
+  return trait as ZyTrait<Schema>;
+}
+
+export type TraitMethodResponse<Return> =
+  | { implemented: true; return: Return }
+  | { implemented: false };
+
+export function impl<R>(r: R): TraitMethodResponse<R> {
+  return {
+    implemented: true,
+    return: r,
+  };
+}
+
+export const UNIMPL: TraitMethodResponse<any> = { implemented: false };
+
+export type TraitMethodImplementation<
+  Schema extends ZyTraitSchema,
+  Method extends keyof Schema
+> = (
+  zym: Zym,
+  ...args: Schema[Method]["args"] extends undefined
+    ? [undefined?]
+    : [Schema[Method]["args"]]
+) => Promise<Schema[Method]["return"]>;

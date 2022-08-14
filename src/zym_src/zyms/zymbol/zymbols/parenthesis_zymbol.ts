@@ -9,7 +9,7 @@ import {
   implementPartialCmdGroup,
   NONE,
   some,
-} from "../../../../zym_lib/zy_commands/zy_command_types";
+} from "../../../../zym_lib/zy_trait/zy_command_types";
 import {
   Cursor,
   CursorIndex,

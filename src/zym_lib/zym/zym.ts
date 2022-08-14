@@ -6,7 +6,7 @@ import {
   unwrap,
   ZyCmdPointer,
   ZyResult,
-} from "../zy_commands/zy_command_types";
+} from "../zy_trait/zy_command_types";
 import {
   Cursor,
   CursorIndex,
@@ -19,6 +19,12 @@ import {
 import { ZyGodMessage } from "../zy_god/zy_god";
 import { ZyId } from "../zy_types/basic_types";
 import { ZyMaster } from "./zy_master";
+import {
+  TraitMethodResponse,
+  UNIMPL,
+  ZyTraitPointer,
+  ZyTraitSchema,
+} from "../zy_trait/zy_trait";
 
 export const ZYM_PERSIST_FIELDS: {
   MASTER_ID: "m";
@@ -170,6 +176,24 @@ export abstract class Zym<T = any, P = any, RenderOptions = any> {
     if (global.ok) return global;
 
     return UNIMPLEMENTED;
+  };
+
+  callTraitMethod = async <
+    Schema extends ZyTraitSchema,
+    Method extends keyof Schema
+  >(
+    pointer: ZyTraitPointer<Schema, Method>,
+    ...args: Schema[Method]["args"] extends undefined
+      ? [undefined?]
+      : [Schema[Method]["args"]]
+  ): Promise<TraitMethodResponse<Schema[Method]["return"]>> => {
+    const local = await this.zyMaster.callTraitMethod(this, pointer, ...args);
+
+    if (local.implemented) return local;
+
+    /* Use a magic hermes call to get an implementation from either god or the default trait zentinel */
+
+    return UNIMPL;
   };
 
   checkCmdImplemented = (pointer: ZyCmdPointer): boolean => {

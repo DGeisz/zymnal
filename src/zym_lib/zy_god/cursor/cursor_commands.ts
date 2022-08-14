@@ -9,7 +9,7 @@ import {
   ZyCommandGroup,
   ZyCommandGroupType,
   ZyOption,
-} from "../../zy_commands/zy_command_types";
+} from "../../zy_trait/zy_command_types";
 import { addZymChangeLink } from "../undo_redo/undo_redo";
 import { Cursor, extendChildCursor, extractCursorInfo } from "./cursor";
 

@@ -26,7 +26,7 @@ import {
   unwrap,
   ZyBoolVal,
   ZyOption,
-} from "../../../../zym_lib/zy_commands/zy_command_types";
+} from "../../../../zym_lib/zy_trait/zy_command_types";
 import {
   chainMoveResponse,
   Cursor,
@@ -487,11 +487,7 @@ export class ZymbolFrame extends Zyact<ZymbolFramePersist, FrameRenderProps> {
   component: React.FC<FrameRenderProps> = () => {
     let zocketCursor: Cursor = [];
 
-    const fullCursorResult = useHermesValue(
-      this,
-      GET_FULL_CURSOR,
-      ZyBoolVal.True
-    );
+    const fullCursorResult = useHermesValue(this, GET_FULL_CURSOR, true);
 
     if (fullCursorResult) {
       const opt = getRelativeCursor(
