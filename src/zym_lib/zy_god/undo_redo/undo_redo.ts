@@ -1,5 +1,9 @@
 import { defaultTraitImplementationFactory } from "../../zy_trait/default_trait_zentinel/default_trait_zentinel_schema";
-import { createZyTrait, ZyTraitSchema } from "../../zy_trait/zy_trait";
+import {
+  createZyTrait,
+  CreateZyTraitSchema,
+  ZyTraitSchema,
+} from "../../zy_trait/zy_trait";
 import { Cursor } from "../cursor/cursor";
 import { BasicContext } from "../../utils/basic_context";
 
@@ -83,12 +87,12 @@ export class UndoRedoStack {
 
 const UNDO_REDO_COMMANDS_ID = "undo-redo-f23a9";
 
-interface UndoRedoSchema extends ZyTraitSchema {
+type UndoRedoSchema = CreateZyTraitSchema<{
   prepUndoRedo: {
     args: undefined;
     return: void;
   };
-}
+}>;
 
 export const UndoRedoTrait = createZyTrait<UndoRedoSchema>(
   UNDO_REDO_COMMANDS_ID,

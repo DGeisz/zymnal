@@ -1,11 +1,19 @@
 import { ZyGodMethod } from "../../zy_god/zy_god_schema";
 import { unwrapOption } from "../../utils/zy_option";
-import { Zym, ZymPersist } from "../zym";
+import { Zym } from "../zym";
+import {
+  ZymPersist,
+  ZyPersistenceSchema,
+  ZySchema,
+} from "../../zy_schema/zy_schema";
 
-export async function hydrateChild(
-  zym: Zym,
-  childPersist: ZymPersist<any>
-): Promise<Zym> {
+export async function hydrateChild<
+  Schema extends ZySchema,
+  PersistenceSchema extends ZyPersistenceSchema<Schema>
+>(
+  zym: Zym<any, any>,
+  childPersist: ZymPersist<Schema, PersistenceSchema>
+): Promise<Zym<Schema, PersistenceSchema>> {
   return unwrapOption(
     await zym.callZentinelMethod(ZyGodMethod.hydratePersistedZym, childPersist)
   );

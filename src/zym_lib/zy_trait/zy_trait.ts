@@ -10,6 +10,15 @@ export type ZyTraitSchema = {
   };
 };
 
+export type CreateZyTraitSchema<Schema extends ZyTraitSchema> = Schema;
+
+export type b = CreateZyTraitSchema<{
+  help: {
+    args: string;
+    return: string;
+  };
+}>;
+
 export type ZyTraitPointer<
   Schema extends ZyTraitSchema,
   Method extends keyof Schema

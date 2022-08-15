@@ -1,11 +1,19 @@
 import { ZentinelMethodPointer, ZentinelMethodSchema } from "../hermes/hermes";
-import { unwrapOption } from "../utils/zy_option";
+import { unwrapOption, ZyOption } from "../utils/zy_option";
 import {
   Cursor,
   CursorIndex,
   extendParentCursor,
 } from "../zy_god/cursor/cursor";
-import { ZyId } from "../zy_types/basic_types";
+import {
+  ZyFullPersist,
+  zymPersist,
+  ZymPersist,
+  ZyPartialPersist,
+  ZyPersistedSchemaSymbols,
+  ZyPersistenceSchema,
+  ZySchema,
+} from "../zy_schema/zy_schema";
 import { ZyMaster } from "./zy_master";
 import {
   TraitMethodResponse,
@@ -14,26 +22,6 @@ import {
 } from "../zy_trait/zy_trait";
 import { defaultTraitZentinelMethodList } from "../zy_trait/default_trait_zentinel/default_trait_zentinel_schema";
 import { ZyGodMethod } from "../zy_god/zy_god_schema";
-
-export const ZYM_PERSIST_FIELDS: {
-  MASTER_ID: "m";
-  DATA: "d";
-} = {
-  MASTER_ID: "m",
-  DATA: "d",
-};
-
-export interface ZymPersist<P> {
-  [ZYM_PERSIST_FIELDS.MASTER_ID]: ZyId;
-  [ZYM_PERSIST_FIELDS.DATA]: P;
-}
-
-export function zymPersist<P>(masterId: ZyId, data: P): ZymPersist<P> {
-  return {
-    [ZYM_PERSIST_FIELDS.MASTER_ID]: masterId,
-    [ZYM_PERSIST_FIELDS.DATA]: data,
-  };
-}
 
 /**
  * A zym is a basic object that is stored in the zym hierarchy.  This is essentially
@@ -46,7 +34,12 @@ export function zymPersist<P>(masterId: ZyId, data: P): ZymPersist<P> {
  * while additional methods can always be added with small architecture costs by registering commands
  * with ZyGod or ZyMasters
  * */
-export abstract class Zym<T = any, P = any, RenderOptions = any> {
+export abstract class Zym<
+  Schema extends ZySchema,
+  PersistenceSchema extends ZyPersistenceSchema<Schema>,
+  RenderContentType = any,
+  RenderOptions = any
+> {
   /* Allows us to determine zym's position amongst it's siblings */
   private cursorIndex: CursorIndex;
 
@@ -55,7 +48,14 @@ export abstract class Zym<T = any, P = any, RenderOptions = any> {
   abstract children: Zym<any, any>[];
 
   /* Master */
-  abstract readonly zyMaster: ZyMaster<any>;
+  abstract readonly zyMaster: ZyMaster<Schema, PersistenceSchema, any>;
+
+  /* Persistence Schema */
+  private persistedSchemaSymbols?: ZyPersistedSchemaSymbols<
+    Schema,
+    PersistenceSchema
+  >;
+  private invertedSchemaSymbols?: { [key: string]: string };
 
   /* Instance id (used for re-rendering...) */
   iid = Math.random();
@@ -63,6 +63,20 @@ export abstract class Zym<T = any, P = any, RenderOptions = any> {
   constructor(cursorIndex: CursorIndex, parent: Zym<any, any> | undefined) {
     this.cursorIndex = cursorIndex;
     this.parent = parent;
+  }
+
+  /* We always need to call this in the constructor */
+  setPersistenceSchemaSymbols(
+    persistedSchema: ZyPersistedSchemaSymbols<Schema, PersistenceSchema>
+  ) {
+    this.persistedSchemaSymbols = persistedSchema;
+    const inverted: any = {};
+
+    for (const [key, value] of Object.entries(persistedSchema)) {
+      inverted[value] = key;
+    }
+
+    this.invertedSchemaSymbols = inverted;
   }
 
   getCursorIndex = () => this.cursorIndex;
@@ -108,37 +122,71 @@ export abstract class Zym<T = any, P = any, RenderOptions = any> {
    * Gets information that the parent requires
    * to render itself
    * */
-  abstract getRenderContent(opts?: RenderOptions): T;
+  abstract getRenderContent(opts?: RenderOptions): RenderContentType;
 
-  renderAndGetRenderContent(opts?: RenderOptions): T {
+  renderAndGetRenderContent(opts?: RenderOptions): RenderContentType {
     this.render(opts);
     return this.getRenderContent(opts);
   }
 
   /* ===== PERSISTENCE METHODS ===== */
 
+  errorMessage = () =>
+    `You haven't set Persisted Symbols for ${this.getMasterId()}! Be sure to do this in the constructor!`;
+
   /* Persists the zym */
-  persist = (): ZymPersist<P> => {
-    return zymPersist(this.getMasterId(), this.persistData());
+  persist = (): ZymPersist<Schema, PersistenceSchema> => {
+    let fullPersist: any = {};
+
+    if (!this.persistedSchemaSymbols) {
+      throw new Error(this.errorMessage());
+    }
+
+    for (const [key, value] of Object.entries(this.persistData())) {
+      fullPersist[this.persistedSchemaSymbols![key]] = value;
+    }
+
+    return zymPersist(this.getMasterId(), fullPersist);
   };
 
-  abstract persistData(): P;
+  abstract persistData(): ZyPartialPersist<Schema, PersistenceSchema>;
 
-  abstract hydrate(p: Partial<P>): Promise<void>;
+  hydrate(p: Partial<ZyFullPersist<Schema, PersistenceSchema>>): Promise<void> {
+    const partialPersist: any = {};
+
+    if (!this.invertedSchemaSymbols) {
+      throw new Error(this.errorMessage());
+    }
+
+    for (const [key, value] of Object.entries(p)) {
+      partialPersist[this.invertedSchemaSymbols![key]] = value;
+    }
+
+    return this.hydrateFromPartialPersist(partialPersist);
+  }
+
+  abstract hydrateFromPartialPersist(
+    p: Partial<ZyPartialPersist<Schema, PersistenceSchema>>
+  ): Promise<void>;
 
   /* ===== TREE METHODS ===== */
-  clone = async (copies = 1, newParent?: Zym): Promise<Zym<T, P>[]> => {
+  clone = async (
+    copies = 1,
+    newParent?: Zym<any, any>
+  ): Promise<
+    Zym<Schema, PersistenceSchema, RenderContentType, RenderOptions>[]
+  > => {
     const p = this.persist();
 
-    let finalCopies: Zym<T, P>[] = [];
+    let all: Promise<
+      ZyOption<Zym<Schema, PersistenceSchema, RenderContentType, RenderOptions>>
+    >[] = [];
 
     for (let i = 0; i < copies; i++) {
-      finalCopies.push(
-        unwrapOption(
-          await this.callZentinelMethod(ZyGodMethod.hydratePersistedZym, p)
-        ) as Zym
-      );
+      all.push(this.callZentinelMethod(ZyGodMethod.hydratePersistedZym, p));
     }
+
+    const finalCopies = (await Promise.all(all)).map(unwrapOption);
 
     if (newParent) {
       finalCopies.forEach((f) => (f.parent = newParent));

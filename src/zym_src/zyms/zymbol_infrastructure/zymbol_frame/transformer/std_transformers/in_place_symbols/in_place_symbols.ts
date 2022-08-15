@@ -31,7 +31,7 @@ import {
 import { ZymbolFrameMethod } from "../../../zymbol_frame_schema";
 import {
   createZyTrait,
-  ZyTraitSchema,
+  CreateZyTraitSchema,
 } from "../../../../../../../zym_lib/zy_trait/zy_trait";
 import {
   InPlaceSymbolsMethodSchema,
@@ -553,12 +553,12 @@ interface ContextualTransformers {
   direct: InPlaceSymbolMap[];
 }
 
-interface InPlaceTraitSchema extends ZyTraitSchema {
+type InPlaceTraitSchema = CreateZyTraitSchema<{
   getInPlaceSymbolMaps: {
     args: undefined;
     return: ContextualTransformers;
   };
-}
+}>;
 
 export const InPlaceTrait = createZyTrait<InPlaceTraitSchema>(
   IN_PLACE_SYMBOLS_ID,

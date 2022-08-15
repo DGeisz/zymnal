@@ -1,12 +1,12 @@
 import {
   createZentinelMethodList,
-  ZentinelMethodSchema,
+  CreateZentinelMethodSchema,
 } from "../../../../../../../zym_lib/hermes/hermes";
 import { InPlaceSymbolMap } from "./in_place_symbols";
 
 export const IN_PLACE_SYMBOLS_ID = "in-place-afj3";
 
-export interface InPlaceSymbolsMethodSchema extends ZentinelMethodSchema {
+export type InPlaceSymbolsMethodSchema = CreateZentinelMethodSchema<{
   addSlashMap: {
     args: InPlaceSymbolMap;
     return: void;
@@ -15,7 +15,7 @@ export interface InPlaceSymbolsMethodSchema extends ZentinelMethodSchema {
     args: InPlaceSymbolMap;
     return: void;
   };
-}
+}>;
 
 export const InPlaceMethod =
   createZentinelMethodList<InPlaceSymbolsMethodSchema>(IN_PLACE_SYMBOLS_ID, {

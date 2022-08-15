@@ -23,12 +23,16 @@ import { TeX } from "./zymbol_types";
 import { ZyGodMethod } from "../../../zym_lib/zy_god/zy_god_schema";
 import {
   createZyTrait,
+  CreateZyTraitSchema,
   TraitImplementation,
   unwrapTraitResponse,
-  ZyTraitSchema,
 } from "../../../zym_lib/zy_trait/zy_trait";
 import { defaultTraitImplementation } from "../../../zym_lib/zy_trait/default_trait_zentinel/default_trait_zentinel_schema";
 import { zyGod } from "../../../zym_lib/zy_god/zy_god";
+import {
+  ZyPersistenceSchema,
+  ZySchema,
+} from "../../../zym_lib/zy_schema/zy_schema";
 
 /* Help */
 export interface ZymbolRenderArgs {
@@ -52,13 +56,16 @@ export function keyPressHasModifier(
 }
 
 export interface SpliceDeleteResponse {
-  zymbols: Zymbol[];
+  zymbols: Zymbol<any, any>[];
   putCursorAtEnd: boolean;
 }
 
-export abstract class Zymbol<P = any> extends Zym<TeX, P> {
+export abstract class Zymbol<
+  Schema extends ZySchema,
+  PersistenceSchema extends ZyPersistenceSchema<Schema>
+> extends Zym<Schema, PersistenceSchema, TeX> {
   parentFrame: ZymbolFrame;
-  abstract children: Zymbol[];
+  abstract children: Zymbol<any, any>[];
 
   constructor(
     parentFrame: ZymbolFrame,
@@ -218,14 +225,16 @@ export abstract class Zymbol<P = any> extends Zym<TeX, P> {
 
   setParentFrame = (frame: ZymbolFrame) => {
     this.parentFrame = frame;
-    this.children.forEach((c) => (c as Zymbol).setParentFrame(frame));
+    this.children.forEach((c) => (c as Zymbol<any, any>).setParentFrame(frame));
   };
 
   recursivelyReIndexChildren = () => {
     this.reIndexChildren();
     this.reConnectParentChildren();
 
-    this.children.forEach((c) => (c as Zymbol).recursivelyReIndexChildren());
+    this.children.forEach((c) =>
+      (c as Zymbol<any, any>).recursivelyReIndexChildren()
+    );
   };
 }
 
@@ -237,12 +246,12 @@ export interface ZymbolHtmlClickInfo {
   clickCursor: Cursor;
 }
 
-export interface ZymbolHtmlIdSchema extends ZyTraitSchema {
+export type ZymbolHtmlIdSchema = CreateZyTraitSchema<{
   getAllDescendentHTMLIds: {
     args: undefined;
     return: ZymbolHtmlClickInfo[];
   };
-}
+}>;
 
 export const ZymbolHtmlIdTrait = createZyTrait<ZymbolHtmlIdSchema>(
   ZYMBOL_HTML_ID_COMMANDS,
@@ -255,7 +264,7 @@ defaultTraitImplementation(ZymbolHtmlIdTrait, zyGod, {
   async getAllDescendentHTMLIds(zym) {
     return _.flatten(
       await Promise.all(
-        zym.children.map(async (c) =>
+        zym.children.map(async (c: Zym<any, any, any>) =>
           unwrapTraitResponse(
             await c.callTraitMethod(
               ZymbolHtmlIdTrait.getAllDescendentHTMLIds,

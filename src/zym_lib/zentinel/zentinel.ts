@@ -5,7 +5,7 @@ import {
   ZentinelMethodPointer,
   ZentinelMethodSchema,
 } from "../hermes/hermes";
-import { ZyId } from "../zy_types/basic_types";
+import { ZyId } from "../zy_schema/zy_schema";
 
 /**
  * A Zentinel is something that handles messages passed

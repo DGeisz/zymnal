@@ -1,43 +1,53 @@
-import { FC } from "react";
 import {
   hydrateChild,
   safeHydrate,
 } from "../../../../zym_lib/zym/utils/hydrate";
-import { Zym, ZymPersist } from "../../../../zym_lib/zym/zym";
+import { Zym } from "../../../../zym_lib/zym/zym";
 import { useZymponent } from "../../../../zym_lib/zym/zymplementations/zyact/hooks";
 import { Zyact } from "../../../../zym_lib/zym/zymplementations/zyact/zyact";
 import { ZyMaster } from "../../../../zym_lib/zym/zy_master";
+import { CursorIndex } from "../../../../zym_lib/zy_god/cursor/cursor";
 import {
-  ZymbolProgression,
-  ZymbolProgressionPersist,
-} from "../zymbol_progression/zymbol_progression";
+  ZyPartialPersist,
+  IdentifiedSchema,
+} from "../../../../zym_lib/zy_schema/zy_schema";
+import { ZymbolProgression } from "../zymbol_progression/zymbol_progression";
+import {
+  ZymbolContextPersistenceSchema,
+  ZymbolContextSchema,
+} from "./zymbol_context_schema";
 
-export const ZCP_FIELDS: {
-  PROGRESSION: "p";
-} = {
-  PROGRESSION: "p",
-};
-
-export interface ZymbolContextPersist {
-  [ZCP_FIELDS.PROGRESSION]: ZymPersist<ZymbolProgressionPersist>;
-}
-
-class ZymbolContextMaster extends ZyMaster {
+class ZymbolContextMaster extends ZyMaster<
+  ZymbolContextSchema,
+  ZymbolContextPersistenceSchema,
+  {}
+> {
   zyId = "zymbol_context";
 
-  newBlankChild(): Zym<any, any, any> {
+  newBlankChild(): Zym<ZymbolContextSchema, ZymbolContextPersistenceSchema> {
     return new ZymbolContext(0, undefined);
   }
 }
 
 export const zymbolContextMaster = new ZymbolContextMaster();
 
-export class ZymbolContext extends Zyact<ZymbolContextPersist> {
-  zyMaster: ZyMaster = zymbolContextMaster;
+export class ZymbolContext extends Zyact<
+  ZymbolContextSchema,
+  ZymbolContextPersistenceSchema
+> {
+  zyMaster = zymbolContextMaster;
   progression: ZymbolProgression = new ZymbolProgression(0, this);
   children: Zym<any, any>[] = [this.progression];
 
-  component: FC = () => {
+  constructor(cursorIndex: CursorIndex, parent?: Zym<any, any, any>) {
+    super(cursorIndex, parent);
+
+    this.setPersistenceSchemaSymbols({
+      progression: "p",
+    });
+  }
+
+  component: React.FC = () => {
     const ProgressionComponent = useZymponent(this.progression);
 
     return <ProgressionComponent />;
@@ -45,13 +55,17 @@ export class ZymbolContext extends Zyact<ZymbolContextPersist> {
 
   persistData() {
     return {
-      [ZCP_FIELDS.PROGRESSION]: this.progression.persist(),
+      progression: this.progression.persist(),
     };
   }
 
-  async hydrate(p: Partial<ZymbolContextPersist>): Promise<void> {
+  async hydrateFromPartialPersist(
+    p: Partial<
+      ZyPartialPersist<ZymbolContextSchema, ZymbolContextPersistenceSchema>
+    >
+  ): Promise<void> {
     await safeHydrate(p, {
-      [ZCP_FIELDS.PROGRESSION]: async (p) => {
+      progression: async (p) => {
         this.progression = (await hydrateChild(this, p)) as ZymbolProgression;
       },
     });

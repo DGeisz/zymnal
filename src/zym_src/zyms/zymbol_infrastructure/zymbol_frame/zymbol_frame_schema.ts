@@ -1,6 +1,6 @@
 import {
   createZentinelMethodList,
-  ZentinelMethodSchema,
+  CreateZentinelMethodSchema,
 } from "../../../../zym_lib/hermes/hermes";
 import { Cursor } from "../../../../zym_lib/zy_god/cursor/cursor";
 import { ZymKeyPress } from "../../../../zym_lib/zy_god/event_handler/key_press";
@@ -12,7 +12,7 @@ import {
 
 export const ZYMBOL_FRAME_MASTER_ID = "zymbol_frame";
 
-export interface ZymbolFrameSchema extends ZentinelMethodSchema {
+export type ZymbolFrameSchema = CreateZentinelMethodSchema<{
   registerTransformer: {
     args: SourcedTransformer;
     return: void;
@@ -28,7 +28,7 @@ export interface ZymbolFrameSchema extends ZentinelMethodSchema {
     };
     return: ZymbolTransformer;
   };
-}
+}>;
 
 export const ZymbolFrameMethod = createZentinelMethodList<ZymbolFrameSchema>(
   ZYMBOL_FRAME_MASTER_ID,

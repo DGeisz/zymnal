@@ -425,7 +425,7 @@ export interface DotModifierMap {
   cost: number;
 }
 
-interface DotModifiersTraitSchema extends ZyTraitSchema {
+type DotModifiersTraitSchema = CreateZyTraitSchema<{
   getContextualTransforms: {
     args: undefined;
     return: DotModifierZymbolTransform;
@@ -434,7 +434,7 @@ interface DotModifiersTraitSchema extends ZyTraitSchema {
     args: undefined;
     return: DotModifierZymbolTransform;
   };
-}
+}>;
 
 export const DotModifiersTrait = createZyTrait<DotModifiersTraitSchema>(
   DOT_MODIFIERS_TRANSFORM,

@@ -7,32 +7,47 @@ import { Zym } from "../../../../zym_lib/zym/zym";
 import { useZymponent } from "../../../../zym_lib/zym/zymplementations/zyact/hooks";
 import { Zyact } from "../../../../zym_lib/zym/zymplementations/zyact/zyact";
 import { ZyMaster } from "../../../../zym_lib/zym/zy_master";
+import { CursorIndex } from "../../../../zym_lib/zy_god/cursor/cursor";
+import { ZyPartialPersist } from "../../../../zym_lib/zy_schema/zy_schema";
 import { ZymbolFrame } from "../zymbol_frame/zymbol_frame";
+import {
+  ZymbolProgressionPersistenceSchema,
+  ZymbolProgressionSchema,
+  ZYMBOL_PROGRESSION_ID,
+} from "./zymbol_progression_schema";
 
-const ZPP_FIELDS: { BASE_FRAME: "b" } = {
-  BASE_FRAME: "b",
-};
-
-export interface ZymbolProgressionPersist {
-  [ZPP_FIELDS.BASE_FRAME]: any;
-}
-
-export const ZYMBOL_PROGRESSION_ID = "zymbol_progression";
-
-class ZymbolProgressionMaster extends ZyMaster {
+class ZymbolProgressionMaster extends ZyMaster<
+  ZymbolProgressionSchema,
+  ZymbolProgressionPersistenceSchema,
+  {}
+> {
   zyId = ZYMBOL_PROGRESSION_ID;
 
-  newBlankChild(): Zym<any, any, any> {
+  newBlankChild(): Zym<
+    ZymbolProgressionSchema,
+    ZymbolProgressionPersistenceSchema
+  > {
     return new ZymbolProgression(0, undefined);
   }
 }
 
 export const zymbolProgressionMaster = new ZymbolProgressionMaster();
 
-export class ZymbolProgression extends Zyact<ZymbolProgressionPersist> {
-  zyMaster: ZyMaster = zymbolProgressionMaster;
+export class ZymbolProgression extends Zyact<
+  ZymbolProgressionSchema,
+  ZymbolProgressionPersistenceSchema
+> {
+  zyMaster = zymbolProgressionMaster;
   baseFrame: ZymbolFrame = new ZymbolFrame(0, this);
   children: Zym<any, any>[] = [this.baseFrame];
+
+  constructor(cursorIndex: CursorIndex, parent?: Zym<any, any, any>) {
+    super(cursorIndex, parent);
+
+    this.setPersistenceSchemaSymbols({
+      baseFrame: "b",
+    });
+  }
 
   component: FC = () => {
     const Frame = useZymponent(this.baseFrame);
@@ -44,15 +59,22 @@ export class ZymbolProgression extends Zyact<ZymbolProgressionPersist> {
     );
   };
 
-  persistData(): ZymbolProgressionPersist {
+  persistData() {
     return {
-      [ZPP_FIELDS.BASE_FRAME]: this.baseFrame.persist(),
+      baseFrame: this.baseFrame.persist(),
     };
   }
 
-  async hydrate(p: Partial<ZymbolProgressionPersist>): Promise<void> {
+  async hydrateFromPartialPersist(
+    p: Partial<
+      ZyPartialPersist<
+        ZymbolProgressionSchema,
+        ZymbolProgressionPersistenceSchema
+      >
+    >
+  ): Promise<void> {
     await safeHydrate(p, {
-      [ZPP_FIELDS.BASE_FRAME]: async (frame) => {
+      baseFrame: async (frame) => {
         this.baseFrame = (await hydrateChild(this, frame)) as ZymbolFrame;
       },
     });

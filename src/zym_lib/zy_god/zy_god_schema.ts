@@ -1,5 +1,6 @@
 import {
   createZentinelMethodList,
+  CreateZentinelMethodSchema,
   ZentinelMethodSchema,
 } from "../hermes/hermes";
 import type { Zym, ZymPersist } from "../zym/zym";
@@ -9,7 +10,7 @@ import { ZymKeyPress } from "./event_handler/key_press";
 
 export const ZY_GOD_ID = "zy-god";
 
-export interface ZyGodSchema extends ZentinelMethodSchema {
+export type ZyGodSchema = CreateZentinelMethodSchema<{
   getZymRoot: {
     args: undefined;
     return: Zym;
@@ -30,7 +31,7 @@ export interface ZyGodSchema extends ZentinelMethodSchema {
     args: undefined;
     return: Cursor;
   };
-}
+}>;
 
 export const ZyGodMethod = createZentinelMethodList<ZyGodSchema>(ZY_GOD_ID, {
   getZymRoot: 0,

@@ -12,10 +12,9 @@ import { BasicContext } from "../../utils/basic_context";
 import _ from "underscore";
 import {
   createZyTrait,
+  CreateZyTraitSchema,
   unwrapTraitResponse,
-  ZyTraitSchema,
 } from "../../zy_trait/zy_trait";
-import { Zentinel } from "../../zentinel/zentinel";
 import { defaultTraitImplementationFactory } from "../../zy_trait/default_trait_zentinel/default_trait_zentinel_schema";
 
 /* === Basic keypress types ===  */
@@ -110,7 +109,7 @@ export const SECONDARY_SELECTOR: ZymKeyPress = {
 
 const KEY_PRESS_CMD_ID = "keypress-cmd-6a62";
 
-export interface KeyPressSchema extends ZyTraitSchema {
+export type KeyPressSchema = CreateZyTraitSchema<{
   handleKeyPress: {
     args: {
       keyPress: ZymKeyPress;
@@ -119,7 +118,7 @@ export interface KeyPressSchema extends ZyTraitSchema {
     };
     return: CursorMoveResponse;
   };
-}
+}>;
 
 export const KeyPressTrait = createZyTrait<KeyPressSchema>(KEY_PRESS_CMD_ID, {
   handleKeyPress: "hkp",

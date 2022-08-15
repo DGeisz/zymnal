@@ -2,8 +2,7 @@ import { useEffect, useState } from "react";
 import _ from "underscore";
 import { Zentinel } from "../zentinel/zentinel";
 import { Zyact } from "../zym/zymplementations/zyact/zyact";
-import { defaultTraitZentinelMethodList } from "../zy_trait/default_trait_zentinel/default_trait_zentinel_schema";
-import { ZyId } from "../zy_types/basic_types";
+import { ZyId } from "../zy_schema/zy_schema";
 
 export interface ZentinelMessage<T = any> {
   message: string | number;
@@ -129,6 +128,9 @@ export type ZentinelMethodSchema = {
     return: any;
   };
 };
+
+export type CreateZentinelMethodSchema<Schema extends ZentinelMethodSchema> =
+  Schema;
 
 export type ZentinelMethodPointer<
   Schema extends ZentinelMethodSchema,

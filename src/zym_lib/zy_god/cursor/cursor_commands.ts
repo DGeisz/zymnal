@@ -2,6 +2,7 @@ import { defaultTraitImplementationFactory } from "../../zy_trait/default_trait_
 import { isSome, NONE, some, ZyOption } from "../../utils/zy_option";
 import {
   createZyTrait,
+  CreateZyTraitSchema,
   unwrapTraitResponse,
   ZyTraitSchema,
 } from "../../zy_trait/zy_trait";
@@ -23,7 +24,7 @@ export interface ModifyNodeAndReRenderArgs {
   renderOpts: any;
 }
 
-export interface CursorCommandSchema extends ZyTraitSchema {
+export type CursorCommandSchema = CreateZyTraitSchema<{
   /* Allows to get where the cursor should start */
   getInitialCursor: {
     args: undefined;
@@ -44,7 +45,7 @@ export interface CursorCommandSchema extends ZyTraitSchema {
     args: undefined;
     return: boolean;
   };
-}
+}>;
 
 export const CursorCommandTrait = createZyTrait<CursorCommandSchema>(
   CURSOR_COMMANDS_ID,

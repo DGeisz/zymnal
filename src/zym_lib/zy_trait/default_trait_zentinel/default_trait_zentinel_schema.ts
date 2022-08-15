@@ -1,5 +1,6 @@
 import {
   createZentinelMethodList,
+  CreateZentinelMethodSchema,
   ZentinelMethodSchema,
 } from "../../hermes/hermes";
 import { Zentinel } from "../../zentinel/zentinel";
@@ -14,7 +15,7 @@ import {
 
 export const DEFAULT_TRAIT_ZENTINEL = "default-trait";
 
-export interface DefaultTraitZentinelSchema extends ZentinelMethodSchema {
+export type DefaultTraitZentinelSchema = CreateZentinelMethodSchema<{
   implementTrait: {
     args: {
       trait: ZyTrait<any>;
@@ -32,7 +33,7 @@ export interface DefaultTraitZentinelSchema extends ZentinelMethodSchema {
     };
     return: any;
   };
-}
+}>;
 
 export const defaultTraitZentinelMethodList =
   createZentinelMethodList<DefaultTraitZentinelSchema>(DEFAULT_TRAIT_ZENTINEL, {

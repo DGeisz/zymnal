@@ -69,7 +69,7 @@ export interface ZymbolFramePersist {
 
 /* === MASTER ===  */
 
-const HINT_PERIOD = 2;
+const VIMIUM_HINT_PERIOD = 2;
 class ZymbolFrameMaster extends ZyMaster<ZymbolFrameSchema> {
   zyId = ZYMBOL_FRAME_MASTER_ID;
 
@@ -252,7 +252,7 @@ export class ZymbolFrame extends Zyact<ZymbolFramePersist, FrameRenderProps> {
 
         if (vimiumActive) {
           vimiumHints = vimiumHintKeys(
-            Math.floor(subTreePointers.length / HINT_PERIOD) + 1
+            Math.floor(subTreePointers.length / VIMIUM_HINT_PERIOD) + 1
           );
         }
 
@@ -270,8 +270,8 @@ export class ZymbolFrame extends Zyact<ZymbolFramePersist, FrameRenderProps> {
 
             oldHint && oldHint.remove();
 
-            if (vimiumActive && i % HINT_PERIOD === 0) {
-              const hint = vimiumHints[Math.floor(i / HINT_PERIOD)];
+            if (vimiumActive && i % VIMIUM_HINT_PERIOD === 0) {
+              const hint = vimiumHints[Math.floor(i / VIMIUM_HINT_PERIOD)];
 
               if (hint === vimiumChars) {
                 this.vimiumMode.escapeVimiumMode();
