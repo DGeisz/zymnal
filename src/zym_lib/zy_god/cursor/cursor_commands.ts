@@ -1,5 +1,5 @@
 import { defaultTraitImplementationFactory } from "../../zy_trait/default_trait_zentinel/default_trait_zentinel_schema";
-import { isSome, NONE, some, ZyOption } from "../../zy_trait/zy_command_types";
+import { isSome, NONE, some, ZyOption } from "../../utils/zy_option";
 import {
   createZyTrait,
   unwrapTraitResponse,

@@ -1,6 +1,6 @@
 import { CURSOR_NAME } from "../../../global_utils/latex_utils";
 import { Zym } from "../../zym/zym";
-import { NONE, some, ZyOption } from "../../zy_trait/zy_command_types";
+import { NONE, some, ZyOption } from "../../utils/zy_option";
 
 export type CursorIndex = number;
 export type Cursor = CursorIndex[];

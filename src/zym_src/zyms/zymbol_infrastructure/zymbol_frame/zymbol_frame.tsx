@@ -9,10 +9,7 @@ import {
 import { Zym, ZymPersist } from "../../../../zym_lib/zym/zym";
 import { Zyact } from "../../../../zym_lib/zym/zymplementations/zyact/zyact";
 import { ZyMaster } from "../../../../zym_lib/zym/zy_master";
-import {
-  isSome,
-  ZyOption,
-} from "../../../../zym_lib/zy_trait/zy_command_types";
+import { isSome, ZyOption } from "../../../../zym_lib/utils/zy_option";
 import {
   chainMoveResponse,
   Cursor,
@@ -28,20 +25,18 @@ import {
   KeyPressComplexType,
   keyPressEqual,
   KeyPressModifier,
-  keyPressModifierToSymbol,
   KeyPressTrait,
   ZymKeyPress,
 } from "../../../../zym_lib/zy_god/event_handler/key_press";
 import { Zymbol, ZymbolHtmlIdTrait } from "../../zymbol/zymbol";
 import { Zocket, ZocketPersist } from "../../zymbol/zymbols/zocket/zocket";
-import { TeX } from "../../zymbol/zymbol_types";
 import _ from "underscore";
 import {
   addZymChangeLink,
   UndoRedoTrait,
 } from "../../../../zym_lib/zy_god/undo_redo/undo_redo";
 import { cursorToString } from "../../../../global_utils/latex_utils";
-import { BasicContext } from "../../../../zym_lib/zy_god/types/context_types";
+import { BasicContext } from "../../../../zym_lib/utils/basic_context";
 import clsx from "clsx";
 import { palette } from "../../../../global_styles/palette";
 import { vimiumHintKeys } from "../../../../global_utils/text_utils";
@@ -53,6 +48,14 @@ import {
   ZymbolFrameSchema,
   ZYMBOL_FRAME_MASTER_ID,
 } from "./zymbol_frame_schema";
+import { TexTransform } from "./building_blocks/tex_transform";
+import { VimiumHint, VimiumMode } from "./building_blocks/vimium_mode";
+import {
+  SourcedTransformer,
+  TransformerFactory,
+  ZymbolTransformRank,
+  ZymbolTreeTransformation,
+} from "./transformer/transformer";
 
 const ZFP_FIELDS: {
   BASE_ZOCKET: "b";
@@ -66,191 +69,7 @@ export interface ZymbolFramePersist {
 
 /* === MASTER ===  */
 
-export interface GetTransformerContent {
-  cursor: Cursor;
-  keyPress: ZymKeyPress;
-}
-
-export enum ZymbolTransformRank {
-  /* Means that the transform is immediately used to transform the input, 
-  and the user has to change out in order to access something else */
-  Suggest = 0,
-  /* The transformation is included, but the user has to select the
-  transform in order to access it
-   */
-  Include = 1,
-}
-
-export interface ZymbolTreeTransformationPriority {
-  rank: ZymbolTransformRank;
-  cost: number;
-}
-
-export abstract class ZymbolTreeTransformation {
-  abstract priority: ZymbolTreeTransformationPriority;
-
-  abstract getCurrentTransformation(): {
-    newTreeRoot: Zocket;
-    cursor: Cursor;
-  };
-
-  /* We use this to see if the keypress is allowed to
-    be used to confirm the transformation (see in_place_symbols for 
-    an example of when we don't do this)  */
-  checkKeypressConfirms = (_keyPress: ZymKeyPress): boolean => true;
-
-  /* Indicates whether the transformation did something with the keypress */
-  handleKeyPress = (_keyPress: ZymKeyPress): boolean => false;
-
-  abstract setRootParent(parent: Zym): void;
-}
-
-export type KeyPressValidator = (keyPress: ZymKeyPress) => boolean;
-
-export class BasicZymbolTreeTransformation extends ZymbolTreeTransformation {
-  newTreeRoot;
-  cursor: Cursor;
-  priority: ZymbolTreeTransformationPriority;
-
-  keyPressValidator?: KeyPressValidator;
-
-  constructor(
-    s: {
-      newTreeRoot: Zocket;
-      cursor: Cursor;
-      priority: ZymbolTreeTransformationPriority;
-    },
-    keyPressValidator?: KeyPressValidator
-  ) {
-    const { newTreeRoot, cursor, priority } = s;
-    super();
-    this.newTreeRoot = newTreeRoot;
-    this.cursor = cursor;
-    this.priority = priority;
-    this.keyPressValidator = keyPressValidator;
-  }
-
-  getCurrentTransformation(): { newTreeRoot: Zocket; cursor: Cursor } {
-    return {
-      ...this,
-    };
-  }
-  setRootParent(parent: Zym<any, any, any>): void {
-    this.newTreeRoot.parent = parent;
-  }
-
-  checkKeypressConfirms = (keyPress: ZymKeyPress): boolean => {
-    if (!!this.keyPressValidator) {
-      return this.keyPressValidator(keyPress);
-    } else {
-      return true;
-    }
-  };
-}
-
-export type ZymbolTransformer = (
-  rootZymbol: Zymbol,
-  cursor: Cursor,
-  keyPress: ZymKeyPress
-) => Promise<ZymbolTreeTransformation[]> | ZymbolTreeTransformation[];
-
-export interface SourcedTransformer {
-  source: string;
-  name: string;
-  transform: ZymbolTransformer;
-}
-
-export interface TransformerFactory {
-  source: string;
-  name: string;
-  factory: (
-    root: Zym,
-    cursor: Cursor
-  ) => Promise<ZymbolTransformer[]> | ZymbolTransformer[];
-}
-
-enum VimiumState {
-  None,
-  Active,
-}
-
-export const VimiumHint: React.FC<{ hint: string; str: string }> = ({
-  hint,
-  str,
-}) => {
-  return (
-    <span
-      className={clsx(
-        "bg-green-200",
-        "px-[3px]",
-        "rounded-sm",
-        "text-sm font-semibold text-green-600",
-        "z-50"
-      )}
-    >
-      {hint.startsWith(str) ? (
-        <>
-          <span className="text-gray-300">{str}</span>
-          {hint.substring(str.length)}
-        </>
-      ) : (
-        hint
-      )}
-    </span>
-  );
-};
-
 const HINT_PERIOD = 2;
-
-export class VimiumMode {
-  private chars = "";
-  private state = VimiumState.None;
-
-  /* Return true if the keypress was intercepted and handled*/
-  handleKeyPress = (keyPress: ZymKeyPress): boolean => {
-    switch (this.state) {
-      case VimiumState.None: {
-        if (
-          keyPressEqual(keyPress, {
-            type: KeyPressComplexType.Key,
-            key: "f",
-            modifiers: [KeyPressModifier.Cmd],
-          })
-        ) {
-          this.state = VimiumState.Active;
-          this.chars = "";
-          return true;
-        }
-
-        break;
-      }
-      case VimiumState.Active: {
-        if (keyPress.type === KeyPressComplexType.Key) {
-          if (/^[a-zA-Z]$/.test(keyPress.key)) {
-            this.chars += keyPress.key;
-            return true;
-          }
-        } else if (keyPress.type === KeyPressBasicType.Escape) {
-          this.escapeVimiumMode();
-          return false;
-        }
-
-        break;
-      }
-    }
-
-    return false;
-  };
-
-  escapeVimiumMode = () => {
-    this.state = VimiumState.None;
-    this.chars = "";
-  };
-
-  isActive = () => this.state === VimiumState.Active;
-  getChars = () => this.chars;
-}
-
 class ZymbolFrameMaster extends ZyMaster<ZymbolFrameSchema> {
   zyId = ZYMBOL_FRAME_MASTER_ID;
 
@@ -343,73 +162,11 @@ interface FrameRenderProps {
 /* Helper class */
 const Styles = {
   FrameContainer: "items-start",
-  SelectionKey: clsx(
-    "bg-green-200",
-    "rounded-md px-2 py-1",
-    "text-sm font-semibold text-green-600",
-    "shadow-sm shadow-gray"
-  ),
   MainFrameContainer: "m-4 mt-0",
-  TransContainer: "p-2 border-b ",
   SelectedTransContainer: "bg-gray-200 rounded-md",
 };
 
 /* Helper components */
-interface TexTransformProps {
-  tex: TeX;
-  showSelector?: boolean;
-  selector?: ZymKeyPress;
-}
-
-const TexTransform: React.FC<TexTransformProps> = (props) => {
-  let finalKey = "Any Key";
-
-  const { selector } = props;
-
-  if (selector) {
-    switch (selector.type) {
-      case KeyPressComplexType.Key: {
-        finalKey = selector.key;
-
-        if (finalKey === " ") {
-          finalKey = "Space";
-        }
-
-        break;
-      }
-      case KeyPressBasicType.Enter: {
-        finalKey = "Enter";
-        break;
-      }
-    }
-  }
-
-  return (
-    <div className="flex flex-row self-stretch">
-      <div className="flex flex-row flex-1">
-        <div>
-          <Tex tex={props.tex} />
-        </div>
-      </div>
-      {props.showSelector && (
-        <div className="flex self-end">
-          <span>
-            {(selector?.modifiers ?? []).map((m, i) => (
-              <span key={i}>
-                <span className={Styles.SelectionKey}>
-                  {keyPressModifierToSymbol(m)}
-                </span>
-                <span className="mx-1">+</span>
-              </span>
-            ))}
-            <span className={Styles.SelectionKey}>{finalKey}</span>
-          </span>
-        </div>
-      )}
-    </div>
-  );
-};
-
 /* === Zym ====  */
 export class ZymbolFrame extends Zyact<ZymbolFramePersist, FrameRenderProps> {
   zyMaster: ZyMaster = zymbolFrameMaster;
@@ -596,7 +353,6 @@ export class ZymbolFrame extends Zyact<ZymbolFramePersist, FrameRenderProps> {
         <div className={Styles.FrameContainer}>
           <div className={Styles.MainFrameContainer}>
             <TexTransform tex={selectedTex} showSelector />
-            {/* <div>{selectedTex}</div> */}
           </div>
           <div className="shadow-lg shadow-gray-400 py-4 px-2 rounded-lg bg-gray-100">
             {allTex.map((t, i) => (
@@ -622,7 +378,6 @@ export class ZymbolFrame extends Zyact<ZymbolFramePersist, FrameRenderProps> {
         <div className={Styles.FrameContainer}>
           <div className={Styles.MainFrameContainer}>
             <TexTransform tex={frameTex} />
-            {/* <div>{frameTex}</div> */}
           </div>
         </div>
       );

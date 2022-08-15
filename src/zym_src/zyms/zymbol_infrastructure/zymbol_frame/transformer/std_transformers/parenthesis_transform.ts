@@ -1,30 +1,30 @@
-import { last } from "../../../../../global_utils/array_utils";
-import { splitCursorStringAtLastWord } from "../../../../../global_utils/text_utils";
-import { Zentinel } from "../../../../../zym_lib/zentinel/zentinel";
-import { Zym } from "../../../../../zym_lib/zym/zym";
+import { last } from "../../../../../../global_utils/array_utils";
+import { splitCursorStringAtLastWord } from "../../../../../../global_utils/text_utils";
+import { Zentinel } from "../../../../../../zym_lib/zentinel/zentinel";
+import { Zym } from "../../../../../../zym_lib/zym/zym";
 import {
   Cursor,
   extendParentCursor,
-} from "../../../../../zym_lib/zy_god/cursor/cursor";
+} from "../../../../../../zym_lib/zy_god/cursor/cursor";
 import {
   KeyPressBasicType,
   KeyPressComplexType,
   ZymKeyPress,
-} from "../../../../../zym_lib/zy_god/event_handler/key_press";
-import { Zymbol } from "../../../zymbol/zymbol";
-import { ParenthesisZymbol } from "../../../zymbol/zymbols/parenthesis_zymbol";
+} from "../../../../../../zym_lib/zy_god/event_handler/key_press";
+import { Zymbol } from "../../../../zymbol/zymbol";
+import { ParenthesisZymbol } from "../../../../zymbol/zymbols/parenthesis_zymbol";
 import {
   TextZymbol,
   TEXT_ZYMBOL_NAME,
-} from "../../../zymbol/zymbols/text_zymbol/text_zymbol";
-import { Zocket } from "../../../zymbol/zymbols/zocket/zocket";
+} from "../../../../zymbol/zymbols/text_zymbol/text_zymbol";
+import { Zocket } from "../../../../zymbol/zymbols/zocket/zocket";
+import { ZymbolFrameMethod } from "../../zymbol_frame_schema";
 import {
   BasicZymbolTreeTransformation,
   ZymbolTransformRank,
   ZymbolTreeTransformation,
   ZymbolTreeTransformationPriority,
-} from "../zymbol_frame";
-import { ZymbolFrameMethod } from "../zymbol_frame_schema";
+} from "../transformer";
 import {
   getTransformTextZymbolAndParent,
   makeHelperCursor,

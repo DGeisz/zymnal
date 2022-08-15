@@ -5,7 +5,7 @@ import {
 } from "../../../../zym_lib/zym/utils/hydrate";
 import { Zym, ZymPersist } from "../../../../zym_lib/zym/zym";
 import { ZyMaster } from "../../../../zym_lib/zym/zy_master";
-import { NONE, some } from "../../../../zym_lib/zy_trait/zy_command_types";
+import { NONE, some } from "../../../../zym_lib/utils/zy_option";
 import {
   Cursor,
   CursorIndex,
@@ -15,7 +15,7 @@ import {
   wrapChildCursorResponse,
 } from "../../../../zym_lib/zy_god/cursor/cursor";
 import { ZymbolDirection } from "../../../../zym_lib/zy_god/event_handler/key_press";
-import { BasicContext } from "../../../../zym_lib/zy_god/types/context_types";
+import { BasicContext } from "../../../../zym_lib/utils/basic_context";
 import {
   DUMMY_FRAME,
   ZymbolFrame,
@@ -25,7 +25,7 @@ import { Zymbol, ZymbolRenderArgs } from "../zymbol";
 import { extendZymbol } from "../zymbol_cmd";
 import { Zocket, ZocketPersist } from "./zocket/zocket";
 import { deflectMethodToChild } from "./zymbol_utils";
-import { DotModifiersTrait } from "../../zymbol_infrastructure/zymbol_frame/transformers/dot_modifiers/dot_modifiers";
+import { DotModifiersTrait } from "../../zymbol_infrastructure/zymbol_frame/transformer/std_transformers/dot_modifiers/dot_modifiers";
 
 const PZP_FIELDS: {
   BASE_ZOCKET: "b";
@@ -160,8 +160,12 @@ export class ParenthesisZymbol extends Zymbol<ParenthesisPersist> {
   });
 
   renderTex = (opts: ZymbolRenderArgs) => {
-    const left = this.bigParenthesis ? `\\left${this.left}` : this.left;
-    const right = this.bigParenthesis ? `\\right${this.right}` : this.right;
+    const left = this.bigParenthesis
+      ? ` \\left${this.left} `
+      : ` ${this.left} `;
+    const right = this.bigParenthesis
+      ? ` \\right${this.right} `
+      : ` ${this.right} `;
 
     const { childRelativeCursor } = extractCursorInfo(opts.cursor);
 
@@ -207,8 +211,14 @@ const dotModMap: { [key: string]: string } = {
   c: "ceil",
   f: "floor",
   brc: "brace",
+  "{": "brace",
+  "}": "brace",
   brk: "brack",
+  "[": "brack",
+  "]": "brack",
   p: "paren",
+  "(": "paren",
+  ")": "paren",
   m: "moustache",
   g: "group",
 };

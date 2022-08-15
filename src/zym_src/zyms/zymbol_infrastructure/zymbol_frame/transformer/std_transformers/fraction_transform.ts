@@ -1,24 +1,24 @@
-import { last } from "../../../../../global_utils/array_utils";
-import { backslash } from "../../../../../global_utils/latex_utils";
-import { Zentinel } from "../../../../../zym_lib/zentinel/zentinel";
-import { Zym } from "../../../../../zym_lib/zym/zym";
-import { Cursor } from "../../../../../zym_lib/zy_god/cursor/cursor";
+import { last } from "../../../../../../global_utils/array_utils";
+import { backslash } from "../../../../../../global_utils/latex_utils";
+import { Zentinel } from "../../../../../../zym_lib/zentinel/zentinel";
+import { Zym } from "../../../../../../zym_lib/zym/zym";
+import { Cursor } from "../../../../../../zym_lib/zy_god/cursor/cursor";
 import {
   KeyPressBasicType,
   ZymKeyPress,
-} from "../../../../../zym_lib/zy_god/event_handler/key_press";
-import { Zymbol } from "../../../zymbol/zymbol";
-import { StackZymbol } from "../../../zymbol/zymbols/stack_zymbol";
-import { isSymbolZymbol } from "../../../zymbol/zymbols/symbol_zymbol/symbol_zymbol";
-import { TEXT_ZYMBOL_NAME } from "../../../zymbol/zymbols/text_zymbol/text_zymbol";
-import { Zocket } from "../../../zymbol/zymbols/zocket/zocket";
+} from "../../../../../../zym_lib/zy_god/event_handler/key_press";
+import { Zymbol } from "../../../../zymbol/zymbol";
+import { StackZymbol } from "../../../../zymbol/zymbols/stack_zymbol";
+import { isSymbolZymbol } from "../../../../zymbol/zymbols/symbol_zymbol/symbol_zymbol";
+import { TEXT_ZYMBOL_NAME } from "../../../../zymbol/zymbols/text_zymbol/text_zymbol";
+import { Zocket } from "../../../../zymbol/zymbols/zocket/zocket";
+import { ZymbolFrameMethod } from "../../zymbol_frame_schema";
 import {
   BasicZymbolTreeTransformation,
   ZymbolTransformRank,
   ZymbolTreeTransformation,
   ZymbolTreeTransformationPriority,
-} from "../zymbol_frame";
-import { ZymbolFrameMethod } from "../zymbol_frame_schema";
+} from "../transformer";
 import {
   getTransformTextZymbolAndParent,
   makeHelperCursor,
@@ -117,13 +117,6 @@ class CustomFractionTransformation extends ZymbolTreeTransformation {
     if (transformText.isTextZymbol) {
       const { parent } = transformText;
 
-      // const fraction = new FunctionZymbol(
-      //   FRAC_FUN,
-      //   2,
-      //   root.parentFrame,
-      //   0,
-      //   parent
-      // );
       const fraction = new StackZymbol(FRAC_FUN, root.parentFrame, 0, parent);
 
       parent.children.splice(zymbolIndex, 1);

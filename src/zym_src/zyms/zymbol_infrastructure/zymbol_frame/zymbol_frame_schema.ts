@@ -8,7 +8,7 @@ import {
   SourcedTransformer,
   TransformerFactory,
   ZymbolTransformer,
-} from "./zymbol_frame";
+} from "./transformer/transformer";
 
 export const ZYMBOL_FRAME_MASTER_ID = "zymbol_frame";
 

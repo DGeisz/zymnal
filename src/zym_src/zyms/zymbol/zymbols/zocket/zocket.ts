@@ -11,7 +11,7 @@ import {
 } from "../../../../../zym_lib/zym/utils/hydrate";
 import { Zym, ZymPersist } from "../../../../../zym_lib/zym/zym";
 import { ZyMaster } from "../../../../../zym_lib/zym/zy_master";
-import { some } from "../../../../../zym_lib/zy_trait/zy_command_types";
+import { some } from "../../../../../zym_lib/utils/zy_option";
 import {
   chainMoveResponse,
   Cursor,
@@ -27,7 +27,7 @@ import {
   KeyPressModifier,
   ZymbolDirection,
 } from "../../../../../zym_lib/zy_god/event_handler/key_press";
-import { BasicContext } from "../../../../../zym_lib/zy_god/types/context_types";
+import { BasicContext } from "../../../../../zym_lib/utils/basic_context";
 import { addZymChangeLink } from "../../../../../zym_lib/zy_god/undo_redo/undo_redo";
 import { DUMMY_FRAME } from "../../../zymbol_infrastructure/zymbol_frame/zymbol_frame";
 import {
@@ -38,7 +38,6 @@ import {
 import {
   keyPressHasModifier,
   Zymbol,
-  ZymbolHtmlClickInfo,
   ZymbolHtmlIdTrait,
   ZymbolRenderArgs,
 } from "../../zymbol";

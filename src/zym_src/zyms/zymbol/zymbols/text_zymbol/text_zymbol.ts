@@ -17,7 +17,7 @@ import {
   successfulMoveResponse,
 } from "../../../../../zym_lib/zy_god/cursor/cursor";
 import { ZymbolDirection } from "../../../../../zym_lib/zy_god/event_handler/key_press";
-import { BasicContext } from "../../../../../zym_lib/zy_god/types/context_types";
+import { BasicContext } from "../../../../../zym_lib/utils/basic_context";
 import { addZymChangeLink } from "../../../../../zym_lib/zy_god/undo_redo/undo_redo";
 import { getFullContextCursor } from "../../../../../zym_lib/zy_god/zy_god";
 import { DUMMY_FRAME } from "../../../zymbol_infrastructure/zymbol_frame/zymbol_frame";

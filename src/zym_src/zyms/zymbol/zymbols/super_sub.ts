@@ -1,6 +1,3 @@
-import { collapseTextChangeRangesAcrossMultipleVersions } from "typescript";
-import _ from "underscore";
-import { last } from "../../../../global_utils/array_utils";
 import {
   hydrateChild,
   safeHydrate,
@@ -17,7 +14,7 @@ import {
   wrapChildCursorResponse,
 } from "../../../../zym_lib/zy_god/cursor/cursor";
 import { ZymbolDirection } from "../../../../zym_lib/zy_god/event_handler/key_press";
-import { BasicContext } from "../../../../zym_lib/zy_god/types/context_types";
+import { BasicContext } from "../../../../zym_lib/utils/basic_context";
 import { DUMMY_FRAME } from "../../zymbol_infrastructure/zymbol_frame/zymbol_frame";
 import {
   DeleteBehavior,
@@ -372,6 +369,17 @@ export class SuperSubZymbol extends Zymbol<SuperSubPersist> {
     return deleteBehaviorNormal(DeleteBehaviorType.ABSORB);
   };
 
+  absorbCursor = (ctx: BasicContext) => {
+    if (this.children.length === 1) {
+      return this.takeCursorFromRight(ctx);
+    } else {
+      return wrapChildCursorResponse(
+        this.children[SuperSubBothIndex.Sub].takeCursorFromRight(ctx),
+        SuperSubBothIndex.Sub
+      );
+    }
+  };
+
   letParentDeleteWithDeleteBehavior = (
     cursor: Cursor,
     _ctx: BasicContext
@@ -401,13 +409,13 @@ export class SuperSubZymbol extends Zymbol<SuperSubPersist> {
               this.status = SuperSubStatus.OnlySub;
               this.children = [this.children[SuperSubBothIndex.Sub]];
 
-              return deleteBehaviorNormal(DeleteBehaviorType.MOVE_LEFT);
+              return deleteBehaviorNormal(DeleteBehaviorType.ABSORB);
             }
             case SuperSubPosition.Sub: {
               this.status = SuperSubStatus.OnlySuper;
               this.children = [this.children[SuperSubBothIndex.Super]];
 
-              return deleteBehaviorNormal(DeleteBehaviorType.MOVE_LEFT);
+              return deleteBehaviorNormal(DeleteBehaviorType.ABSORB);
             }
           }
 

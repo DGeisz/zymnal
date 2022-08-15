@@ -6,7 +6,7 @@ import {
 } from "../../../../zym_lib/zym/utils/hydrate";
 import { Zym, ZymPersist } from "../../../../zym_lib/zym/zym";
 import { ZyMaster } from "../../../../zym_lib/zym/zy_master";
-import { NONE, some } from "../../../../zym_lib/zy_trait/zy_command_types";
+import { NONE, some } from "../../../../zym_lib/utils/zy_option";
 import {
   Cursor,
   CursorIndex,
@@ -21,7 +21,7 @@ import {
   ZymbolDirection,
   ZymKeyPress,
 } from "../../../../zym_lib/zy_god/event_handler/key_press";
-import { BasicContext } from "../../../../zym_lib/zy_god/types/context_types";
+import { BasicContext } from "../../../../zym_lib/utils/basic_context";
 import {
   DUMMY_FRAME,
   ZymbolFrame,
@@ -37,7 +37,7 @@ import { TeX } from "../zymbol_types";
 import { Zocket } from "./zocket/zocket";
 import { deflectMethodToChild } from "./zymbol_utils";
 import { ZyGodMethod } from "../../../../zym_lib/zy_god/zy_god_schema";
-import { DotModifiersTrait } from "../../zymbol_infrastructure/zymbol_frame/transformers/dot_modifiers/dot_modifiers";
+import { DotModifiersTrait } from "../../zymbol_infrastructure/zymbol_frame/transformer/std_transformers/dot_modifiers/dot_modifiers";
 
 export function checkStackOperator(op: TeX): boolean {
   return (
@@ -134,12 +134,6 @@ export class StackZymbol extends Zymbol<StackZymbolPersist> {
     wrapChildCursorResponse(
       this.children[StackPosition.TOP].takeCursorFromRight(ctx),
       StackPosition.TOP
-    );
-
-  absorbCursor = (ctx: BasicContext) =>
-    wrapChildCursorResponse(
-      this.children[StackPosition.BOTTOM].takeCursorFromRight(ctx),
-      StackPosition.BOTTOM
     );
 
   moveCursorUp = (cursor: Cursor, ctx: BasicContext): CursorMoveResponse =>
@@ -310,6 +304,12 @@ export class StackZymbol extends Zymbol<StackZymbolPersist> {
       }
     }
   };
+
+  absorbCursor = (ctx: BasicContext) =>
+    wrapChildCursorResponse(
+      this.children[StackPosition.BOTTOM].takeCursorFromRight(ctx),
+      StackPosition.BOTTOM
+    );
 
   letParentDeleteWithDeleteBehavior = (
     cursor: Cursor,

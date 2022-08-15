@@ -1,18 +1,18 @@
-import { checkLatex } from "../../../../../global_utils/latex_utils";
-import { Zentinel } from "../../../../../zym_lib/zentinel/zentinel";
-import { Zymbol } from "../../../zymbol/zymbol";
-import { FunctionZymbol } from "../../../zymbol/zymbols/function_zymbol/function_zymbol";
+import { checkLatex } from "../../../../../../global_utils/latex_utils";
+import { Zentinel } from "../../../../../../zym_lib/zentinel/zentinel";
+import { Zymbol } from "../../../../zymbol/zymbol";
+import { FunctionZymbol } from "../../../../zymbol/zymbols/function_zymbol/function_zymbol";
 import {
   TextZymbol,
   TEXT_ZYMBOL_NAME,
-} from "../../../zymbol/zymbols/text_zymbol/text_zymbol";
-import { Zocket } from "../../../zymbol/zymbols/zocket/zocket";
-import { TeX } from "../../../zymbol/zymbol_types";
+} from "../../../../zymbol/zymbols/text_zymbol/text_zymbol";
+import { Zocket } from "../../../../zymbol/zymbols/zocket/zocket";
+import { TeX } from "../../../../zymbol/zymbol_types";
+import { ZymbolFrameMethod } from "../../zymbol_frame_schema";
 import {
   BasicZymbolTreeTransformation,
   ZymbolTransformRank,
-} from "../zymbol_frame";
-import { ZymbolFrameMethod } from "../zymbol_frame_schema";
+} from "../transformer";
 import { makeHelperCursor, recoverAllowedCursor } from "./transform_utils";
 
 const FUNCTION_TRANSFORMER = "function-transformer";

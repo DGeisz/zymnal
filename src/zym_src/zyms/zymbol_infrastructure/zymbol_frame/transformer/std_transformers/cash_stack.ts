@@ -1,15 +1,15 @@
-import { Zentinel } from "../../../../../zym_lib/zentinel/zentinel";
+import { Zentinel } from "../../../../../../zym_lib/zentinel/zentinel";
 import {
   checkStackOperator,
   StackPosition,
   StackZymbol,
-} from "../../../zymbol/zymbols/stack_zymbol";
-import { Zocket } from "../../../zymbol/zymbols/zocket/zocket";
+} from "../../../../zymbol/zymbols/stack_zymbol";
+import { Zocket } from "../../../../zymbol/zymbols/zocket/zocket";
+import { ZymbolFrameMethod } from "../../zymbol_frame_schema";
 import {
   BasicZymbolTreeTransformation,
   ZymbolTransformRank,
-} from "../zymbol_frame";
-import { ZymbolFrameMethod } from "../zymbol_frame_schema";
+} from "../transformer";
 import {
   getTransformTextZymbolAndParent,
   makeHelperCursor,
@@ -27,7 +27,7 @@ class CashStack extends Zentinel<{}> {
     this.callZentinelMethod(ZymbolFrameMethod.registerTransformer, {
       source: CASH_STACK,
       name: "cash-stack",
-      transform: (root, cursor) => {
+      transform(root, cursor) {
         cursor = makeHelperCursor(cursor, root);
 
         const cursorCopy = [...cursor];

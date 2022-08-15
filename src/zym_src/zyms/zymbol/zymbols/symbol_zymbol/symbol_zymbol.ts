@@ -13,8 +13,8 @@ import {
   FAILED_CURSOR_MOVE_RESPONSE,
 } from "../../../../../zym_lib/zy_god/cursor/cursor";
 import { ZymbolDirection } from "../../../../../zym_lib/zy_god/event_handler/key_press";
-import { BasicContext } from "../../../../../zym_lib/zy_god/types/context_types";
-import { operatorList } from "../../../zymbol_infrastructure/zymbol_frame/transformers/transform_utils";
+import { BasicContext } from "../../../../../zym_lib/utils/basic_context";
+import { operatorList } from "../../../zymbol_infrastructure/zymbol_frame/transformer/std_transformers/transform_utils";
 import {
   DUMMY_FRAME,
   ZymbolFrame,

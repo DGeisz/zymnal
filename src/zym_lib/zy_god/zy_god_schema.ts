@@ -3,7 +3,7 @@ import {
   ZentinelMethodSchema,
 } from "../hermes/hermes";
 import type { Zym, ZymPersist } from "../zym/zym";
-import { ZyOption } from "../zy_trait/zy_command_types";
+import { ZyOption } from "../utils/zy_option";
 import { Cursor } from "./cursor/cursor";
 import { ZymKeyPress } from "./event_handler/key_press";
 

@@ -1,16 +1,16 @@
-import { last } from "../../../../../global_utils/array_utils";
-import { backslash } from "../../../../../global_utils/latex_utils";
+import { last } from "../../../../../../global_utils/array_utils";
+import { backslash } from "../../../../../../global_utils/latex_utils";
 import {
   Cursor,
   CursorIndex,
-} from "../../../../../zym_lib/zy_god/cursor/cursor";
-import { Zymbol } from "../../../zymbol/zymbol";
-import { isSymbolZymbol } from "../../../zymbol/zymbols/symbol_zymbol/symbol_zymbol";
+} from "../../../../../../zym_lib/zy_god/cursor/cursor";
+import { Zymbol } from "../../../../zymbol/zymbol";
+import { isSymbolZymbol } from "../../../../zymbol/zymbols/symbol_zymbol/symbol_zymbol";
 import {
   TextZymbol,
   TEXT_ZYMBOL_NAME,
-} from "../../../zymbol/zymbols/text_zymbol/text_zymbol";
-import { ZOCKET_MASTER_ID } from "../../../zymbol/zymbols/zocket/zocket";
+} from "../../../../zymbol/zymbols/text_zymbol/text_zymbol";
+import { ZOCKET_MASTER_ID } from "../../../../zymbol/zymbols/zocket/zocket";
 
 /**
  * Basically just gets us to an assumed text zymbol and the parent */

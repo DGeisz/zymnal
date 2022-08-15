@@ -16,7 +16,7 @@ import {
   ZymbolDirection,
   ZymKeyPress,
 } from "../../../zym_lib/zy_god/event_handler/key_press";
-import { BasicContext } from "../../../zym_lib/zy_god/types/context_types";
+import { BasicContext } from "../../../zym_lib/utils/basic_context";
 import { ZymbolFrame } from "../zymbol_infrastructure/zymbol_frame/zymbol_frame";
 import { DeleteBehavior } from "./delete_behavior";
 import { TeX } from "./zymbol_types";

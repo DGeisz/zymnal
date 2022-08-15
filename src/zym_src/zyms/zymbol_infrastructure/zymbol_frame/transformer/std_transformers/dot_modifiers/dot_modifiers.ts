@@ -1,39 +1,36 @@
 import _ from "underscore";
-import { last } from "../../../../../../global_utils/array_utils";
-import { checkLatex } from "../../../../../../global_utils/latex_utils";
-import { HermesMessage } from "../../../../../../zym_lib/hermes/hermes";
-import { Zentinel } from "../../../../../../zym_lib/zentinel/zentinel";
-import {
-  isSome,
-  ZyOption,
-} from "../../../../../../zym_lib/zy_trait/zy_command_types";
-import { cursorForEach } from "../../../../../../zym_lib/zy_god/cursor/cursor";
-import { Zymbol } from "../../../../zymbol/zymbol";
-import { isSuperSub } from "../../../../zymbol/zymbols/super_sub";
-import { isSymbolZymbol } from "../../../../zymbol/zymbols/symbol_zymbol/symbol_zymbol";
+import { last } from "../../../../../../../global_utils/array_utils";
+import { checkLatex } from "../../../../../../../global_utils/latex_utils";
+import { HermesMessage } from "../../../../../../../zym_lib/hermes/hermes";
+import { Zentinel } from "../../../../../../../zym_lib/zentinel/zentinel";
+import { isSome, ZyOption } from "../../../../../../../zym_lib/utils/zy_option";
+import { cursorForEach } from "../../../../../../../zym_lib/zy_god/cursor/cursor";
+import { Zymbol } from "../../../../../zymbol/zymbol";
+import { isSuperSub } from "../../../../../zymbol/zymbols/super_sub";
+import { isSymbolZymbol } from "../../../../../zymbol/zymbols/symbol_zymbol/symbol_zymbol";
 import {
   Zocket,
   ZymbolModifier,
-} from "../../../../zymbol/zymbols/zocket/zocket";
-import {
-  BasicZymbolTreeTransformation,
-  ZymbolTransformRank,
-  ZymbolTreeTransformation,
-} from "../../zymbol_frame";
+} from "../../../../../zymbol/zymbols/zocket/zocket";
 import {
   getTransformTextZymbolAndParent,
   makeHelperCursor,
   recoverAllowedCursor,
 } from "../transform_utils";
-import { ZymbolFrameMethod } from "../../zymbol_frame_schema";
+import { ZymbolFrameMethod } from "../../../zymbol_frame_schema";
 import {
   createZyTrait,
   ZyTraitSchema,
-} from "../../../../../../zym_lib/zy_trait/zy_trait";
+} from "../../../../../../../zym_lib/zy_trait/zy_trait";
 import {
   DotModifiersMethodSchema,
   DOT_MODIFIERS_TRANSFORM,
 } from "./dot_modifiers_schema";
+import {
+  BasicZymbolTreeTransformation,
+  ZymbolTransformRank,
+  ZymbolTreeTransformation,
+} from "../../transformer";
 
 const DOT = ".";
 

@@ -1,5 +1,5 @@
 import { Zym } from "../../zym/zym";
-import { NONE, some, ZyOption } from "../../zy_trait/zy_command_types";
+import { NONE, some, ZyOption } from "../../utils/zy_option";
 import { Cursor } from "../cursor/cursor";
 import { zyGod } from "../zy_god";
 

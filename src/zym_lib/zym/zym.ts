@@ -1,5 +1,5 @@
 import { ZentinelMethodPointer, ZentinelMethodSchema } from "../hermes/hermes";
-import { unwrapOption } from "../zy_trait/zy_command_types";
+import { unwrapOption } from "../utils/zy_option";
 import {
   Cursor,
   CursorIndex,

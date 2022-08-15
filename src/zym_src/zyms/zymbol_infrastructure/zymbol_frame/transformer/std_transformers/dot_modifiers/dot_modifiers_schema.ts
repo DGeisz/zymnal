@@ -1,7 +1,7 @@
 import {
   createZentinelMethodList,
   ZentinelMethodSchema,
-} from "../../../../../../zym_lib/hermes/hermes";
+} from "../../../../../../../zym_lib/hermes/hermes";
 import { DotModifierMap, DotModifierZymbolTransform } from "./dot_modifiers";
 
 export const DOT_MODIFIERS_TRANSFORM = "dot-modifiers-e1125";

@@ -4,7 +4,7 @@ import { Zentinel } from "../zentinel/zentinel";
 import { Zym, ZymPersist } from "../zym/zym";
 import { Zyact } from "../zym/zymplementations/zyact/zyact";
 import { ZyMaster } from "../zym/zy_master";
-import { isSome, NONE, some } from "../zy_trait/zy_command_types";
+import { isSome, NONE, some } from "../utils/zy_option";
 import { unwrapTraitResponse } from "../zy_trait/zy_trait";
 import { ZyId } from "../zy_types/basic_types";
 import { Cursor } from "./cursor/cursor";
@@ -21,7 +21,7 @@ import {
   ZymKeyPress,
 } from "./event_handler/key_press";
 import { WindowEventHandler } from "./event_handler/window_event_handler";
-import { BasicContext, newContext } from "./types/context_types";
+import { BasicContext, newContext } from "../utils/basic_context";
 import {
   defaultUndoRedoImplFactory,
   getZymChangeLinks,

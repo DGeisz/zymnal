@@ -1,5 +1,5 @@
 import _ from "underscore";
-import { backslash } from "../../../../../../global_utils/latex_utils";
+import { backslash } from "../../../../../../../global_utils/latex_utils";
 import {
   InPlaceSymbolMap,
   SlashMap,

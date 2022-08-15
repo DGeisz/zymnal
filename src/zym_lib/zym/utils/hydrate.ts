@@ -1,5 +1,5 @@
 import { ZyGodMethod } from "../../zy_god/zy_god_schema";
-import { unwrapOption } from "../../zy_trait/zy_command_types";
+import { unwrapOption } from "../../utils/zy_option";
 import { Zym, ZymPersist } from "../zym";
 
 export async function hydrateChild(

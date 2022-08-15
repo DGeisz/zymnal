@@ -1,15 +1,15 @@
-import { last } from "../../../../../global_utils/array_utils";
-import { Zentinel } from "../../../../../zym_lib/zentinel/zentinel";
+import { last } from "../../../../../../global_utils/array_utils";
+import { Zentinel } from "../../../../../../zym_lib/zentinel/zentinel";
 import {
   SuperSubZymbol,
   SUPER_SUB_ID,
-} from "../../../zymbol/zymbols/super_sub";
-import { Zocket } from "../../../zymbol/zymbols/zocket/zocket";
+} from "../../../../zymbol/zymbols/super_sub";
+import { Zocket } from "../../../../zymbol/zymbols/zocket/zocket";
+import { ZymbolFrameMethod } from "../../zymbol_frame_schema";
 import {
   BasicZymbolTreeTransformation,
   ZymbolTransformRank,
-} from "../zymbol_frame";
-import { ZymbolFrameMethod } from "../zymbol_frame_schema";
+} from "../transformer";
 import {
   getTransformTextZymbolAndParent,
   makeHelperCursor,

@@ -1,5 +1,5 @@
 import _ from "underscore";
-import { Zentinel } from "../../../../../../zym_lib/zentinel/zentinel";
+import { Zentinel } from "../../../../../../../zym_lib/zentinel/zentinel";
 import { DotModifiersMethod } from "../dot_modifiers/dot_modifiers_schema";
 import { InPlaceMethod } from "../in_place_symbols/in_place_symbols_schema";
 import { StdDotModMap } from "./dot_map";

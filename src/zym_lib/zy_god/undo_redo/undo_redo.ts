@@ -1,7 +1,7 @@
 import { defaultTraitImplementationFactory } from "../../zy_trait/default_trait_zentinel/default_trait_zentinel_schema";
 import { createZyTrait, ZyTraitSchema } from "../../zy_trait/zy_trait";
 import { Cursor } from "../cursor/cursor";
-import { BasicContext } from "../types/context_types";
+import { BasicContext } from "../../utils/basic_context";
 
 export const ZYM_CHANGES = "zym_changes";
 

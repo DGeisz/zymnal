@@ -1,4 +1,4 @@
-import { backslash } from "../../../../../../global_utils/latex_utils";
+import { backslash } from "../../../../../../../global_utils/latex_utils";
 import { InPlaceSymbolMap } from "../in_place_symbols/in_place_symbols";
 
 export const physicsSlash: InPlaceSymbolMap = {
