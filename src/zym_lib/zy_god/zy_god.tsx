@@ -1,8 +1,7 @@
 import { ControlledAwaiter } from "../../global_utils/promise_utils";
 import { Hermes } from "../hermes/hermes";
 import { Zentinel } from "../zentinel/zentinel";
-import { Zym, ZymPersist } from "../zym/zym";
-import { Zyact } from "../zym/zymplementations/zyact/zyact";
+import { Zym } from "../zym/zym";
 import { ZyMaster } from "../zym/zy_master";
 import { isSome, NONE, some } from "../utils/zy_option";
 import { unwrapTraitResponse } from "../zy_trait/zy_trait";
@@ -36,15 +35,15 @@ export function getFullContextCursor(ctx: BasicContext): Cursor {
   return [...(ctx.get(CONTEXT_CURSOR) as Cursor)];
 }
 
-class ZyGod extends ZyMaster<ZyGodSchema> {
+class ZyGod extends Zentinel<ZyGodSchema> {
   zyId: string = ZY_GOD_ID;
 
   /* ZyGod Creates and Manages Hermes */
   private zyGodHermes: Hermes = new Hermes();
 
-  private masterRegistry: Map<ZyId, ZyMaster<any>> = new Map();
+  private masterRegistry: Map<ZyId, ZyMaster<any, any, any>> = new Map();
   private cursor: Cursor = [];
-  private root?: Zyact;
+  private root?: Zym<any, any>;
   private rootAwaiter = new ControlledAwaiter();
 
   private windowInFocus = true;
@@ -55,18 +54,16 @@ class ZyGod extends ZyMaster<ZyGodSchema> {
   constructor() {
     super();
 
-    const self = this;
-
     this.setMethodImplementation({
-      async getZymRoot() {
-        await self.rootAwaiter.awaitTrigger();
+      getZymRoot: async () => {
+        await this.rootAwaiter.awaitTrigger();
 
-        return self.root!;
+        return this.root!;
       },
-      async hydratePersistedZym(persisted) {
-        const { m: masterId, d: zymData }: ZymPersist<any> = persisted;
+      hydratePersistedZym: async (persisted) => {
+        const { m: masterId, d: zymData } = persisted;
 
-        const master = self.masterRegistry.get(masterId);
+        const master = this.masterRegistry.get(masterId);
 
         if (master) {
           const zym = await master.hydrate(zymData);
@@ -76,14 +73,14 @@ class ZyGod extends ZyMaster<ZyGodSchema> {
 
         return NONE;
       },
-      async queueSimulatedKeyPress(keyPress) {
-        self.simulatedKeyPressQueue.push(keyPress);
+      queueSimulatedKeyPress: async (keyPress) => {
+        this.simulatedKeyPressQueue.push(keyPress);
       },
-      async takeCursor(cursor) {
+      takeCursor: async (cursor) => {
         this.handleCursorChange(cursor);
       },
-      async getFullCursor() {
-        return self.windowInFocus ? self.cursor : [];
+      getFullCursor: async () => {
+        return this.windowInFocus ? this.cursor : [];
       },
     });
 
@@ -108,7 +105,7 @@ class ZyGod extends ZyMaster<ZyGodSchema> {
     We have to add this line because the zy god is both the 
     carrier of hermes and also a zentinel
     */
-    this.zyGodHermes.registerZentinel(this);
+    this.zyGodHermes.registerZentinel(this as Zentinel<any>);
   }
 
   private handleCursorChange = (newCursor: Cursor) => {
@@ -252,7 +249,7 @@ class ZyGod extends ZyMaster<ZyGodSchema> {
 
   getCursorCopy = () => [...this.cursor];
 
-  registerMasters(masters: ZyMaster<any>[]) {
+  registerMasters(masters: ZyMaster<any, any, any>[]) {
     for (const master of masters) {
       this.masterRegistry.set(master.zyId, master);
       this.zyGodHermes.registerZentinel(master);
@@ -265,7 +262,7 @@ class ZyGod extends ZyMaster<ZyGodSchema> {
     }
   }
 
-  async setRoot(root: Zyact) {
+  async setRoot(root: Zym<any, any, any>) {
     this.root = root;
     this.rootAwaiter.trigger();
 
@@ -296,19 +293,11 @@ class ZyGod extends ZyMaster<ZyGodSchema> {
       this.cursor = cursorOpt.val;
     }
   }
-
-  hydrate(_p: {}): Promise<Zym<any, any, any>> {
-    throw new Error(
-      "If you're hydrating the zym god, something's gone horribly wrong"
-    );
-  }
-
-  newBlankChild(): Zym<any, any, any> {
-    throw new Error("This god don't have no son bitches");
-  }
 }
 
-export const zyGod = new ZyGod();
+/* TODO: Look into why this is happening?? */
+export const zyGod = new ZyGod() as Zentinel<any>;
+// export const zyGod = new ZyGod();
 
 defaultKeyPressImplFactory(zyGod);
 defaultCursorImplFactory(zyGod);

@@ -103,7 +103,7 @@ export function useHermesValue<
   Method extends keyof Schema,
   Return = Schema[Method]["return"]
 >(
-  zyact: Zyact,
+  zyact: Zyact<any, any>,
   pointer: ZentinelMethodPointer<Schema, Method>,
   args: Schema[Method]["args"],
   depArray?: any[]

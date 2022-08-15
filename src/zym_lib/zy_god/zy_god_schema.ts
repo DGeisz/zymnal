@@ -1,23 +1,23 @@
 import {
   createZentinelMethodList,
   CreateZentinelMethodSchema,
-  ZentinelMethodSchema,
 } from "../hermes/hermes";
-import type { Zym, ZymPersist } from "../zym/zym";
+import type { Zym } from "../zym/zym";
 import { ZyOption } from "../utils/zy_option";
 import { Cursor } from "./cursor/cursor";
 import { ZymKeyPress } from "./event_handler/key_press";
+import { ZymPersist } from "../zy_schema/zy_schema";
 
 export const ZY_GOD_ID = "zy-god";
 
 export type ZyGodSchema = CreateZentinelMethodSchema<{
   getZymRoot: {
     args: undefined;
-    return: Zym;
+    return: Zym<any, any, any>;
   };
   hydratePersistedZym: {
-    args: ZymPersist<any>;
-    return: ZyOption<Zym>;
+    args: ZymPersist<any, any>;
+    return: ZyOption<Zym<any, any, any>>;
   };
   queueSimulatedKeyPress: {
     args: ZymKeyPress;
