@@ -5,11 +5,7 @@ import {
 } from "../../../../zym_lib/zym/utils/hydrate";
 import { Zym, ZymPersist } from "../../../../zym_lib/zym/zym";
 import { ZyMaster } from "../../../../zym_lib/zym/zy_master";
-import {
-  implementPartialCmdGroup,
-  NONE,
-  some,
-} from "../../../../zym_lib/zy_trait/zy_command_types";
+import { NONE, some } from "../../../../zym_lib/zy_trait/zy_command_types";
 import {
   Cursor,
   CursorIndex,
@@ -20,7 +16,6 @@ import {
 } from "../../../../zym_lib/zy_god/cursor/cursor";
 import { ZymbolDirection } from "../../../../zym_lib/zy_god/event_handler/key_press";
 import { BasicContext } from "../../../../zym_lib/zy_god/types/context_types";
-import { DotModifierCommand } from "../../zymbol_infrastructure/zymbol_frame/transformers/dot_modifiers";
 import {
   DUMMY_FRAME,
   ZymbolFrame,
@@ -30,6 +25,7 @@ import { Zymbol, ZymbolRenderArgs } from "../zymbol";
 import { extendZymbol } from "../zymbol_cmd";
 import { Zocket, ZocketPersist } from "./zocket/zocket";
 import { deflectMethodToChild } from "./zymbol_utils";
+import { DotModifiersTrait } from "../../zymbol_infrastructure/zymbol_frame/transformers/dot_modifiers/dot_modifiers";
 
 const PZP_FIELDS: {
   BASE_ZOCKET: "b";
@@ -217,8 +213,8 @@ const dotModMap: { [key: string]: string } = {
   g: "group",
 };
 
-const dotModImpl = implementPartialCmdGroup(DotModifierCommand, {
-  getNodeTransforms() {
+parenthesisZymbolMaster.implementTrait(DotModifiersTrait, {
+  async getNodeTransforms() {
     return {
       id: {
         group: "parenthesis",
@@ -255,5 +251,3 @@ const dotModImpl = implementPartialCmdGroup(DotModifierCommand, {
     };
   },
 });
-
-parenthesisZymbolMaster.registerCmds([...dotModImpl]);

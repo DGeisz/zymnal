@@ -26,7 +26,12 @@ import {
   DeleteBehaviorType,
   deleteBehaviorNormal,
 } from "../../delete_behavior";
-import { basicZymbolHtmlIdImpl, Zymbol, ZymbolRenderArgs } from "../../zymbol";
+import {
+  basicZymbolHtmlIdImplementation,
+  Zymbol,
+  ZymbolHtmlIdTrait,
+  ZymbolRenderArgs,
+} from "../../zymbol";
 import { extendZymbol } from "../../zymbol_cmd";
 
 const TZP_FIELDS: { CHARACTERS: "c" } = {
@@ -283,4 +288,7 @@ export class TextZymbol extends Zymbol<TextZymbolPersist> {
   };
 }
 
-textZymbolMaster.registerCmds([...basicZymbolHtmlIdImpl]);
+textZymbolMaster.implementTrait(
+  ZymbolHtmlIdTrait,
+  basicZymbolHtmlIdImplementation
+);

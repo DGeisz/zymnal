@@ -10,9 +10,9 @@ import { Zocket } from "../../../zymbol/zymbols/zocket/zocket";
 import { TeX } from "../../../zymbol/zymbol_types";
 import {
   BasicZymbolTreeTransformation,
-  TransformerMessage,
   ZymbolTransformRank,
 } from "../zymbol_frame";
+import { ZymbolFrameMethod } from "../zymbol_frame_schema";
 import { makeHelperCursor, recoverAllowedCursor } from "./transform_utils";
 
 const FUNCTION_TRANSFORMER = "function-transformer";
@@ -36,95 +36,93 @@ function getTexFunctionArgCount(fn: TeX): number {
   return -1;
 }
 
-class FunctionTransformer extends Zentinel {
+class FunctionTransformer extends Zentinel<{}> {
   zyId: string = FUNCTION_TRANSFORMER;
 
   onRegistration = async () => {
-    this.callHermes(
-      TransformerMessage.registerTransformer({
-        source: FUNCTION_TRANSFORMER,
-        name: "fn-trans",
-        transform: (root, cursor) => {
-          cursor = makeHelperCursor(cursor, root);
+    this.callZentinelMethod(ZymbolFrameMethod.registerTransformer, {
+      source: FUNCTION_TRANSFORMER,
+      name: "fn-trans",
+      transform: (root, cursor) => {
+        cursor = makeHelperCursor(cursor, root);
 
-          const cursorCopy = [...cursor];
+        const cursorCopy = [...cursor];
 
-          /* First we want to get to the parent */
-          let currZymbol = root;
-          let parent = root;
+        /* First we want to get to the parent */
+        let currZymbol = root;
+        let parent = root;
 
-          for (let i = 0; i < cursorCopy.length - 1; i++) {
-            parent = currZymbol;
-            currZymbol = parent.children[cursorCopy[i]] as Zymbol;
+        for (let i = 0; i < cursorCopy.length - 1; i++) {
+          parent = currZymbol;
+          currZymbol = parent.children[cursorCopy[i]] as Zymbol;
 
-            if (!currZymbol) {
-              return [];
-            }
+          if (!currZymbol) {
+            return [];
+          }
+        }
+
+        if (currZymbol.getMasterId() === TEXT_ZYMBOL_NAME) {
+          const text = currZymbol as TextZymbol;
+          const word = text.getText().trim();
+
+          let rank = ZymbolTransformRank.Include;
+
+          let fn;
+
+          if (word in SPECIAL_COMMANDS) {
+            fn = SPECIAL_COMMANDS[word];
+            rank = ZymbolTransformRank.Suggest;
+          } else {
+            fn = word;
           }
 
-          if (currZymbol.getMasterId() === TEXT_ZYMBOL_NAME) {
-            const text = currZymbol as TextZymbol;
-            const word = text.getText().trim();
-
-            let rank = ZymbolTransformRank.Include;
-
-            let fn;
-
-            if (word in SPECIAL_COMMANDS) {
-              fn = SPECIAL_COMMANDS[word];
-              rank = ZymbolTransformRank.Suggest;
-            } else {
-              fn = word;
-            }
-
-            if (fn.length > 2) {
-              rank = ZymbolTransformRank.Suggest;
-            }
-
-            const numArgs = getTexFunctionArgCount(fn);
-
-            if (numArgs > 0) {
-              cursorCopy.pop();
-
-              const textPointer = cursorCopy.pop()!;
-              const parentZocket = text.parent as Zocket;
-
-              const newZym = [];
-              let newTextPointer = textPointer + 1;
-
-              const fnZym = new FunctionZymbol(
-                fn,
-                numArgs,
-                root.parentFrame,
-                0,
-                parent
-              );
-
-              newZym.push(fnZym);
-
-              parentZocket.children.splice(textPointer, 1, ...newZym);
-
-              cursorCopy.push(...[newTextPointer - 1, 0, 0]);
-
-              root.recursivelyReIndexChildren();
-
-              return [
-                new BasicZymbolTreeTransformation({
-                  newTreeRoot: root as Zocket,
-                  cursor: recoverAllowedCursor(cursorCopy, root),
-                  priority: {
-                    rank: rank,
-                    cost: 100,
-                  },
-                }),
-              ];
-            }
+          if (fn.length > 2) {
+            rank = ZymbolTransformRank.Suggest;
           }
 
-          return [];
-        },
-      })
-    );
+          const numArgs = getTexFunctionArgCount(fn);
+
+          if (numArgs > 0) {
+            cursorCopy.pop();
+
+            const textPointer = cursorCopy.pop()!;
+            const parentZocket = text.parent as Zocket;
+
+            const newZym = [];
+            let newTextPointer = textPointer + 1;
+
+            const fnZym = new FunctionZymbol(
+              fn,
+              numArgs,
+              root.parentFrame,
+              0,
+              parent
+            );
+
+            newZym.push(fnZym);
+
+            parentZocket.children.splice(textPointer, 1, ...newZym);
+
+            cursorCopy.push(...[newTextPointer - 1, 0, 0]);
+
+            root.recursivelyReIndexChildren();
+
+            return [
+              new BasicZymbolTreeTransformation({
+                newTreeRoot: root as Zocket,
+                cursor: recoverAllowedCursor(cursorCopy, root),
+                priority: {
+                  rank: rank,
+                  cost: 100,
+                },
+              }),
+            ];
+          }
+        }
+
+        return [];
+      },
+    });
   };
 }
 

@@ -1,102 +1,48 @@
 import { ControlledAwaiter } from "../../global_utils/promise_utils";
-import { Hermes, HermesMessage, ZentinelMessage } from "../hermes/hermes";
+import { Hermes } from "../hermes/hermes";
 import { Zentinel } from "../zentinel/zentinel";
 import { Zym, ZymPersist } from "../zym/zym";
 import { Zyact } from "../zym/zymplementations/zyact/zyact";
 import { ZyMaster } from "../zym/zy_master";
-import {
-  isSome,
-  NONE,
-  ok,
-  some,
-  UNIMPLEMENTED,
-  unwrap,
-  ZyResult,
-} from "../zy_trait/zy_command_types";
+import { isSome, NONE, some } from "../zy_trait/zy_command_types";
+import { unwrapTraitResponse } from "../zy_trait/zy_trait";
 import { ZyId } from "../zy_types/basic_types";
-import { Cursor, CursorMoveResponse } from "./cursor/cursor";
+import { Cursor } from "./cursor/cursor";
 import {
-  CursorCommand,
-  CursorRenderArgs,
-  GetInitialCursorReturn,
-  ModifyNodeAndReRenderArgs,
+  CursorCommandTrait,
+  defaultCursorImplFactory,
 } from "./cursor/cursor_commands";
 import { keyEventHandler } from "./event_handler/key_event_handler";
 import {
-  KeyPressArgs,
-  KeyPressCommand,
+  defaultKeyPressImplFactory,
   KeyPressComplexType,
   KeyPressModifier,
+  KeyPressTrait,
   ZymKeyPress,
 } from "./event_handler/key_press";
 import { WindowEventHandler } from "./event_handler/window_event_handler";
 import { BasicContext, newContext } from "./types/context_types";
 import {
+  defaultUndoRedoImplFactory,
   getZymChangeLinks,
-  UndoRedoCommand,
   UndoRedoStack,
+  UndoRedoTrait,
 } from "./undo_redo/undo_redo";
+import { ZyGodSchema, ZY_GOD_ID } from "./zy_god_schema";
 
-export const ZyGodId: ZyId = "zyGod";
-
-enum ZyGodZentinelMessage {
-  GetZymRoot = "gzr",
-  HydratePersistedZym = "hpr",
-  QueueSimulatedKeyPress = "qsk",
-  TakeCursor = "tk",
-  GetFullCursor = "gfc",
-}
-
-export const ZyGodMessage = {
-  hydrateZym(p: ZymPersist<any>): HermesMessage {
-    return {
-      zentinelId: ZyGodId,
-      message: ZyGodZentinelMessage.HydratePersistedZym,
-      content: p,
-    };
-  },
-  queueSimulatedKeyPress(keyPress: ZymKeyPress): HermesMessage {
-    return {
-      zentinelId: ZyGodId,
-      message: ZyGodZentinelMessage.QueueSimulatedKeyPress,
-      content: keyPress,
-    };
-  },
-  takeCursor(cursor: Cursor): HermesMessage {
-    return {
-      zentinelId: ZyGodId,
-      message: ZyGodZentinelMessage.TakeCursor,
-      content: cursor,
-    };
-  },
-  getZymRoot: {
-    zentinelId: ZyGodId,
-    message: ZyGodZentinelMessage.GetZymRoot,
-  },
-  getFullCursor: {
-    zentinelId: ZyGodId,
-    message: ZyGodZentinelMessage.GetFullCursor,
-  },
-};
-
-export const GET_FULL_CURSOR: HermesMessage<Cursor> = {
-  zentinelId: ZyGodId,
-  message: ZyGodZentinelMessage.GetFullCursor,
-};
-
-export const CONTEXT_CURSOR = "content-cursor-f4994b65";
+export const CONTEXT_CURSOR = "context-cursor-f49";
 
 export function getFullContextCursor(ctx: BasicContext): Cursor {
   return [...(ctx.get(CONTEXT_CURSOR) as Cursor)];
 }
 
-class ZyGod extends ZyMaster {
-  zyId: string = ZyGodId;
+class ZyGod extends ZyMaster<ZyGodSchema> {
+  zyId: string = ZY_GOD_ID;
 
   /* ZyGod Creates and Manages Hermes */
   private zyGodHermes: Hermes = new Hermes();
 
-  private masterRegistry: Map<ZyId, ZyMaster> = new Map();
+  private masterRegistry: Map<ZyId, ZyMaster<any>> = new Map();
   private cursor: Cursor = [];
   private root?: Zyact;
   private rootAwaiter = new ControlledAwaiter();
@@ -108,6 +54,38 @@ class ZyGod extends ZyMaster {
 
   constructor() {
     super();
+
+    const self = this;
+
+    this.setMethodImplementation({
+      async getZymRoot() {
+        await self.rootAwaiter.awaitTrigger();
+
+        return self.root!;
+      },
+      async hydratePersistedZym(persisted) {
+        const { m: masterId, d: zymData }: ZymPersist<any> = persisted;
+
+        const master = self.masterRegistry.get(masterId);
+
+        if (master) {
+          const zym = await master.hydrate(zymData);
+
+          return some(zym);
+        }
+
+        return NONE;
+      },
+      async queueSimulatedKeyPress(keyPress) {
+        self.simulatedKeyPressQueue.push(keyPress);
+      },
+      async takeCursor(cursor) {
+        this.handleCursorChange(cursor);
+      },
+      async getFullCursor() {
+        return self.windowInFocus ? self.cursor : [];
+      },
+    });
 
     // @ts-ignore
     window.undo = this.undoRedoStack;
@@ -134,7 +112,7 @@ class ZyGod extends ZyMaster {
   }
 
   private handleCursorChange = (newCursor: Cursor) => {
-    this.root?.cmd<any, CursorRenderArgs>(CursorCommand.cursorRender, {
+    this.root?.callTraitMethod(CursorCommandTrait.cursorRender, {
       oldCursor: some(this.cursor),
       newCursor: some(newCursor),
     });
@@ -146,7 +124,7 @@ class ZyGod extends ZyMaster {
     if (this.windowInFocus) {
       this.windowInFocus = false;
 
-      this.root?.cmd<any, CursorRenderArgs>(CursorCommand.cursorRender, {
+      this.root?.callTraitMethod(CursorCommandTrait.cursorRender, {
         oldCursor: some(this.cursor),
         newCursor: NONE,
       });
@@ -157,7 +135,7 @@ class ZyGod extends ZyMaster {
     if (!this.windowInFocus) {
       this.windowInFocus = true;
 
-      this.root?.cmd<any, CursorRenderArgs>(CursorCommand.cursorRender, {
+      this.root?.callTraitMethod(CursorCommandTrait.cursorRender, {
         oldCursor: NONE,
         newCursor: some(this.cursor),
       });
@@ -165,7 +143,7 @@ class ZyGod extends ZyMaster {
   };
 
   handleUndo = async () => {
-    await this.root?.cmd(UndoRedoCommand.prepUndoRedo);
+    await this.root?.callTraitMethod(UndoRedoTrait.prepUndoRedo, undefined);
 
     const frame = this.undoRedoStack.undo();
 
@@ -177,8 +155,8 @@ class ZyGod extends ZyMaster {
           zymLocation,
         } = link;
 
-        await this.root?.cmd<any, ModifyNodeAndReRenderArgs>(
-          CursorCommand.modifyNodeAndReRender,
+        await this.root?.callTraitMethod(
+          CursorCommandTrait.modifyNodeAndReRender,
           {
             cursor: zymLocation,
             updates: zymState,
@@ -192,9 +170,7 @@ class ZyGod extends ZyMaster {
   };
 
   handleRedo = async () => {
-    // await this.handleChangeFrame(this.undoRedoStack.redo(), false);
-
-    await this.root?.cmd(UndoRedoCommand.prepUndoRedo);
+    await this.root?.callTraitMethod(UndoRedoTrait.prepUndoRedo, undefined);
 
     const frame = this.undoRedoStack.redo();
 
@@ -206,8 +182,8 @@ class ZyGod extends ZyMaster {
           zymLocation,
         } = link;
 
-        await this.root?.cmd<any, ModifyNodeAndReRenderArgs>(
-          CursorCommand.modifyNodeAndReRender,
+        await this.root?.callTraitMethod(
+          CursorCommandTrait.modifyNodeAndReRender,
           {
             cursor: zymLocation,
             updates: zymState,
@@ -245,15 +221,12 @@ class ZyGod extends ZyMaster {
       const ctx = newContext();
       ctx.set(CONTEXT_CURSOR, [...this.cursor]);
 
-      const moveResponse = unwrap(
-        await this.root.cmd<CursorMoveResponse, KeyPressArgs>(
-          KeyPressCommand.handleKeyPress,
-          {
-            cursor: this.cursor,
-            keyPress: event,
-            keyPressContext: ctx,
-          }
-        )
+      const moveResponse = unwrapTraitResponse(
+        await this.root.callTraitMethod(KeyPressTrait.handleKeyPress, {
+          cursor: this.cursor,
+          keyPress: event,
+          keyPressContext: ctx,
+        })
       );
 
       const beforeCursor = [...this.cursor];
@@ -279,14 +252,14 @@ class ZyGod extends ZyMaster {
 
   getCursorCopy = () => [...this.cursor];
 
-  registerMasters(masters: ZyMaster[]) {
+  registerMasters(masters: ZyMaster<any>[]) {
     for (const master of masters) {
       this.masterRegistry.set(master.zyId, master);
       this.zyGodHermes.registerZentinel(master);
     }
   }
 
-  registerZentinels(zentinels: Zentinel[]) {
+  registerZentinels(zentinels: Zentinel<any>[]) {
     for (const z of zentinels) {
       this.zyGodHermes.registerZentinel(z);
     }
@@ -296,9 +269,10 @@ class ZyGod extends ZyMaster {
     this.root = root;
     this.rootAwaiter.trigger();
 
-    const cursorOpt = unwrap(
-      await this.root.cmd<GetInitialCursorReturn>(
-        CursorCommand.getInitialCursor
+    const cursorOpt = unwrapTraitResponse(
+      await this.root.callTraitMethod(
+        CursorCommandTrait.getInitialCursor,
+        undefined
       )
     );
 
@@ -323,45 +297,6 @@ class ZyGod extends ZyMaster {
     }
   }
 
-  handleMessage = async (msg: ZentinelMessage): Promise<ZyResult<any>> => {
-    switch (msg.message) {
-      case ZyGodZentinelMessage.GetZymRoot: {
-        await this.rootAwaiter.awaitTrigger();
-
-        return ok(this.root);
-      }
-      case ZyGodZentinelMessage.HydratePersistedZym: {
-        const { m: masterId, d: zymData }: ZymPersist<any> = msg.content!;
-
-        const master = this.masterRegistry.get(masterId);
-
-        if (master) {
-          const zym = await master.hydrate(zymData);
-
-          return ok(some(zym));
-        }
-
-        return ok(NONE);
-      }
-      case ZyGodZentinelMessage.QueueSimulatedKeyPress: {
-        this.simulatedKeyPressQueue.push(msg.content);
-
-        return ok(NONE);
-      }
-      case ZyGodZentinelMessage.TakeCursor: {
-        this.handleCursorChange(msg.content);
-
-        return ok(NONE);
-      }
-      case ZyGodZentinelMessage.GetFullCursor: {
-        return ok(this.windowInFocus ? this.cursor : []);
-      }
-      default: {
-        return UNIMPLEMENTED;
-      }
-    }
-  };
-
   hydrate(_p: {}): Promise<Zym<any, any, any>> {
     throw new Error(
       "If you're hydrating the zym god, something's gone horribly wrong"
@@ -374,3 +309,7 @@ class ZyGod extends ZyMaster {
 }
 
 export const zyGod = new ZyGod();
+
+defaultKeyPressImplFactory(zyGod);
+defaultCursorImplFactory(zyGod);
+defaultUndoRedoImplFactory(zyGod);

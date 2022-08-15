@@ -1,5 +1,5 @@
-import { unwrapOption, unwrap } from "../../zy_trait/zy_command_types";
-import { ZyGodMessage } from "../../zy_god/zy_god";
+import { ZyGodMethod } from "../../zy_god/zy_god_schema";
+import { unwrapOption } from "../../zy_trait/zy_command_types";
 import { Zym, ZymPersist } from "../zym";
 
 export async function hydrateChild(
@@ -7,7 +7,7 @@ export async function hydrateChild(
   childPersist: ZymPersist<any>
 ): Promise<Zym> {
   return unwrapOption(
-    unwrap(await zym.callHermes(ZyGodMessage.hydrateZym(childPersist)))
+    await zym.callZentinelMethod(ZyGodMethod.hydratePersistedZym, childPersist)
   );
 }
 

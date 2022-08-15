@@ -1,6 +1,9 @@
 import _ from "underscore";
 import { backslash } from "../../../../../../global_utils/latex_utils";
-import { InPlaceSymbolMap, SlashMap } from "../in_place_symbols";
+import {
+  InPlaceSymbolMap,
+  SlashMap,
+} from "../in_place_symbols/in_place_symbols";
 
 const lowerGreekSlashMap: SlashMap = {
   a: "alpha",

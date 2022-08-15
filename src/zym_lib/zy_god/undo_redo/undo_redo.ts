@@ -1,14 +1,7 @@
-import {
-  groupPathFactory,
-  implementPartialCmdGroup,
-  justPath,
-  ZyCommandGroup,
-  ZyCommandGroupType,
-} from "../../zy_trait/zy_command_types";
+import { defaultTraitImplementationFactory } from "../../zy_trait/default_trait_zentinel/default_trait_zentinel_schema";
+import { createZyTrait, ZyTraitSchema } from "../../zy_trait/zy_trait";
 import { Cursor } from "../cursor/cursor";
 import { BasicContext } from "../types/context_types";
-
-export {};
 
 export const ZYM_CHANGES = "zym_changes";
 
@@ -89,21 +82,28 @@ export class UndoRedoStack {
 }
 
 const UNDO_REDO_COMMANDS_ID = "undo-redo-f23a9";
-const ucc = groupPathFactory(UNDO_REDO_COMMANDS_ID);
 
-interface UndoRedoCommandType extends ZyCommandGroupType {
+interface UndoRedoSchema extends ZyTraitSchema {
   prepUndoRedo: {
     args: undefined;
     return: void;
   };
 }
 
-export const UndoRedoCommand: ZyCommandGroup<UndoRedoCommandType> = {
-  prepUndoRedo: justPath(ucc("pur")),
-};
+export const UndoRedoTrait = createZyTrait<UndoRedoSchema>(
+  UNDO_REDO_COMMANDS_ID,
+  {
+    prepUndoRedo: "pur",
+  }
+);
 
-export const defaultUndoRedoImpl = implementPartialCmdGroup(UndoRedoCommand, {
-  async prepUndoRedo(zym) {
-    zym.children.forEach((c) => c.cmd(UndoRedoCommand.prepUndoRedo));
-  },
-});
+export const defaultUndoRedoImplFactory = defaultTraitImplementationFactory(
+  UndoRedoTrait,
+  {
+    async prepUndoRedo(zym) {
+      zym.children.forEach((c) =>
+        c.callTraitMethod(UndoRedoTrait.prepUndoRedo, undefined)
+      );
+    },
+  }
+);

@@ -6,7 +6,6 @@ import {
 import { safeHydrate } from "../../../../../zym_lib/zym/utils/hydrate";
 import { Zym } from "../../../../../zym_lib/zym/zym";
 import { ZyMaster } from "../../../../../zym_lib/zym/zy_master";
-import { implementPartialCmdGroup } from "../../../../../zym_lib/zy_trait/zy_command_types";
 import {
   Cursor,
   CursorIndex,
@@ -24,11 +23,7 @@ import {
   DeleteBehaviorType,
   deleteBehaviorNormal,
 } from "../../delete_behavior";
-import {
-  Zymbol,
-  ZymbolHtmlIdCommandGroup,
-  ZymbolRenderArgs,
-} from "../../zymbol";
+import { Zymbol, ZymbolHtmlIdTrait, ZymbolRenderArgs } from "../../zymbol";
 import { extendZymbol } from "../../zymbol_cmd";
 import { TeX } from "../../zymbol_types";
 import { ZymbolModifier } from "../zocket/zocket";
@@ -172,27 +167,22 @@ export function isSymbolZymbol(zym: Zym): zym is SymbolZymbol {
   return zym.getMasterId() === symbolZymbolMaster.zyId;
 }
 
-const symbolZymbolHtmlIdImpl = implementPartialCmdGroup(
-  ZymbolHtmlIdCommandGroup,
-  {
-    async getAllDescendentHTMLIds(zym) {
-      if (htmlIdBlacklist.includes((zym as SymbolZymbol).texSymbol)) {
-        return [];
-      }
+symbolZymbolMaster.implementTrait(ZymbolHtmlIdTrait, {
+  async getAllDescendentHTMLIds(zym) {
+    if (htmlIdBlacklist.includes((zym as SymbolZymbol).texSymbol)) {
+      return [];
+    }
 
-      const pointer = zym.getFullCursorPointer();
+    const pointer = zym.getFullCursorPointer();
 
-      const nextPointer = [...pointer];
-      nextPointer.splice(nextPointer.length - 1, 1, last(nextPointer) + 1);
+    const nextPointer = [...pointer];
+    nextPointer.splice(nextPointer.length - 1, 1, last(nextPointer) + 1);
 
-      return [
-        {
-          loc: pointer,
-          clickCursor: nextPointer,
-        },
-      ];
-    },
-  }
-);
-
-symbolZymbolMaster.registerCmds([...symbolZymbolHtmlIdImpl]);
+    return [
+      {
+        loc: pointer,
+        clickCursor: nextPointer,
+      },
+    ];
+  },
+});

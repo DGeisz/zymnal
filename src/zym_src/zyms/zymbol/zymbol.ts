@@ -2,14 +2,6 @@ import _ from "underscore";
 import { last } from "../../../global_utils/array_utils";
 import { Zym } from "../../../zym_lib/zym/zym";
 import {
-  groupPathFactory,
-  implementPartialCmdGroup,
-  justPath,
-  unwrap,
-  ZyCommandGroup,
-  ZyCommandGroupType,
-} from "../../../zym_lib/zy_trait/zy_command_types";
-import {
   Cursor,
   CursorIndex,
   CursorMoveResponse,
@@ -25,10 +17,18 @@ import {
   ZymKeyPress,
 } from "../../../zym_lib/zy_god/event_handler/key_press";
 import { BasicContext } from "../../../zym_lib/zy_god/types/context_types";
-import { ZyGodMessage } from "../../../zym_lib/zy_god/zy_god";
 import { ZymbolFrame } from "../zymbol_infrastructure/zymbol_frame/zymbol_frame";
 import { DeleteBehavior } from "./delete_behavior";
 import { TeX } from "./zymbol_types";
+import { ZyGodMethod } from "../../../zym_lib/zy_god/zy_god_schema";
+import {
+  createZyTrait,
+  TraitImplementation,
+  unwrapTraitResponse,
+  ZyTraitSchema,
+} from "../../../zym_lib/zy_trait/zy_trait";
+import { defaultTraitImplementation } from "../../../zym_lib/zy_trait/default_trait_zentinel/default_trait_zentinel_schema";
+import { zyGod } from "../../../zym_lib/zy_god/zy_god";
 
 /* Help */
 export interface ZymbolRenderArgs {
@@ -132,11 +132,9 @@ export abstract class Zymbol<P = any> extends Zym<TeX, P> {
         nextCursorIndex <= -1 ||
         nextCursorIndex >= this.children.length)
     ) {
-      this.callHermes(
-        ZyGodMessage.queueSimulatedKeyPress({
-          type: KeyPressBasicType.ArrowRight,
-        })
-      );
+      this.callZentinelMethod(ZyGodMethod.queueSimulatedKeyPress, {
+        type: KeyPressBasicType.ArrowRight,
+      });
 
       return FAILED_CURSOR_MOVE_RESPONSE;
     } else {
@@ -239,42 +237,39 @@ export interface ZymbolHtmlClickInfo {
   clickCursor: Cursor;
 }
 
-interface ZymbolHtmlIdCommandGroupType extends ZyCommandGroupType {
+export interface ZymbolHtmlIdSchema extends ZyTraitSchema {
   getAllDescendentHTMLIds: {
     args: undefined;
     return: ZymbolHtmlClickInfo[];
   };
 }
 
-const hcc = groupPathFactory(ZYMBOL_HTML_ID_COMMANDS);
-
-export const ZymbolHtmlIdCommandGroup: ZyCommandGroup<ZymbolHtmlIdCommandGroupType> =
+export const ZymbolHtmlIdTrait = createZyTrait<ZymbolHtmlIdSchema>(
+  ZYMBOL_HTML_ID_COMMANDS,
   {
-    getAllDescendentHTMLIds: justPath(hcc("gadh")),
-  };
-
-export const defaultZymbolHtmlIdImpl = implementPartialCmdGroup(
-  ZymbolHtmlIdCommandGroup,
-  {
-    async getAllDescendentHTMLIds(zym) {
-      return _.flatten(
-        await Promise.all(
-          zym.children.map(async (c) =>
-            unwrap(
-              await c.cmd<ZymbolHtmlClickInfo[]>(
-                ZymbolHtmlIdCommandGroup.getAllDescendentHTMLIds
-              )
-            )
-          )
-        ),
-        1
-      );
-    },
+    getAllDescendentHTMLIds: "gadh",
   }
 );
 
-export const basicZymbolHtmlIdImpl = implementPartialCmdGroup(
-  ZymbolHtmlIdCommandGroup,
+defaultTraitImplementation(ZymbolHtmlIdTrait, zyGod, {
+  async getAllDescendentHTMLIds(zym) {
+    return _.flatten(
+      await Promise.all(
+        zym.children.map(async (c) =>
+          unwrapTraitResponse(
+            await c.callTraitMethod(
+              ZymbolHtmlIdTrait.getAllDescendentHTMLIds,
+              undefined
+            )
+          )
+        )
+      ),
+      1
+    );
+  },
+});
+
+export const basicZymbolHtmlIdImplementation: TraitImplementation<ZymbolHtmlIdSchema> =
   {
     async getAllDescendentHTMLIds(zym) {
       const pointer = zym.getFullCursorPointer();
@@ -289,5 +284,4 @@ export const basicZymbolHtmlIdImpl = implementPartialCmdGroup(
         },
       ];
     },
-  }
-);
+  };

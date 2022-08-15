@@ -11,11 +11,7 @@ import {
 } from "../../../../../zym_lib/zym/utils/hydrate";
 import { Zym, ZymPersist } from "../../../../../zym_lib/zym/zym";
 import { ZyMaster } from "../../../../../zym_lib/zym/zy_master";
-import {
-  implementPartialCmdGroup,
-  some,
-  unwrap,
-} from "../../../../../zym_lib/zy_trait/zy_command_types";
+import { some } from "../../../../../zym_lib/zy_trait/zy_command_types";
 import {
   chainMoveResponse,
   Cursor,
@@ -27,10 +23,6 @@ import {
   successfulMoveResponse,
   wrapChildCursorResponse,
 } from "../../../../../zym_lib/zy_god/cursor/cursor";
-import {
-  CursorCommand,
-  GetInitialCursorReturn,
-} from "../../../../../zym_lib/zy_god/cursor/cursor_commands";
 import {
   KeyPressModifier,
   ZymbolDirection,
@@ -47,12 +39,14 @@ import {
   keyPressHasModifier,
   Zymbol,
   ZymbolHtmlClickInfo,
-  ZymbolHtmlIdCommandGroup,
+  ZymbolHtmlIdTrait,
   ZymbolRenderArgs,
 } from "../../zymbol";
 import { extendZymbol } from "../../zymbol_cmd";
 import { TeX } from "../../zymbol_types";
 import { TEXT_ZYMBOL_NAME, TextZymbol } from "../text_zymbol/text_zymbol";
+import { CursorCommandTrait } from "../../../../../zym_lib/zy_god/cursor/cursor_commands";
+import { unwrapTraitResponse } from "../../../../../zym_lib/zy_trait/zy_trait";
 
 /* === Helper Types === */
 export interface ZymbolModifier {
@@ -765,39 +759,37 @@ export class Zocket extends Zymbol<ZocketPersist> {
   }
 }
 
-const zocketCursorImpl = implementPartialCmdGroup(CursorCommand, {
-  getInitialCursor: (): GetInitialCursorReturn => some([0]),
+zocketMaster.implementTrait(CursorCommandTrait, {
+  async getInitialCursor(zym) {
+    return some([0]);
+  },
 });
 
-export const zocketHtmlIdImpl = implementPartialCmdGroup(
-  ZymbolHtmlIdCommandGroup,
-  {
-    async getAllDescendentHTMLIds(zym) {
-      if (zym.children.length === 0) {
-        const pointer = zym.getFullCursorPointer();
+zocketMaster.implementTrait(ZymbolHtmlIdTrait, {
+  async getAllDescendentHTMLIds(zym) {
+    if (zym.children.length === 0) {
+      const pointer = zym.getFullCursorPointer();
 
-        return [
-          {
-            loc: pointer,
-            clickCursor: [...pointer, 0],
-          },
-        ];
-      } else {
-        return _.flatten(
-          await Promise.all(
-            zym.children.map(async (c) =>
-              unwrap(
-                await c.cmd<ZymbolHtmlClickInfo[]>(
-                  ZymbolHtmlIdCommandGroup.getAllDescendentHTMLIds
-                )
+      return [
+        {
+          loc: pointer,
+          clickCursor: [...pointer, 0],
+        },
+      ];
+    } else {
+      return _.flatten(
+        await Promise.all(
+          zym.children.map(async (c) =>
+            unwrapTraitResponse(
+              await c.callTraitMethod(
+                ZymbolHtmlIdTrait.getAllDescendentHTMLIds,
+                undefined
               )
             )
-          ),
-          1
-        );
-      }
-    },
-  }
-);
-
-zocketMaster.registerCmds([...zocketCursorImpl, ...zocketHtmlIdImpl]);
+          )
+        ),
+        1
+      );
+    }
+  },
+});

@@ -7,8 +7,8 @@ import { zyGod } from "../zy_god";
 
 interface ZyBridgeProps {
   root: Zyact;
-  zyMasters: ZyMaster[];
-  zentinels: Zentinel[];
+  zyMasters: ZyMaster<any>[];
+  zentinels: Zentinel<any>[];
 }
 
 export const ZyBridge: React.FC<ZyBridgeProps> = (props) => {
@@ -18,6 +18,7 @@ export const ZyBridge: React.FC<ZyBridgeProps> = (props) => {
     (async () => {
       zyGod.registerMasters(props.zyMasters);
       zyGod.registerZentinels(props.zentinels);
+
       await zyGod.setRoot(props.root);
 
       setReady(true);

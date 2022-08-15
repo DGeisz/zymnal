@@ -6,11 +6,7 @@ import {
 } from "../../../../zym_lib/zym/utils/hydrate";
 import { Zym, ZymPersist } from "../../../../zym_lib/zym/zym";
 import { ZyMaster } from "../../../../zym_lib/zym/zy_master";
-import {
-  implementPartialCmdGroup,
-  NONE,
-  some,
-} from "../../../../zym_lib/zy_trait/zy_command_types";
+import { NONE, some } from "../../../../zym_lib/zy_trait/zy_command_types";
 import {
   Cursor,
   CursorIndex,
@@ -26,8 +22,6 @@ import {
   ZymKeyPress,
 } from "../../../../zym_lib/zy_god/event_handler/key_press";
 import { BasicContext } from "../../../../zym_lib/zy_god/types/context_types";
-import { ZyGodMessage } from "../../../../zym_lib/zy_god/zy_god";
-import { DotModifierCommand } from "../../zymbol_infrastructure/zymbol_frame/transformers/dot_modifiers";
 import {
   DUMMY_FRAME,
   ZymbolFrame,
@@ -42,6 +36,8 @@ import { extendZymbol } from "../zymbol_cmd";
 import { TeX } from "../zymbol_types";
 import { Zocket } from "./zocket/zocket";
 import { deflectMethodToChild } from "./zymbol_utils";
+import { ZyGodMethod } from "../../../../zym_lib/zy_god/zy_god_schema";
+import { DotModifiersTrait } from "../../zymbol_infrastructure/zymbol_frame/transformers/dot_modifiers/dot_modifiers";
 
 export function checkStackOperator(op: TeX): boolean {
   return (
@@ -269,11 +265,9 @@ export class StackZymbol extends Zymbol<StackZymbolPersist> {
         nextCursorIndex <= -1 ||
         nextCursorIndex >= this.children.length
       ) {
-        this.callHermes(
-          ZyGodMessage.queueSimulatedKeyPress({
-            type: KeyPressBasicType.ArrowRight,
-          })
-        );
+        this.callZentinelMethod(ZyGodMethod.queueSimulatedKeyPress, {
+          type: KeyPressBasicType.ArrowRight,
+        });
 
         return FAILED_CURSOR_MOVE_RESPONSE;
       }
@@ -397,8 +391,8 @@ const dotModMap: { [key: string]: string } = {
   db: "dbinom",
 };
 
-const dotModImpl = implementPartialCmdGroup(DotModifierCommand, {
-  getNodeTransforms: () => {
+stackZymbolMaster.implementTrait(DotModifiersTrait, {
+  async getNodeTransforms() {
     return {
       id: {
         group: "stack",
@@ -423,5 +417,3 @@ const dotModImpl = implementPartialCmdGroup(DotModifierCommand, {
     };
   },
 });
-
-stackZymbolMaster.registerCmds([...dotModImpl]);

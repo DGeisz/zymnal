@@ -1,13 +1,5 @@
 import { Zym } from "../../zym/zym";
 import {
-  groupPathFactory,
-  implementTotalCmdGroup,
-  justPath,
-  unwrap,
-  ZyCommandGroup,
-  ZyCommandGroupType,
-} from "../../zy_trait/zy_command_types";
-import {
   chainMoveResponse,
   Cursor,
   CursorMoveResponse,
@@ -18,6 +10,13 @@ import {
 } from "../cursor/cursor";
 import { BasicContext } from "../types/context_types";
 import _ from "underscore";
+import {
+  createZyTrait,
+  unwrapTraitResponse,
+  ZyTraitSchema,
+} from "../../zy_trait/zy_trait";
+import { Zentinel } from "../../zentinel/zentinel";
+import { defaultTraitImplementationFactory } from "../../zy_trait/default_trait_zentinel/default_trait_zentinel_schema";
 
 /* === Basic keypress types ===  */
 
@@ -111,49 +110,52 @@ export const SECONDARY_SELECTOR: ZymKeyPress = {
 
 const KEY_PRESS_CMD_ID = "keypress-cmd-6a62";
 
-const kpc = groupPathFactory(KEY_PRESS_CMD_ID);
-
-export interface KeyPressArgs {
-  keyPress: ZymKeyPress;
-  cursor: Cursor;
-  keyPressContext: BasicContext;
-}
-
-export interface KeyPressType extends ZyCommandGroupType {
+export interface KeyPressSchema extends ZyTraitSchema {
   handleKeyPress: {
-    args: KeyPressArgs;
+    args: {
+      keyPress: ZymKeyPress;
+      cursor: Cursor;
+      keyPressContext: BasicContext;
+    };
     return: CursorMoveResponse;
   };
 }
 
-export const KeyPressCommand: ZyCommandGroup<KeyPressType> = {
-  handleKeyPress: justPath(kpc("hkp")),
-};
-
-export const defaultKeyPressImpl = implementTotalCmdGroup(KeyPressCommand, {
-  handleKeyPress: async (zym, args) => {
-    const { cursor, keyPressContext, keyPress } = args;
-    const { nextCursorIndex, childRelativeCursor } = extractCursorInfo(cursor);
-
-    if (nextCursorIndex >= 0) {
-      const child: Zym = zym.children[nextCursorIndex];
-
-      const childMove = await child.cmd<CursorMoveResponse, KeyPressArgs>(
-        KeyPressCommand.handleKeyPress,
-        {
-          cursor: childRelativeCursor,
-          keyPressContext,
-          keyPress,
-        }
-      );
-
-      return chainMoveResponse(unwrap(childMove), (nextCursor) => {
-        return successfulMoveResponse(
-          extendChildCursor(nextCursorIndex, nextCursor)
-        );
-      });
-    }
-
-    return FAILED_CURSOR_MOVE_RESPONSE;
-  },
+export const KeyPressTrait = createZyTrait<KeyPressSchema>(KEY_PRESS_CMD_ID, {
+  handleKeyPress: "hkp",
 });
+
+export const defaultKeyPressImplFactory = defaultTraitImplementationFactory(
+  KeyPressTrait,
+  {
+    handleKeyPress: async (zym, args) => {
+      const { cursor, keyPressContext, keyPress } = args;
+      const { nextCursorIndex, childRelativeCursor } =
+        extractCursorInfo(cursor);
+
+      if (nextCursorIndex >= 0) {
+        const child: Zym = zym.children[nextCursorIndex];
+
+        const childMove = await child.callTraitMethod(
+          KeyPressTrait.handleKeyPress,
+          {
+            cursor: childRelativeCursor,
+            keyPressContext,
+            keyPress,
+          }
+        );
+
+        return chainMoveResponse(
+          unwrapTraitResponse(childMove),
+          (nextCursor) => {
+            return successfulMoveResponse(
+              extendChildCursor(nextCursorIndex, nextCursor)
+            );
+          }
+        );
+      }
+
+      return FAILED_CURSOR_MOVE_RESPONSE;
+    },
+  }
+);

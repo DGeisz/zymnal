@@ -14,11 +14,11 @@ import { TEXT_ZYMBOL_NAME } from "../../../zymbol/zymbols/text_zymbol/text_zymbo
 import { Zocket } from "../../../zymbol/zymbols/zocket/zocket";
 import {
   BasicZymbolTreeTransformation,
-  TransformerMessage,
   ZymbolTransformRank,
   ZymbolTreeTransformation,
   ZymbolTreeTransformationPriority,
 } from "../zymbol_frame";
+import { ZymbolFrameMethod } from "../zymbol_frame_schema";
 import {
   getTransformTextZymbolAndParent,
   makeHelperCursor,
@@ -169,98 +169,93 @@ class CustomFractionTransformation extends ZymbolTreeTransformation {
   }
 }
 
-class Fraction extends Zentinel {
+class FractionTransformer extends Zentinel<{}> {
   zyId: string = FRACTION;
 
   onRegistration = async () => {
-    this.callHermes(
-      TransformerMessage.registerTransformer({
-        source: FRACTION,
-        name: "fraction",
-        transform: async (root, cursor) => {
-          cursor = makeHelperCursor(cursor, root);
-          const cursorCopy = [...cursor];
+    this.callZentinelMethod(ZymbolFrameMethod.registerTransformer, {
+      source: FRACTION,
+      name: "fraction",
+      transform: async (root, cursor) => {
+        cursor = makeHelperCursor(cursor, root);
+        const cursorCopy = [...cursor];
 
-          const transformText = getTransformTextZymbolAndParent(
-            root,
-            cursorCopy
-          );
+        const transformText = getTransformTextZymbolAndParent(root, cursorCopy);
 
-          /* First we want to get to the parent */
-          const zymbolIndex: number = last(cursorCopy, 2);
+        /* First we want to get to the parent */
+        const zymbolIndex: number = last(cursorCopy, 2);
 
-          /* Handle fractions */
-          if (transformText.isTextZymbol) {
-            const { text, parent } = transformText;
+        /* Handle fractions */
+        if (transformText.isTextZymbol) {
+          const { text, parent } = transformText;
 
-            const fullText = text.getText();
-            const word = fullText.trim();
+          const fullText = text.getText();
+          const word = fullText.trim();
 
-            if (word === fractionDelim) {
-              if (zymbolIndex === 0 || /^\s/.test(fullText)) {
-                const fraction = new StackZymbol(
-                  FRAC_FUN,
-                  root.parentFrame,
-                  0,
-                  parent
-                );
+          if (word === fractionDelim) {
+            if (zymbolIndex === 0 || /^\s/.test(fullText)) {
+              const fraction = new StackZymbol(
+                FRAC_FUN,
+                root.parentFrame,
+                0,
+                parent
+              );
 
-                parent.children.splice(zymbolIndex, 1, fraction);
+              parent.children.splice(zymbolIndex, 1, fraction);
 
-                cursorCopy.splice(
-                  cursorCopy.length - 2,
-                  2,
-                  ...[zymbolIndex, 0, 0]
-                );
+              cursorCopy.splice(
+                cursorCopy.length - 2,
+                2,
+                ...[zymbolIndex, 0, 0]
+              );
 
-                root.recursivelyReIndexChildren();
-                return [
-                  new BasicZymbolTreeTransformation({
-                    newTreeRoot: root as Zocket,
-                    cursor: recoverAllowedCursor(cursorCopy, root),
-                    priority: {
-                      rank: ZymbolTransformRank.Suggest,
-                      cost: 100,
-                    },
-                  }),
-                ];
-              } else {
-                let k = zymbolIndex - 1;
-                let startIndex = 0;
+              root.recursivelyReIndexChildren();
+              return [
+                new BasicZymbolTreeTransformation({
+                  newTreeRoot: root as Zocket,
+                  cursor: recoverAllowedCursor(cursorCopy, root),
+                  priority: {
+                    rank: ZymbolTransformRank.Suggest,
+                    cost: 100,
+                  },
+                }),
+              ];
+            } else {
+              let k = zymbolIndex - 1;
+              let startIndex = 0;
 
-                while (k >= 0) {
-                  if (
-                    k !== zymbolIndex - 1 &&
-                    isFractionStopper(parent.children[k])
-                  ) {
-                    startIndex = k + 1;
-                    break;
-                  } else if (isPreFractionStopper(parent.children[k])) {
-                    startIndex = k;
-                    break;
-                  }
-
-                  k--;
+              while (k >= 0) {
+                if (
+                  k !== zymbolIndex - 1 &&
+                  isFractionStopper(parent.children[k])
+                ) {
+                  startIndex = k + 1;
+                  break;
+                } else if (isPreFractionStopper(parent.children[k])) {
+                  startIndex = k;
+                  break;
                 }
 
-                const t = new CustomFractionTransformation(
-                  root as Zocket,
-                  [...cursorCopy],
-                  startIndex
-                );
-
-                await t.init();
-
-                return [t];
+                k--;
               }
+
+              const t = new CustomFractionTransformation(
+                root as Zocket,
+                [...cursorCopy],
+                startIndex
+              );
+
+              await t.init();
+
+              return [t];
             }
           }
+        }
 
-          return [];
-        },
-      })
-    );
+        return [];
+      },
+    });
   };
 }
 
-export const fraction = new Fraction();
+export const fractionTransformer = new FractionTransformer();

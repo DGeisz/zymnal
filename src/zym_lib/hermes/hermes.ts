@@ -1,8 +1,8 @@
-import { MenuHTMLAttributes, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import _ from "underscore";
 import { Zentinel } from "../zentinel/zentinel";
-import { Zym } from "../zym/zym";
 import { Zyact } from "../zym/zymplementations/zyact/zyact";
-import { unwrap, ZyResult } from "../zy_trait/zy_command_types";
+import { defaultTraitZentinelMethodList } from "../zy_trait/default_trait_zentinel/default_trait_zentinel_schema";
 import { ZyId } from "../zy_types/basic_types";
 
 export interface ZentinelMessage<T = any> {
@@ -22,12 +22,11 @@ interface PendingHermesMessage<
   Schema extends ZentinelMethodSchema,
   Method extends keyof Schema
 > {
-  msg: HermesZentinelMethodMessage<any, any>;
   pointer: ZentinelMethodPointer<Schema, Method>;
   args: Schema[Method]["args"] extends undefined
     ? [undefined?]
     : [Schema[Method]["args"]];
-  resolve: (d: any) => void;
+  resolve: (d: Schema[Method]["return"]) => void;
 }
 
 /**
@@ -53,7 +52,7 @@ export class Hermes {
 
       for (const msg of pendingMessages) {
         promises.push(
-          this.handleZentinelInstruction(msg.msg).then(msg.resolve)
+          this.handleZentinelMethod(msg.pointer, msg.args).then(msg.resolve)
         );
       }
 
@@ -63,45 +62,17 @@ export class Hermes {
     }
   };
 
-  handleZentinelInstruction = async <
-    Schema extends ZentinelMethodSchema,
-    Method extends keyof Schema
-  >(
-    msg: HermesZentinelMethodMessage<Schema, Method>
-  ): Promise<ZyResult<any>> => {
-    const { zentinelId, method, args } = msg;
-
-    const zentinel = this.zentinelRegistry.get(zentinelId);
-
-    if (zentinel) {
-      return zentinel.handleMethodInstruction({ method, args });
-    } else {
-      return new Promise((resolve) => {
-        const existingMessages = this.pendingMessages.get(zentinelId);
-
-        const newMsg: PendingHermesMessage = {
-          msg,
-          resolve,
-        };
-
-        if (existingMessages) {
-          this.pendingMessages.set(zentinelId, [...existingMessages, newMsg]);
-        } else {
-          this.pendingMessages.set(zentinelId, [newMsg]);
-        }
-      });
-    }
-  };
-
   handleZentinelMethod = async <
     Schema extends ZentinelMethodSchema,
     Method extends keyof Schema
   >(
     pointer: ZentinelMethodPointer<Schema, Method>,
-    ...args: Schema[Method]["args"] extends undefined
-      ? [undefined?]
-      : [Schema[Method]["args"]]
+    args: Schema[Method]["args"]
   ) => {
+    // if (_.isEqual(pointer, defaultTraitZentinelMethodList.callTraitMethod)) {
+    //   debugger;
+    // }
+
     const { zentinelId } = pointer;
 
     const zentinel = this.zentinelRegistry.get(zentinelId);
@@ -109,36 +80,12 @@ export class Hermes {
     if (zentinel) {
       return zentinel.handleMethod(pointer, args);
     } else {
-      return new Promise((resolve) => {
+      return new Promise<Schema[Method]["return"]>((resolve) => {
         const existingMessages = this.pendingMessages.get(zentinelId);
 
-        const newMsg: PendingHermesMessage = {
-          msg,
-          resolve,
-        };
-
-        if (existingMessages) {
-          this.pendingMessages.set(zentinelId, [...existingMessages, newMsg]);
-        } else {
-          this.pendingMessages.set(zentinelId, [newMsg]);
-        }
-      });
-    }
-  };
-
-  handleMessage = async (msg: HermesMessage): Promise<ZyResult<any>> => {
-    const { zentinelId, content, message } = msg;
-
-    const zentinel = this.zentinelRegistry.get(zentinelId);
-
-    if (zentinel) {
-      return zentinel.handleMessage({ content, message });
-    } else {
-      return new Promise((resolve) => {
-        const existingMessages = this.pendingMessages.get(zentinelId);
-
-        const newMsg: PendingHermesMessage = {
-          msg,
+        const newMsg: PendingHermesMessage<Schema, Method> = {
+          pointer,
+          args,
           resolve,
         };
 
@@ -152,27 +99,25 @@ export class Hermes {
   };
 }
 
-export function useHermesValue<T, G extends boolean>(
+export function useHermesValue<
+  Schema extends ZentinelMethodSchema,
+  Method extends keyof Schema,
+  Return = Schema[Method]["return"]
+>(
   zyact: Zyact,
-  message: HermesMessage<T>,
-  unwrapValue: G,
+  pointer: ZentinelMethodPointer<Schema, Method>,
+  args: Schema[Method]["args"],
   depArray?: any[]
-): (typeof unwrapValue extends true ? T : ZyResult<T>) | undefined {
-  type superType = typeof unwrapValue extends true ? T : ZyResult<T>;
-
-  const [value, setValue] = useState<superType>();
+): Return | undefined {
+  const [value, setValue] = useState<Return>();
 
   const renderCount = zyact.getRenderCount();
 
   useEffect(() => {
     (async () => {
-      if (unwrapValue) {
-        setValue(unwrap(await zyact.callHermes(message)) as superType);
-      } else {
-        setValue((await zyact.callHermes(message)) as superType);
-      }
+      setValue(await zyact.callZentinelMethod(pointer, args));
     })();
-  }, [renderCount, ...(depArray ? depArray : [])]);
+  }, [renderCount, args, ...(depArray ? depArray : [])]);
 
   return value;
 }
@@ -199,7 +144,7 @@ export type ZentinelMethodList<Schema extends ZentinelMethodSchema> = {
 
 export function createZentinelMethodList<Schema extends ZentinelMethodSchema>(
   zentinelId: ZyId,
-  schema: { [key in keyof Schema]: true }
+  schema: { [key in keyof Schema]: 0 }
 ): ZentinelMethodList<Schema> {
   const trait: Partial<ZentinelMethodList<Schema>> = {};
 
@@ -216,32 +161,4 @@ export function createZentinelMethodList<Schema extends ZentinelMethodSchema>(
 export type ZentinelMethodImplementation<
   Schema extends ZentinelMethodSchema,
   Method extends keyof Schema
-> = (
-  ...args: Schema[Method]["args"] extends undefined
-    ? [undefined?]
-    : [Schema[Method]["args"]]
-) => Promise<Schema[Method]["return"]>;
-
-export type ZentinelMethodInstruction<
-  Schema extends ZentinelMethodSchema,
-  Method extends keyof Schema
-> = {
-  method: Method;
-  args: Schema[Method]["args"] extends undefined
-    ? [undefined?]
-    : [Schema[Method]["args"]];
-};
-
-export interface HermesZentinelMethodMessage<
-  Schema extends ZentinelMethodSchema,
-  Method extends keyof Schema
-> extends ZentinelMethodInstruction<Schema, Method> {
-  zentinelId: ZyId;
-}
-
-interface a extends ZentinelMethodSchema {
-  a: {
-    args: number;
-    return: string;
-  };
-}
+> = (args: Schema[Method]["args"]) => Promise<Schema[Method]["return"]>;

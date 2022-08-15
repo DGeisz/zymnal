@@ -1,6 +1,10 @@
 import _ from "underscore";
 import { backslash } from "../../../../../../global_utils/latex_utils";
-import { DirectMap, InPlaceSymbolMap, SlashMap } from "../in_place_symbols";
+import {
+  DirectMap,
+  InPlaceSymbolMap,
+  SlashMap,
+} from "../in_place_symbols/in_place_symbols";
 
 /* +++ Basic binary operations +++ */
 const basicBinaryOperations: DirectMap = {

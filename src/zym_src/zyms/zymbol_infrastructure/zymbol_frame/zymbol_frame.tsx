@@ -1,15 +1,7 @@
 import React, { useEffect } from "react";
 import ReactDOM from "react-dom/client";
 import Tex from "../../../../global_building_blocks/tex/tex";
-import {
-  HermesMessage,
-  useHermesValue,
-  ZentinelMessage,
-} from "../../../../zym_lib/hermes/hermes";
-import {
-  GET_FULL_CURSOR,
-  ZyGodMessage,
-} from "../../../../zym_lib/zy_god/zy_god";
+import { useHermesValue } from "../../../../zym_lib/hermes/hermes";
 import {
   hydrateChild,
   safeHydrate,
@@ -18,54 +10,49 @@ import { Zym, ZymPersist } from "../../../../zym_lib/zym/zym";
 import { Zyact } from "../../../../zym_lib/zym/zymplementations/zyact/zyact";
 import { ZyMaster } from "../../../../zym_lib/zym/zy_master";
 import {
-  implementPartialCmdGroup,
   isSome,
-  NONE,
-  ok,
-  UNIMPLEMENTED,
-  unwrap,
-  ZyBoolVal,
   ZyOption,
 } from "../../../../zym_lib/zy_trait/zy_command_types";
 import {
   chainMoveResponse,
   Cursor,
-  CursorMoveResponse,
   extendChildCursor,
   extractCursorInfo,
   FAILED_CURSOR_MOVE_RESPONSE,
   getRelativeCursor,
   successfulMoveResponse,
 } from "../../../../zym_lib/zy_god/cursor/cursor";
-import { CursorCommand } from "../../../../zym_lib/zy_god/cursor/cursor_commands";
 import {
   DEFAULT_SELECTOR,
-  KeyPressArgs,
   KeyPressBasicType,
-  KeyPressCommand,
   KeyPressComplexType,
   keyPressEqual,
   KeyPressModifier,
   keyPressModifierToSymbol,
+  KeyPressTrait,
   ZymKeyPress,
 } from "../../../../zym_lib/zy_god/event_handler/key_press";
-import {
-  Zymbol,
-  ZymbolHtmlClickInfo,
-  ZymbolHtmlIdCommandGroup,
-} from "../../zymbol/zymbol";
+import { Zymbol, ZymbolHtmlIdTrait } from "../../zymbol/zymbol";
 import { Zocket, ZocketPersist } from "../../zymbol/zymbols/zocket/zocket";
 import { TeX } from "../../zymbol/zymbol_types";
 import _ from "underscore";
 import {
   addZymChangeLink,
-  UndoRedoCommand,
+  UndoRedoTrait,
 } from "../../../../zym_lib/zy_god/undo_redo/undo_redo";
 import { cursorToString } from "../../../../global_utils/latex_utils";
 import { BasicContext } from "../../../../zym_lib/zy_god/types/context_types";
 import clsx from "clsx";
 import { palette } from "../../../../global_styles/palette";
 import { vimiumHintKeys } from "../../../../global_utils/text_utils";
+import { ZyGodMethod } from "../../../../zym_lib/zy_god/zy_god_schema";
+import { unwrapTraitResponse } from "../../../../zym_lib/zy_trait/zy_trait";
+import { CursorCommandTrait } from "../../../../zym_lib/zy_god/cursor/cursor_commands";
+import {
+  ZymbolFrameMethod,
+  ZymbolFrameSchema,
+  ZYMBOL_FRAME_MASTER_ID,
+} from "./zymbol_frame_schema";
 
 const ZFP_FIELDS: {
   BASE_ZOCKET: "b";
@@ -78,41 +65,6 @@ export interface ZymbolFramePersist {
 }
 
 /* === MASTER ===  */
-
-export const ZymbolFrameMasterId = "zymbol_frame";
-
-enum TransformerMessageType {
-  RegisterTransformer = "rt",
-  RegisterTransformerFactory = "rtf",
-  GetTransformer = "gt",
-}
-
-export const TransformerMessage = {
-  registerTransformer(transformer: SourcedTransformer): HermesMessage {
-    return {
-      zentinelId: ZymbolFrameMasterId,
-      message: TransformerMessageType.RegisterTransformer,
-      content: { transformer },
-    };
-  },
-  registerTransformerFactory(factory: TransformerFactory): HermesMessage {
-    return {
-      zentinelId: ZymbolFrameMasterId,
-      message: TransformerMessageType.RegisterTransformerFactory,
-      content: { factory },
-    };
-  },
-  getTransformer(cursor: Cursor, keyPress: ZymKeyPress): HermesMessage {
-    return {
-      zentinelId: ZymbolFrameMasterId,
-      message: TransformerMessageType.GetTransformer,
-      content: {
-        cursor,
-        keyPress,
-      },
-    };
-  },
-};
 
 export interface GetTransformerContent {
   cursor: Cursor;
@@ -299,44 +251,33 @@ export class VimiumMode {
   getChars = () => this.chars;
 }
 
-class ZymbolFrameMaster extends ZyMaster {
-  zyId = "zymbol_frame";
-
-  newBlankChild(): Zym<any, any, any> {
-    return new ZymbolFrame(0, undefined);
-  }
+class ZymbolFrameMaster extends ZyMaster<ZymbolFrameSchema> {
+  zyId = ZYMBOL_FRAME_MASTER_ID;
 
   transformerFactories: TransformerFactory[] = [];
   transformers: SourcedTransformer[] = [];
 
-  handleMessage = async (msg: ZentinelMessage) => {
-    switch (msg.message) {
-      case TransformerMessageType.RegisterTransformerFactory: {
-        this.registerTransformerFactory(msg.content.factory);
+  constructor() {
+    super();
 
-        return ok(true);
-      }
-      case TransformerMessageType.RegisterTransformer: {
-        this.registerSourcedTransformer(msg.content.transformer);
+    const self = this;
 
-        return ok(true);
-      }
-      case TransformerMessageType.GetTransformer: {
-        const { cursor, keyPress } = msg.content as GetTransformerContent;
+    this.setMethodImplementation({
+      async registerTransformer(sourcedTransformer) {
+        self.registerSourcedTransformer(sourcedTransformer);
+      },
+      async registerTransformerFactory(factory) {
+        self.registerTransformerFactory(factory);
+      },
+      async getTransformer({ cursor, keyPress }) {
+        return self.getZymbolTransformer(cursor, keyPress);
+      },
+    });
+  }
 
-        return ok(await this.getZymbolTransformer(cursor, keyPress));
-      }
-      default: {
-        /* Zentinel defaults to unimplemented for unhandled messages */
-        return UNIMPLEMENTED;
-      }
-    }
-  };
-
-  /*
-  --- NOTE ---
-  We allow overriding transformer implementations by default
-  */
+  newBlankChild(): Zym<any, any, any> {
+    return new ZymbolFrame(0, undefined);
+  }
 
   registerSourcedTransformer = (trans: SourcedTransformer) => {
     this.transformers = this.transformers.filter(
@@ -357,7 +298,10 @@ class ZymbolFrameMaster extends ZyMaster {
 
   getZymbolTransformer = async (cursor: Cursor, keyPress: ZymKeyPress) => {
     /* Get the zym root */
-    const root = unwrap(await this.callHermes(ZyGodMessage.getZymRoot)) as Zym;
+    const root = await this.callZentinelMethod(
+      ZyGodMethod.getZymRoot,
+      undefined
+    );
 
     const transformers = await _.flatten(
       await Promise.all(
@@ -487,7 +431,11 @@ export class ZymbolFrame extends Zyact<ZymbolFramePersist, FrameRenderProps> {
   component: React.FC<FrameRenderProps> = () => {
     let zocketCursor: Cursor = [];
 
-    const fullCursorResult = useHermesValue(this, GET_FULL_CURSOR, true);
+    const fullCursorResult = useHermesValue(
+      this,
+      ZyGodMethod.getFullCursor,
+      undefined
+    );
 
     if (fullCursorResult) {
       const opt = getRelativeCursor(
@@ -536,9 +484,10 @@ export class ZymbolFrame extends Zyact<ZymbolFramePersist, FrameRenderProps> {
         }
 
         /* First get all the ids in the sub tree */
-        const subTreePointers = unwrap(
-          await baseZocket.cmd<ZymbolHtmlClickInfo[]>(
-            ZymbolHtmlIdCommandGroup.getAllDescendentHTMLIds
+        const subTreePointers = unwrapTraitResponse(
+          await baseZocket.callTraitMethod(
+            ZymbolHtmlIdTrait.getAllDescendentHTMLIds,
+            undefined
           )
         );
 
@@ -571,7 +520,10 @@ export class ZymbolFrame extends Zyact<ZymbolFramePersist, FrameRenderProps> {
                 this.vimiumMode.escapeVimiumMode();
                 usingTransformation && this.takeSelectedTransformation();
 
-                this.callHermes(ZyGodMessage.takeCursor(pointer.clickCursor));
+                this.callZentinelMethod(
+                  ZyGodMethod.takeCursor,
+                  pointer.clickCursor
+                );
               } else if (hint.startsWith(vimiumChars)) {
                 const d = document.createElement("span");
                 d.classList.add("vimium-container");
@@ -599,7 +551,10 @@ export class ZymbolFrame extends Zyact<ZymbolFramePersist, FrameRenderProps> {
             element.onclick = () => {
               usingTransformation && this.takeSelectedTransformation();
 
-              this.callHermes(ZyGodMessage.takeCursor(pointer.clickCursor));
+              this.callZentinelMethod(
+                ZyGodMethod.takeCursor,
+                pointer.clickCursor
+              );
             };
           }
         }
@@ -761,8 +716,7 @@ export class ZymbolFrame extends Zyact<ZymbolFramePersist, FrameRenderProps> {
 
 /* ==== CMD Implementations ==== */
 
-/* Key Press */
-const keyPressImpl = implementPartialCmdGroup(KeyPressCommand, {
+zymbolFrameMaster.implementTrait(KeyPressTrait, {
   handleKeyPress: async (zym, args) => {
     const frame = zym as ZymbolFrame;
 
@@ -840,15 +794,15 @@ const keyPressImpl = implementPartialCmdGroup(KeyPressCommand, {
         if (keyPress.type === KeyPressBasicType.Enter) {
           frame.setNewTransformations([]);
 
-          unwrap(
-            await zym.children[nextCursorIndex].cmd<
-              CursorMoveResponse,
-              KeyPressArgs
-            >(KeyPressCommand.handleKeyPress, {
-              cursor: childRelativeCursor,
-              keyPressContext,
-              keyPress,
-            })
+          unwrapTraitResponse(
+            await zym.children[nextCursorIndex].callTraitMethod(
+              KeyPressTrait.handleKeyPress,
+              {
+                cursor: childRelativeCursor,
+                keyPressContext,
+                keyPress,
+              }
+            )
           );
 
           return successfulMoveResponse(cursor);
@@ -861,29 +815,24 @@ const keyPressImpl = implementPartialCmdGroup(KeyPressCommand, {
 
       const child: Zym = zym.children[nextCursorIndex];
 
-      const childMove = unwrap(
-        await child.cmd<CursorMoveResponse, KeyPressArgs>(
-          KeyPressCommand.handleKeyPress,
-          {
-            cursor: childRelativeCursor,
-            keyPressContext,
-            keyPress,
-          }
-        )
+      const childMove = unwrapTraitResponse(
+        await child.callTraitMethod(KeyPressTrait.handleKeyPress, {
+          cursor: childRelativeCursor,
+          keyPressContext,
+          keyPress,
+        })
       );
 
       if (isInputKey) {
         /* Handle potential transformation */
         /* 1. Ask Hermes for the Transformer */
-        const transformer = unwrap(
-          await frame.callHermes(
-            TransformerMessage.getTransformer(
-              frame.getFullCursorPointer(),
-              keyPress
-            )
-          )
-        ) as ZymbolTransformer;
-
+        const transformer = await frame.callZentinelMethod(
+          ZymbolFrameMethod.getTransformer,
+          {
+            cursor: frame.getFullCursorPointer(),
+            keyPress,
+          }
+        );
         /* 2. Apply the transformer to get a list of potential transformations */
         const transformations = await transformer(
           frame.baseZocket,
@@ -906,25 +855,21 @@ const keyPressImpl = implementPartialCmdGroup(KeyPressCommand, {
   },
 });
 
-const frameCursorImpl = implementPartialCmdGroup(CursorCommand, {
+zymbolFrameMaster.implementTrait(CursorCommandTrait, {
   /* The frame handles rendering all the TeX */
-  canHandleCursorBranchRender: () => true,
+  canHandleCursorBranchRender: async () => true,
 });
 
-const undoRedoImpl = implementPartialCmdGroup(UndoRedoCommand, {
+zymbolFrameMaster.implementTrait(UndoRedoTrait, {
   prepUndoRedo: async (zym) => {
     const frame = zym as ZymbolFrame;
     frame.setNewTransformations([]);
 
-    zym.children.forEach((c) => c.cmd(UndoRedoCommand.prepUndoRedo));
+    zym.children.forEach((c) =>
+      c.callTraitMethod(UndoRedoTrait.prepUndoRedo, undefined)
+    );
   },
 });
-
-zymbolFrameMaster.registerCmds([
-  ...frameCursorImpl,
-  ...keyPressImpl,
-  ...undoRedoImpl,
-]);
 
 /* USED FOR HYDRATION */
 export const DUMMY_FRAME = new ZymbolFrame(0, undefined);

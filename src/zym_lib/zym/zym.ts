@@ -1,30 +1,19 @@
-import { HermesMessage } from "../hermes/hermes";
-import {
-  pointerToPath,
-  UNIMPLEMENTED,
-  unwrapOption,
-  unwrap,
-  ZyCmdPointer,
-  ZyResult,
-} from "../zy_trait/zy_command_types";
+import { ZentinelMethodPointer, ZentinelMethodSchema } from "../hermes/hermes";
+import { unwrapOption } from "../zy_trait/zy_command_types";
 import {
   Cursor,
   CursorIndex,
   extendParentCursor,
 } from "../zy_god/cursor/cursor";
-import {
-  checkGlobalImplementation,
-  defaultCmd,
-} from "../zy_god/divine_api/zy_global_cmds";
-import { ZyGodMessage } from "../zy_god/zy_god";
 import { ZyId } from "../zy_types/basic_types";
 import { ZyMaster } from "./zy_master";
 import {
   TraitMethodResponse,
-  UNIMPL,
   ZyTraitPointer,
   ZyTraitSchema,
 } from "../zy_trait/zy_trait";
+import { defaultTraitZentinelMethodList } from "../zy_trait/default_trait_zentinel/default_trait_zentinel_schema";
+import { ZyGodMethod } from "../zy_god/zy_god_schema";
 
 export const ZYM_PERSIST_FIELDS: {
   MASTER_ID: "m";
@@ -66,7 +55,7 @@ export abstract class Zym<T = any, P = any, RenderOptions = any> {
   abstract children: Zym<any, any>[];
 
   /* Master */
-  abstract readonly zyMaster: ZyMaster;
+  abstract readonly zyMaster: ZyMaster<any>;
 
   /* Instance id (used for re-rendering...) */
   iid = Math.random();
@@ -146,7 +135,7 @@ export abstract class Zym<T = any, P = any, RenderOptions = any> {
     for (let i = 0; i < copies; i++) {
       finalCopies.push(
         unwrapOption(
-          unwrap(await this.callHermes(ZyGodMessage.hydrateZym(p)))
+          await this.callZentinelMethod(ZyGodMethod.hydratePersistedZym, p)
         ) as Zym
       );
     }
@@ -158,53 +147,40 @@ export abstract class Zym<T = any, P = any, RenderOptions = any> {
     return finalCopies;
   };
 
+  getMasterId = () => this.zyMaster.zyId;
+
   /* ===== COMMANDS ===== */
-  cmd = async <T, A = any>(
-    pointer: ZyCmdPointer,
-    args?: A
-  ): Promise<ZyResult<T>> => {
-    const path = pointerToPath(pointer);
-
-    /* Look for a local implementation */
-    const local = await this.zyMaster.cmd<T>(this, path, args);
-
-    if (local.ok) return local;
-
-    /* Now look for a default implementation */
-    const global = await defaultCmd<T>(this, path, args);
-
-    if (global.ok) return global;
-
-    return UNIMPLEMENTED;
-  };
-
   callTraitMethod = async <
     Schema extends ZyTraitSchema,
     Method extends keyof Schema
   >(
     pointer: ZyTraitPointer<Schema, Method>,
-    ...args: Schema[Method]["args"] extends undefined
-      ? [undefined?]
-      : [Schema[Method]["args"]]
+    args: Schema[Method]["args"]
   ): Promise<TraitMethodResponse<Schema[Method]["return"]>> => {
-    const local = await this.zyMaster.callTraitMethod(this, pointer, ...args);
+    const local = await this.zyMaster.callTraitMethod(this, pointer, args);
 
-    if (local.implemented) return local;
+    if (local.implemented) {
+      return local;
+    }
 
     /* Use a magic hermes call to get an implementation from either god or the default trait zentinel */
-
-    return UNIMPL;
+    return await this.callZentinelMethod(
+      defaultTraitZentinelMethodList.callTraitMethod,
+      {
+        zym: this,
+        pointer,
+        args,
+      }
+    );
   };
 
-  checkCmdImplemented = (pointer: ZyCmdPointer): boolean => {
-    const path = pointerToPath(pointer);
-    return checkGlobalImplementation(path) || this.zyMaster.checkCmd(path);
-  };
-
-  getMasterId = () => this.zyMaster.zyId;
-
-  /* ===== HERMES CALL ======  */
-  callHermes = async (msg: HermesMessage) => {
-    return this.zyMaster.callHermes(msg);
+  callZentinelMethod = async <
+    OtherSchema extends ZentinelMethodSchema,
+    Method extends keyof OtherSchema
+  >(
+    pointer: ZentinelMethodPointer<OtherSchema, Method>,
+    args: OtherSchema[Method]["args"]
+  ): Promise<OtherSchema[Method]["return"]> => {
+    return this.zyMaster.callZentinelMethod(pointer, args);
   };
 }
