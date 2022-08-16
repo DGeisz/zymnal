@@ -1,9 +1,9 @@
 import {
   hydrateChild,
   safeHydrate,
-} from "../../../../zym_lib/zym/utils/hydrate";
-import { Zym, ZymPersist } from "../../../../zym_lib/zym/zym";
-import { ZyMaster } from "../../../../zym_lib/zym/zy_master";
+} from "../../../../../zym_lib/zym/utils/hydrate";
+import { Zym } from "../../../../../zym_lib/zym/zym";
+import { ZyMaster } from "../../../../../zym_lib/zym/zy_master";
 import {
   Cursor,
   CursorIndex,
@@ -12,42 +12,36 @@ import {
   FAILED_CURSOR_MOVE_RESPONSE,
   successfulMoveResponse,
   wrapChildCursorResponse,
-} from "../../../../zym_lib/zy_god/cursor/cursor";
-import { ZymbolDirection } from "../../../../zym_lib/zy_god/event_handler/key_press";
-import { BasicContext } from "../../../../zym_lib/utils/basic_context";
-import { DUMMY_FRAME } from "../../zymbol_infrastructure/zymbol_frame/zymbol_frame";
+} from "../../../../../zym_lib/zy_god/cursor/cursor";
+import { ZymbolDirection } from "../../../../../zym_lib/zy_god/event_handler/key_press";
+import { BasicContext } from "../../../../../zym_lib/utils/basic_context";
+import {
+  DUMMY_FRAME,
+  ZymbolFrame,
+} from "../../../zymbol_infrastructure/zymbol_frame/zymbol_frame";
 import {
   DeleteBehavior,
   DeleteBehaviorType,
   deleteBehaviorNormal,
-} from "../delete_behavior";
-import { Zymbol, ZymbolRenderArgs } from "../zymbol";
-import { extendZymbol } from "../zymbol_cmd";
-import { Zocket } from "./zocket/zocket";
-import { deflectMethodToChild } from "./zymbol_utils";
+} from "../../delete_behavior";
+import { Zymbol, ZymbolRenderArgs } from "../../zymbol";
+import { extendZymbol } from "../../zymbol_cmd";
+import { Zocket } from "../zocket/zocket";
+import { deflectMethodToChild } from "../zymbol_utils";
+import {
+  SuperSubBothIndex,
+  SuperSubPersistedSchema,
+  SuperSubPosition,
+  SuperSubSchema,
+  SuperSubStatus,
+  SUPER_SUB_ID,
+} from "./super_sub_schema";
+import { ZyPartialPersist } from "../../../../../zym_lib/zy_schema/zy_schema";
 
-const SSP_FIELDS: {
-  CHILDREN: "c";
-  STATUS: "s";
-  STANDALONE: "a";
-} = {
-  CHILDREN: "c",
-  STATUS: "s",
-  STANDALONE: "a",
-};
-
-export interface SuperSubPersist {
-  [SSP_FIELDS.CHILDREN]: ZymPersist<any>[];
-  [SSP_FIELDS.STATUS]: SuperSubStatus;
-  [SSP_FIELDS.STANDALONE]: boolean;
-}
-
-export const SUPER_SUB_ID = "super-sub";
-
-class SuperSubMaster extends ZyMaster {
+class SuperSubMaster extends ZyMaster<SuperSubSchema, SuperSubPersistedSchema> {
   zyId: string = SUPER_SUB_ID;
 
-  newBlankChild(): Zym<any, any, any> {
+  newBlankChild(): Zym<SuperSubSchema, SuperSubPersistedSchema, any> {
     return new SuperSubZymbol(DUMMY_FRAME, 0, undefined);
   }
 }
@@ -56,31 +50,30 @@ export const superSubMaster = new SuperSubMaster();
 
 extendZymbol(superSubMaster);
 
-enum SuperSubStatus {
-  Neither,
-  OnlySub,
-  OnlySuper,
-  Both,
-}
-
-enum SuperSubPosition {
-  None,
-  Super,
-  Sub,
-}
-
-enum SuperSubBothIndex {
-  Super = 0,
-  Sub = 1,
-}
-
-export class SuperSubZymbol extends Zymbol<SuperSubPersist> {
+export class SuperSubZymbol extends Zymbol<
+  SuperSubSchema,
+  SuperSubPersistedSchema
+> {
   /* Super goes after sub */
   children: Zymbol[] = [];
-  zyMaster: ZyMaster = superSubMaster;
+  zyMaster = superSubMaster;
   status: SuperSubStatus = SuperSubStatus.Neither;
 
   standalone = false;
+
+  constructor(
+    parentFrame: ZymbolFrame,
+    cursorIndex: CursorIndex,
+    parent: Zym<any, any> | undefined
+  ) {
+    super(parentFrame, cursorIndex, parent);
+
+    this.setPersistenceSchemaSymbols({
+      children: "c",
+      status: "s",
+      standalone: "a",
+    });
+  }
 
   getChildPosition = (isSuper: boolean) => {
     switch (this.status) {
@@ -519,33 +512,31 @@ export class SuperSubZymbol extends Zymbol<SuperSubPersist> {
     return false;
   };
 
-  persistData(): SuperSubPersist {
+  persistData() {
     return {
-      [SSP_FIELDS.CHILDREN]: this.children.map((c) => c.persist()),
-      [SSP_FIELDS.STATUS]: this.status,
-      [SSP_FIELDS.STANDALONE]: this.standalone,
+      children: this.children.map((c) => c.persist()),
+      status: this.status,
+      standalone: this.standalone,
     };
   }
 
-  async hydrate(p: Partial<SuperSubPersist>): Promise<void> {
+  async hydrateFromPartialPersist(
+    p: Partial<ZyPartialPersist<SuperSubSchema, SuperSubPersistedSchema>>
+  ): Promise<void> {
     await safeHydrate(p, {
-      [SSP_FIELDS.CHILDREN]: async (children) => {
+      children: async (children) => {
         this.children = (await Promise.all(
           children.map((c) => hydrateChild(this, c))
         )) as Zymbol[];
       },
-      [SSP_FIELDS.STATUS]: (s) => {
+      status: (s) => {
         this.status = s;
       },
-      [SSP_FIELDS.STANDALONE]: (s) => {
+      standalone: (s) => {
         this.standalone = s;
       },
     });
 
     this.reConnectParentChildren();
   }
-}
-
-export function isSuperSub(zymbol: Zymbol): zymbol is SuperSubZymbol {
-  return zymbol.getMasterId() === SUPER_SUB_ID;
 }

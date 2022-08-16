@@ -11,6 +11,7 @@ import { Zym } from "../../../../../zym_lib/zym/zym";
 import { ZyMaster } from "../../../../../zym_lib/zym/zy_master";
 import {
   Cursor,
+  CursorIndex,
   CursorMoveResponse,
   extractCursorInfo,
   FAILED_CURSOR_MOVE_RESPONSE,
@@ -20,7 +21,10 @@ import { ZymbolDirection } from "../../../../../zym_lib/zy_god/event_handler/key
 import { BasicContext } from "../../../../../zym_lib/utils/basic_context";
 import { addZymChangeLink } from "../../../../../zym_lib/zy_god/undo_redo/undo_redo";
 import { getFullContextCursor } from "../../../../../zym_lib/zy_god/zy_god";
-import { DUMMY_FRAME } from "../../../zymbol_infrastructure/zymbol_frame/zymbol_frame";
+import {
+  DUMMY_FRAME,
+  ZymbolFrame,
+} from "../../../zymbol_infrastructure/zymbol_frame/zymbol_frame";
 import {
   deflectDeleteBehavior,
   DeleteBehaviorType,
@@ -33,18 +37,17 @@ import {
   ZymbolRenderArgs,
 } from "../../zymbol";
 import { extendZymbol } from "../../zymbol_cmd";
+import {
+  TextZymbolPersistenceSchema,
+  TextZymbolSchema,
+  TEXT_ZYMBOL_NAME,
+} from "./text_zymbol_schema";
+import { ZyPartialPersist } from "../../../../../zym_lib/zy_schema/zy_schema";
 
-const TZP_FIELDS: { CHARACTERS: "c" } = {
-  CHARACTERS: "c",
-};
-
-export interface TextZymbolPersist {
-  [TZP_FIELDS.CHARACTERS]: string[];
-}
-
-export const TEXT_ZYMBOL_NAME = "text";
-
-class TextZymbolMaster extends ZyMaster {
+class TextZymbolMaster extends ZyMaster<
+  TextZymbolSchema,
+  TextZymbolPersistenceSchema
+> {
   zyId: string = TEXT_ZYMBOL_NAME;
 
   newBlankChild(): Zym<any, any, any> {
@@ -57,11 +60,26 @@ export const textZymbolMaster = new TextZymbolMaster();
 /* Extensions */
 extendZymbol(textZymbolMaster);
 
-export class TextZymbol extends Zymbol<TextZymbolPersist> {
+export class TextZymbol extends Zymbol<
+  TextZymbolSchema,
+  TextZymbolPersistenceSchema
+> {
   private characters: string[] = [];
 
   children: Zymbol[] = [];
-  zyMaster: ZyMaster = textZymbolMaster;
+  zyMaster = textZymbolMaster;
+
+  constructor(
+    parentFrame: ZymbolFrame,
+    cursorIndex: CursorIndex,
+    parent: Zym<any, any> | undefined
+  ) {
+    super(parentFrame, cursorIndex, parent);
+
+    this.setPersistenceSchemaSymbols({
+      characters: "c",
+    });
+  }
 
   /* Zymbol Methods  */
 
@@ -153,18 +171,18 @@ export class TextZymbol extends Zymbol<TextZymbolPersist> {
     beforeChars: string[],
     afterChars: string[]
   ) => {
-    addZymChangeLink(ctx, {
+    addZymChangeLink<TextZymbolSchema, TextZymbolPersistenceSchema>(ctx, {
       zymLocation: this.getFullCursorPointer(),
       beforeChange: {
         renderOpts: { cursor: [] },
         zymState: {
-          [TZP_FIELDS.CHARACTERS]: beforeChars,
+          characters: beforeChars,
         },
       },
       afterChange: {
         renderOpts: { cursor: [] },
         zymState: {
-          [TZP_FIELDS.CHARACTERS]: afterChars,
+          characters: afterChars,
         },
       },
     });
@@ -262,19 +280,21 @@ export class TextZymbol extends Zymbol<TextZymbolPersist> {
     }
   };
 
-  persistData(): TextZymbolPersist {
+  persistData() {
     return {
-      [TZP_FIELDS.CHARACTERS]: [...this.characters],
+      characters: [...this.characters],
     };
   }
 
-  hydrate = async (p: Partial<TextZymbolPersist>): Promise<void> => {
+  async hydrateFromPartialPersist(
+    p: Partial<ZyPartialPersist<TextZymbolSchema, TextZymbolPersistenceSchema>>
+  ): Promise<void> {
     await safeHydrate(p, {
-      [TZP_FIELDS.CHARACTERS]: (c) => {
+      characters: (c) => {
         this.characters = c;
       },
     });
-  };
+  }
 
   /* Custom methods */
   getCharacters = () => this.characters;

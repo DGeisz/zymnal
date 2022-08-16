@@ -121,6 +121,9 @@ export function useHermesValue<
   return value;
 }
 
+type IfAny<T, Y, N> = 0 extends 1 & T ? Y : N;
+type IsAny<T> = IfAny<T, true, false>;
+
 /* NEW ========================================================================================================= */
 export type ZentinelMethodSchema = {
   [key: string]: {
@@ -164,3 +167,11 @@ export type ZentinelMethodImplementation<
   Schema extends ZentinelMethodSchema,
   Method extends keyof Schema
 > = (args: Schema[Method]["args"]) => Promise<Schema[Method]["return"]>;
+
+export type ZentinelFullMethodImplementation<
+  Schema extends ZentinelMethodSchema
+> = {
+  [key in keyof Schema]: IsAny<Schema> extends true
+    ? any
+    : ZentinelMethodImplementation<Schema, key>;
+};

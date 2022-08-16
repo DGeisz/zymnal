@@ -8,9 +8,12 @@ import {
   ZymKeyPress,
 } from "../../../../../../zym_lib/zy_god/event_handler/key_press";
 import { Zymbol } from "../../../../zymbol/zymbol";
-import { StackZymbol } from "../../../../zymbol/zymbols/stack_zymbol";
-import { isSymbolZymbol } from "../../../../zymbol/zymbols/symbol_zymbol/symbol_zymbol";
-import { TEXT_ZYMBOL_NAME } from "../../../../zymbol/zymbols/text_zymbol/text_zymbol";
+import { StackZymbol } from "../../../../zymbol/zymbols/stack_zymbol/stack_zymbol";
+import {
+  isSymbolZymbol,
+  zymbolIsBinaryOperator,
+} from "../../../../zymbol/zymbols/symbol_zymbol/symbol_zymbol_schema";
+import { TEXT_ZYMBOL_NAME } from "../../../../zymbol/zymbols/text_zymbol/text_zymbol_schema";
 import { Zocket } from "../../../../zymbol/zymbols/zocket/zocket";
 import { ZymbolFrameMethod } from "../../zymbol_frame_schema";
 import {
@@ -23,7 +26,6 @@ import {
   getTransformTextZymbolAndParent,
   makeHelperCursor,
   recoverAllowedCursor,
-  zymbolIsBinaryOperator,
 } from "./transform_utils";
 
 const FRACTION = "fraction-transform";

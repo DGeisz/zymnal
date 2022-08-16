@@ -1,12 +1,12 @@
 import _ from "underscore";
-import { checkLatex } from "../../../../global_utils/latex_utils";
+import { checkLatex } from "../../../../../global_utils/latex_utils";
 import {
   hydrateChild,
   safeHydrate,
-} from "../../../../zym_lib/zym/utils/hydrate";
-import { Zym, ZymPersist } from "../../../../zym_lib/zym/zym";
-import { ZyMaster } from "../../../../zym_lib/zym/zy_master";
-import { NONE, some } from "../../../../zym_lib/utils/zy_option";
+} from "../../../../../zym_lib/zym/utils/hydrate";
+import type { Zym } from "../../../../../zym_lib/zym/zym";
+import { ZyMaster } from "../../../../../zym_lib/zym/zy_master";
+import { NONE, some } from "../../../../../zym_lib/utils/zy_option";
 import {
   Cursor,
   CursorIndex,
@@ -15,29 +15,40 @@ import {
   FAILED_CURSOR_MOVE_RESPONSE,
   successfulMoveResponse,
   wrapChildCursorResponse,
-} from "../../../../zym_lib/zy_god/cursor/cursor";
+} from "../../../../../zym_lib/zy_god/cursor/cursor";
 import {
   KeyPressBasicType,
   ZymbolDirection,
   ZymKeyPress,
-} from "../../../../zym_lib/zy_god/event_handler/key_press";
-import { BasicContext } from "../../../../zym_lib/utils/basic_context";
+} from "../../../../../zym_lib/zy_god/event_handler/key_press";
+import { BasicContext } from "../../../../../zym_lib/utils/basic_context";
 import {
   DUMMY_FRAME,
   ZymbolFrame,
-} from "../../zymbol_infrastructure/zymbol_frame/zymbol_frame";
+} from "../../../zymbol_infrastructure/zymbol_frame/zymbol_frame";
 import {
   DeleteBehavior,
   deleteBehaviorNormal,
   DeleteBehaviorType,
-} from "../delete_behavior";
-import { SpliceDeleteResponse, Zymbol, ZymbolRenderArgs } from "../zymbol";
-import { extendZymbol } from "../zymbol_cmd";
-import { TeX } from "../zymbol_types";
-import { Zocket } from "./zocket/zocket";
-import { deflectMethodToChild } from "./zymbol_utils";
-import { ZyGodMethod } from "../../../../zym_lib/zy_god/zy_god_schema";
-import { DotModifiersTrait } from "../../zymbol_infrastructure/zymbol_frame/transformer/std_transformers/dot_modifiers/dot_modifiers";
+} from "../../delete_behavior";
+import {
+  enterUsedToConfirmTransform,
+  SpliceDeleteResponse,
+  Zymbol,
+  ZymbolRenderArgs,
+} from "../../zymbol";
+import { extendZymbol } from "../../zymbol_cmd";
+import { TeX } from "../../zymbol_types";
+import { Zocket } from "../zocket/zocket";
+import { deflectMethodToChild } from "../zymbol_utils";
+import { ZyGodMethod } from "../../../../../zym_lib/zy_god/zy_god_schema";
+import {
+  StackZymbolPersistenceSchema,
+  StackZymbolSchema,
+  STACK_ZYMBOL_ID,
+} from "./stack_zymbol_schema";
+import { ZyPartialPersist } from "../../../../../zym_lib/zy_schema/zy_schema";
+import { DotModifiersTrait } from "../../../zymbol_infrastructure/zymbol_frame/transformer/std_transformers/dot_modifiers/dot_modifiers_schema";
 
 export function checkStackOperator(op: TeX): boolean {
   return (
@@ -47,25 +58,13 @@ export function checkStackOperator(op: TeX): boolean {
   );
 }
 
-const SZP_FIELDS: {
-  CHILDREN: "c";
-  OPERATOR: "o";
-} = {
-  CHILDREN: "c",
-  OPERATOR: "o",
-};
-
-export interface StackZymbolPersist {
-  [SZP_FIELDS.CHILDREN]: ZymPersist<any>[];
-  [SZP_FIELDS.OPERATOR]: TeX;
-}
-
-export const STACK_ZYMBOL_ID = "stack-zymbol";
-
-class StackZymbolMaster extends ZyMaster {
+class StackZymbolMaster extends ZyMaster<
+  StackZymbolSchema,
+  StackZymbolPersistenceSchema
+> {
   zyId: string = STACK_ZYMBOL_ID;
 
-  newBlankChild(): Zym<any, any, any> {
+  newBlankChild(): Zym<StackZymbolSchema, StackZymbolPersistenceSchema, any> {
     return new StackZymbol("", DUMMY_FRAME, 0, undefined);
   }
 }
@@ -79,8 +78,11 @@ export enum StackPosition {
   BOTTOM = 1,
 }
 
-export class StackZymbol extends Zymbol<StackZymbolPersist> {
-  zyMaster: ZyMaster = stackZymbolMaster;
+export class StackZymbol extends Zymbol<
+  StackZymbolSchema,
+  StackZymbolPersistenceSchema
+> {
+  zyMaster = stackZymbolMaster;
   /* 0 is at the top, 1 is at the bottom */
   children: [Zocket, Zocket];
   private operator: TeX;
@@ -99,6 +101,11 @@ export class StackZymbol extends Zymbol<StackZymbolPersist> {
       new Zocket(parentFrame, 0, this),
       new Zocket(parentFrame, 1, this),
     ];
+
+    this.setPersistenceSchemaSymbols({
+      children: "c",
+      operator: "o",
+    });
   }
 
   setOperator(operator: TeX) {
@@ -250,6 +257,12 @@ export class StackZymbol extends Zymbol<StackZymbolPersist> {
           this.children[StackPosition.TOP].children.length,
         ])
       ) {
+        if (enterUsedToConfirmTransform(ctx)) {
+          this.callZentinelMethod(ZyGodMethod.queueSimulatedKeyPress, {
+            type: KeyPressBasicType.Enter,
+          });
+        }
+
         return wrapChildCursorResponse(
           this.children[StackPosition.BOTTOM].takeCursorFromLeft(ctx),
           StackPosition.BOTTOM
@@ -360,33 +373,38 @@ export class StackZymbol extends Zymbol<StackZymbolPersist> {
     })}}`;
   };
 
-  persistData = (): StackZymbolPersist => {
+  persistData = () => {
     return {
-      [SZP_FIELDS.CHILDREN]: this.children.map((c) => c.persist()),
-      [SZP_FIELDS.OPERATOR]: this.operator,
+      children: this.children.map((c) => c.persist()),
+      operator: this.operator,
     };
   };
 
-  hydrate = async (p: Partial<StackZymbolPersist>): Promise<void> => {
+  async hydrateFromPartialPersist(
+    p: Partial<
+      ZyPartialPersist<StackZymbolSchema, StackZymbolPersistenceSchema>
+    >
+  ): Promise<void> {
     await safeHydrate(p, {
-      [SZP_FIELDS.CHILDREN]: async (children) => {
+      children: async (children) => {
         this.children = (await Promise.all(
           children.map((c) => hydrateChild(this, c))
         )) as [Zocket, Zocket];
       },
-      [SZP_FIELDS.OPERATOR]: async (operator) => {
+      operator: async (operator) => {
         this.operator = operator;
       },
     });
-  };
+  }
 }
 
 const dotModMap: { [key: string]: string } = {
-  c: "cfrac",
-  f: "frac",
+  cf: "cfrac",
+  fr: "frac",
   tf: "tfrac",
   df: "dfrac",
-  b: "binom",
+  bn: "binom",
+  ch: "binom",
   tb: "tbinom",
   db: "dbinom",
 };

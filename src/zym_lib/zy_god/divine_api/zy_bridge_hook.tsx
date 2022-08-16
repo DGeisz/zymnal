@@ -6,8 +6,8 @@ import { ZyMaster } from "../../zym/zy_master";
 import { zyGod } from "../zy_god";
 
 interface ZyBridgeProps {
-  root: Zyact;
-  zyMasters: ZyMaster<any>[];
+  root: Zyact<any, any>;
+  zyMasters: ZyMaster<any, any>[];
   zentinels: Zentinel<any>[];
 }
 

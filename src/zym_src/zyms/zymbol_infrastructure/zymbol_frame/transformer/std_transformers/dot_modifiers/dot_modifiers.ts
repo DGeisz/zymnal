@@ -1,17 +1,11 @@
 import _ from "underscore";
 import { last } from "../../../../../../../global_utils/array_utils";
 import { checkLatex } from "../../../../../../../global_utils/latex_utils";
-import { HermesMessage } from "../../../../../../../zym_lib/hermes/hermes";
 import { Zentinel } from "../../../../../../../zym_lib/zentinel/zentinel";
-import { isSome, ZyOption } from "../../../../../../../zym_lib/utils/zy_option";
+import { isSome } from "../../../../../../../zym_lib/utils/zy_option";
 import { cursorForEach } from "../../../../../../../zym_lib/zy_god/cursor/cursor";
 import { Zymbol } from "../../../../../zymbol/zymbol";
-import { isSuperSub } from "../../../../../zymbol/zymbols/super_sub";
-import { isSymbolZymbol } from "../../../../../zymbol/zymbols/symbol_zymbol/symbol_zymbol";
-import {
-  Zocket,
-  ZymbolModifier,
-} from "../../../../../zymbol/zymbols/zocket/zocket";
+import { Zocket } from "../../../../../zymbol/zymbols/zocket/zocket";
 import {
   getTransformTextZymbolAndParent,
   makeHelperCursor,
@@ -19,11 +13,10 @@ import {
 } from "../transform_utils";
 import { ZymbolFrameMethod } from "../../../zymbol_frame_schema";
 import {
-  createZyTrait,
-  ZyTraitSchema,
-} from "../../../../../../../zym_lib/zy_trait/zy_trait";
-import {
+  DotModifierMap,
   DotModifiersMethodSchema,
+  DotModifiersTrait,
+  DotModifierZymbolTransform,
   DOT_MODIFIERS_TRANSFORM,
 } from "./dot_modifiers_schema";
 import {
@@ -31,6 +24,9 @@ import {
   ZymbolTransformRank,
   ZymbolTreeTransformation,
 } from "../../transformer";
+import { ZymbolModifier } from "../../../../../zymbol/zymbols/zocket/zocket_schema";
+import { isSymbolZymbol } from "../../../../../zymbol/zymbols/symbol_zymbol/symbol_zymbol_schema";
+import { isSuperSub } from "../../../../../zymbol/zymbols/super_sub/super_sub_schema";
 
 const DOT = ".";
 
@@ -58,31 +54,6 @@ function checkMod(mod: string): boolean {
   return checkLatex(`\\${mod}{a}`) && !checkLatex(`\\${mod}`);
 }
 
-enum DotModifierMessageType {
-  AddDotModifierTransform = "adm",
-  AddDotMap = "admp",
-}
-
-export const DotModifierMessage = {
-  addDotModifierTransform(
-    content: DotModifierZymbolTransform
-  ): HermesMessage<DotModifierZymbolTransform> {
-    return {
-      zentinelId: DOT_MODIFIERS_TRANSFORM,
-      message: DotModifierMessageType.AddDotModifierTransform,
-      content,
-    };
-  },
-
-  addDotMap(content: DotModifierMap): HermesMessage<DotModifierMap> {
-    return {
-      zentinelId: DOT_MODIFIERS_TRANSFORM,
-      message: DotModifierMessageType.AddDotMap,
-      content,
-    };
-  },
-};
-
 class DotModifiers extends Zentinel<DotModifiersMethodSchema> {
   zyId: string = DOT_MODIFIERS_TRANSFORM;
   globalDotTransforms: DotModifierZymbolTransform[] = [];
@@ -91,23 +62,21 @@ class DotModifiers extends Zentinel<DotModifiersMethodSchema> {
   constructor() {
     super();
 
-    const self = this;
-
     this.setMethodImplementation({
-      async addDotMap(dotModifierMap) {
+      addDotMap: async (dotModifierMap) => {
         if (
-          !self.globalDotMap.some((s) => _.isEqual(dotModifierMap.id, s.id))
+          !this.globalDotMap.some((s) => _.isEqual(dotModifierMap.id, s.id))
         ) {
-          self.globalDotMap.push(dotModifierMap);
+          this.globalDotMap.push(dotModifierMap);
         }
       },
-      async addDotModifierTransform(dotModifierTransform) {
+      addDotModifierTransform: async (dotModifierTransform) => {
         if (
-          !self.globalDotTransforms.some((s) =>
+          !this.globalDotTransforms.some((s) =>
             _.isEqual(dotModifierTransform.id, s.id)
           )
         ) {
-          self.globalDotTransforms.push(dotModifierTransform);
+          this.globalDotTransforms.push(dotModifierTransform);
         }
       },
     });
@@ -405,41 +374,3 @@ class DotModifiers extends Zentinel<DotModifiersMethodSchema> {
 }
 
 export const dotModifiers = new DotModifiers();
-
-export interface DotModifierZymbolTransform {
-  id: {
-    group: string;
-    item: string | number;
-  };
-  transform: (s: { zymbol: Zymbol; word: string }) => ZyOption<Zymbol>;
-  cost: number;
-}
-
-export interface DotModifierMap {
-  id: {
-    group: string;
-    item: string | number;
-  };
-  map: { [key: string]: string };
-
-  cost: number;
-}
-
-type DotModifiersTraitSchema = CreateZyTraitSchema<{
-  getContextualTransforms: {
-    args: undefined;
-    return: DotModifierZymbolTransform;
-  };
-  getNodeTransforms: {
-    args: undefined;
-    return: DotModifierZymbolTransform;
-  };
-}>;
-
-export const DotModifiersTrait = createZyTrait<DotModifiersTraitSchema>(
-  DOT_MODIFIERS_TRANSFORM,
-  {
-    getContextualTransforms: "gct",
-    getNodeTransforms: "gnt",
-  }
-);

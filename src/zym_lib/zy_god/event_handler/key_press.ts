@@ -16,6 +16,7 @@ import {
   unwrapTraitResponse,
 } from "../../zy_trait/zy_trait";
 import { defaultTraitImplementationFactory } from "../../zy_trait/default_trait_zentinel/default_trait_zentinel_schema";
+import { ZyGodSchema } from "../zy_god_schema";
 
 /* === Basic keypress types ===  */
 
@@ -133,7 +134,7 @@ export const defaultKeyPressImplFactory = defaultTraitImplementationFactory(
         extractCursorInfo(cursor);
 
       if (nextCursorIndex >= 0) {
-        const child: Zym = zym.children[nextCursorIndex];
+        const child: Zym<any, any> = zym.children[nextCursorIndex];
 
         const childMove = await child.callTraitMethod(
           KeyPressTrait.handleKeyPress,

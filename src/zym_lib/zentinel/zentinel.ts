@@ -1,7 +1,7 @@
 import { ControlledAwaiter } from "../../global_utils/promise_utils";
 import {
   Hermes,
-  ZentinelMethodImplementation,
+  ZentinelFullMethodImplementation,
   ZentinelMethodPointer,
   ZentinelMethodSchema,
 } from "../hermes/hermes";
@@ -11,18 +11,14 @@ import { ZyId } from "../zy_schema/zy_schema";
  * A Zentinel is something that handles messages passed
  * through Hermes
  */
-export abstract class Zentinel<Schema extends ZentinelMethodSchema> {
+export abstract class Zentinel<Schema extends ZentinelMethodSchema = any> {
   abstract readonly zyId: ZyId;
   private hermes?: Hermes;
   hermesSetAwaiter = new ControlledAwaiter();
 
-  methodImplementation?: {
-    [key in keyof Schema]: ZentinelMethodImplementation<Schema, key>;
-  };
+  methodImplementation?: ZentinelFullMethodImplementation<Schema>;
 
-  setMethodImplementation(impl: {
-    [key in keyof Schema]: ZentinelMethodImplementation<Schema, key>;
-  }) {
+  setMethodImplementation(impl: ZentinelFullMethodImplementation<Schema>) {
     this.methodImplementation = impl;
   }
 

@@ -99,7 +99,7 @@ class ZyGod extends Zentinel<ZyGodSchema> {
       } else {
         this.onWindowBlur();
       }
-    }, 2000);
+    }, 1000);
 
     /* 
     We have to add this line because the zy god is both the 
@@ -295,9 +295,7 @@ class ZyGod extends Zentinel<ZyGodSchema> {
   }
 }
 
-/* TODO: Look into why this is happening?? */
-export const zyGod = new ZyGod() as Zentinel<any>;
-// export const zyGod = new ZyGod();
+export const zyGod = new ZyGod();
 
 defaultKeyPressImplFactory(zyGod);
 defaultCursorImplFactory(zyGod);

@@ -29,7 +29,10 @@ import {
 } from "../../../../../zym_lib/zy_god/event_handler/key_press";
 import { BasicContext } from "../../../../../zym_lib/utils/basic_context";
 import { addZymChangeLink } from "../../../../../zym_lib/zy_god/undo_redo/undo_redo";
-import { DUMMY_FRAME } from "../../../zymbol_infrastructure/zymbol_frame/zymbol_frame";
+import {
+  DUMMY_FRAME,
+  ZymbolFrame,
+} from "../../../zymbol_infrastructure/zymbol_frame/zymbol_frame";
 import {
   DeleteBehavior,
   DeleteBehaviorType,
@@ -42,7 +45,7 @@ import {
   ZymbolRenderArgs,
 } from "../../zymbol";
 import { extendZymbol } from "../../zymbol_cmd";
-import { TEXT_ZYMBOL_NAME, TextZymbol } from "../text_zymbol/text_zymbol";
+import { TextZymbol } from "../text_zymbol/text_zymbol";
 import { CursorCommandTrait } from "../../../../../zym_lib/zy_god/cursor/cursor_commands";
 import { unwrapTraitResponse } from "../../../../../zym_lib/zy_trait/zy_trait";
 import {
@@ -55,6 +58,7 @@ import {
   ZyPartialPersist,
   ZymPersist,
 } from "../../../../../zym_lib/zy_schema/zy_schema";
+import { TEXT_ZYMBOL_NAME } from "../text_zymbol/text_zymbol_schema";
 
 /* === Helper Types === */
 
@@ -75,6 +79,19 @@ export class Zocket extends Zymbol<ZocketSchema, ZocketPersistenceSchema> {
   zyMaster = zocketMaster;
   children: Zymbol<any, any>[] = [];
   modifiers: ZymbolModifier[] = [];
+
+  constructor(
+    parentFrame: ZymbolFrame,
+    cursorIndex: CursorIndex,
+    parent: Zym<any, any> | undefined
+  ) {
+    super(parentFrame, cursorIndex, parent);
+
+    this.setPersistenceSchemaSymbols({
+      children: "c",
+      modifiers: "m",
+    });
+  }
 
   /* USED ONLY FOR TESTS */
   getZymbols = () => this.children;
@@ -112,7 +129,10 @@ export class Zocket extends Zymbol<ZocketSchema, ZocketPersistenceSchema> {
 
     if (parentOfCursorElement) {
       /* If we're holding down option, we skip past the children */
-      if (keyPressHasModifier(ctx, KeyPressModifier.Option)) {
+      if (
+        keyPressHasModifier(ctx, KeyPressModifier.Option) ||
+        keyPressHasModifier(ctx, KeyPressModifier.Shift)
+      ) {
         return successfulMoveResponse([nextCursorIndex - 1]);
       }
 
@@ -164,7 +184,8 @@ export class Zocket extends Zymbol<ZocketSchema, ZocketPersistenceSchema> {
     /* If we're holding down option, we skip past the children */
     if (
       parentOfCursorElement &&
-      keyPressHasModifier(ctx, KeyPressModifier.Option)
+      (keyPressHasModifier(ctx, KeyPressModifier.Option) ||
+        keyPressHasModifier(ctx, KeyPressModifier.Shift))
     ) {
       return {
         success: true,
@@ -308,21 +329,21 @@ export class Zocket extends Zymbol<ZocketSchema, ZocketPersistenceSchema> {
   /* Figure out how we're handling undo-redo */
   _addZymChangeLinks = (
     ctx: BasicContext,
-    beforeChildren: ZymPersist<any>[],
-    afterChildren: ZymPersist<any>[]
+    beforeChildren: ZymPersist<any, any>[],
+    afterChildren: ZymPersist<any, any>[]
   ) => {
-    addZymChangeLink(ctx, {
+    addZymChangeLink<ZocketSchema, ZocketPersistenceSchema>(ctx, {
       zymLocation: this.getFullCursorPointer(),
       beforeChange: {
         renderOpts: { cursor: [] },
         zymState: {
-          [ZP_FIELDS.CHILDREN]: beforeChildren,
+          children: beforeChildren,
         },
       },
       afterChange: {
         renderOpts: { cursor: [] },
         zymState: {
-          [ZP_FIELDS.CHILDREN]: afterChildren,
+          children: afterChildren,
         },
       },
     });

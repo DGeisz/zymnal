@@ -18,9 +18,9 @@ import {
 import { Zym } from "./zym";
 
 export abstract class ZyMaster<
-  Schema extends ZySchema,
-  PersistenceSchema extends ZyPersistenceSchema<Schema>,
-  MethodSchema extends ZentinelMethodSchema
+  Schema extends ZySchema = any,
+  PersistenceSchema extends ZyPersistenceSchema<Schema> = any,
+  MethodSchema extends ZentinelMethodSchema = {}
 > extends Zentinel<MethodSchema> {
   private traitMethodRegistry: Map<
     ZyTraitPointer<any, any>,

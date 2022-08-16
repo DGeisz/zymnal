@@ -4,9 +4,9 @@ import {
   createZyTrait,
   CreateZyTraitSchema,
   unwrapTraitResponse,
-  ZyTraitSchema,
 } from "../../zy_trait/zy_trait";
 import { Cursor, extendChildCursor, extractCursorInfo } from "./cursor";
+import { ZyGodSchema } from "../zy_god_schema";
 
 /* ==== LOCAL COMMANDS ==== */
 
@@ -83,7 +83,7 @@ export const defaultCursorImplFactory = defaultTraitImplementationFactory(
         extractCursorInfo(cursor);
 
       if (nextCursorIndex === -1) {
-        await zym.hydrate(updates);
+        await zym.hydrateFromPartialPersist(updates);
         zym.render(renderOpts);
       } else {
         await zym.children[nextCursorIndex].callTraitMethod(

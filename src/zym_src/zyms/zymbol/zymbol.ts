@@ -55,6 +55,19 @@ export function keyPressHasModifier(
   return !!modifiers && modifiers.includes(mod);
 }
 
+export const ENTER_USED_TO_CONFIRM_TRANSFORM = "enter-used";
+
+export function enterUsedToConfirmTransform(ctx: BasicContext): boolean {
+  return !!ctx.get(ENTER_USED_TO_CONFIRM_TRANSFORM);
+}
+
+export function setEnterUsedToConfirmTransform(
+  ctx: BasicContext,
+  used: boolean
+) {
+  ctx.set(ENTER_USED_TO_CONFIRM_TRANSFORM, used);
+}
+
 export interface SpliceDeleteResponse {
   zymbols: Zymbol<any, any>[];
   putCursorAtEnd: boolean;

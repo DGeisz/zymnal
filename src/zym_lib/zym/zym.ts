@@ -35,8 +35,8 @@ import { ZyGodMethod } from "../zy_god/zy_god_schema";
  * with ZyGod or ZyMasters
  * */
 export abstract class Zym<
-  Schema extends ZySchema,
-  PersistenceSchema extends ZyPersistenceSchema<Schema>,
+  Schema extends ZySchema = any,
+  PersistenceSchema extends ZyPersistenceSchema<Schema> = any,
   RenderContentType = any,
   RenderOptions = any
 > {

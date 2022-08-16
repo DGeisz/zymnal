@@ -6,29 +6,20 @@ import {
 } from "../../../../../zym_lib/zy_schema/zy_schema";
 import { TeX } from "../../zymbol_types";
 
-export const ZOCKET_MASTER_ID = "zocket";
+export const STACK_ZYMBOL_ID = "stack-zymbol";
 
-export type ZocketSchema = CreateZySchema<{
+export type StackZymbolSchema = CreateZySchema<{
   children: IdentifiedSchema<any>[];
-  modifiers: ZymbolModifier[];
+  operator: TeX;
 }>;
 
-export type ZocketPersistenceSchema = CreatePersistenceSchema<
-  ZocketSchema,
+export type StackZymbolPersistenceSchema = CreatePersistenceSchema<
+  StackZymbolSchema,
   {
-    modifiers: "m";
     children: {
       persistenceSymbol: "c";
       persistenceType: ZymPersist<any, any>[];
     };
+    operator: "o";
   }
 >;
-
-export interface ZymbolModifier {
-  id: {
-    group: string;
-    item: string | number;
-  };
-  pre: TeX;
-  post: TeX;
-}

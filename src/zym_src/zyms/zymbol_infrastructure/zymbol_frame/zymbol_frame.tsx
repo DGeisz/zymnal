@@ -1,18 +1,18 @@
 import React, { useEffect } from "react";
 import ReactDOM from "react-dom/client";
-import Tex from "../../../../global_building_blocks/tex/tex";
 import { useHermesValue } from "../../../../zym_lib/hermes/hermes";
 import {
   hydrateChild,
   safeHydrate,
 } from "../../../../zym_lib/zym/utils/hydrate";
-import { Zym, ZymPersist } from "../../../../zym_lib/zym/zym";
+import { Zym } from "../../../../zym_lib/zym/zym";
 import { Zyact } from "../../../../zym_lib/zym/zymplementations/zyact/zyact";
 import { ZyMaster } from "../../../../zym_lib/zym/zy_master";
 import { isSome, ZyOption } from "../../../../zym_lib/utils/zy_option";
 import {
   chainMoveResponse,
   Cursor,
+  CursorIndex,
   extendChildCursor,
   extractCursorInfo,
   FAILED_CURSOR_MOVE_RESPONSE,
@@ -28,8 +28,12 @@ import {
   KeyPressTrait,
   ZymKeyPress,
 } from "../../../../zym_lib/zy_god/event_handler/key_press";
-import { Zymbol, ZymbolHtmlIdTrait } from "../../zymbol/zymbol";
-import { Zocket, ZocketPersist } from "../../zymbol/zymbols/zocket/zocket";
+import {
+  setEnterUsedToConfirmTransform,
+  Zymbol,
+  ZymbolHtmlIdTrait,
+} from "../../zymbol/zymbol";
+import { Zocket } from "../../zymbol/zymbols/zocket/zocket";
 import _ from "underscore";
 import {
   addZymChangeLink,
@@ -45,6 +49,8 @@ import { unwrapTraitResponse } from "../../../../zym_lib/zy_trait/zy_trait";
 import { CursorCommandTrait } from "../../../../zym_lib/zy_god/cursor/cursor_commands";
 import {
   ZymbolFrameMethod,
+  ZymbolFrameMethodSchema,
+  ZymbolFramePersistedSchema,
   ZymbolFrameSchema,
   ZYMBOL_FRAME_MASTER_ID,
 } from "./zymbol_frame_schema";
@@ -56,21 +62,14 @@ import {
   ZymbolTransformRank,
   ZymbolTreeTransformation,
 } from "./transformer/transformer";
-
-const ZFP_FIELDS: {
-  BASE_ZOCKET: "b";
-} = {
-  BASE_ZOCKET: "b",
-};
-
-export interface ZymbolFramePersist {
-  [ZFP_FIELDS.BASE_ZOCKET]: ZymPersist<ZocketPersist>;
-}
-
-/* === MASTER ===  */
+import { ZyPartialPersist } from "../../../../zym_lib/zy_schema/zy_schema";
 
 const VIMIUM_HINT_PERIOD = 2;
-class ZymbolFrameMaster extends ZyMaster<ZymbolFrameSchema> {
+class ZymbolFrameMaster extends ZyMaster<
+  ZymbolFrameSchema,
+  ZymbolFramePersistedSchema,
+  ZymbolFrameMethodSchema
+> {
   zyId = ZYMBOL_FRAME_MASTER_ID;
 
   transformerFactories: TransformerFactory[] = [];
@@ -94,7 +93,7 @@ class ZymbolFrameMaster extends ZyMaster<ZymbolFrameSchema> {
     });
   }
 
-  newBlankChild(): Zym<any, any, any> {
+  newBlankChild(): Zym<ZymbolFrameSchema, ZymbolFramePersistedSchema, any> {
     return new ZymbolFrame(0, undefined);
   }
 
@@ -168,7 +167,11 @@ const Styles = {
 
 /* Helper components */
 /* === Zym ====  */
-export class ZymbolFrame extends Zyact<ZymbolFramePersist, FrameRenderProps> {
+export class ZymbolFrame extends Zyact<
+  ZymbolFrameSchema,
+  ZymbolFramePersistedSchema,
+  FrameRenderProps
+> {
   zyMaster: ZyMaster = zymbolFrameMaster;
 
   baseZocket: Zocket = new Zocket(this, 0, this);
@@ -178,6 +181,14 @@ export class ZymbolFrame extends Zyact<ZymbolFramePersist, FrameRenderProps> {
   transformIndex = -1;
 
   vimiumMode = new VimiumMode();
+
+  constructor(cursorIndex: CursorIndex, parent: Zym<any, any> | undefined) {
+    super(cursorIndex, parent);
+
+    this.setPersistenceSchemaSymbols({
+      baseZocket: "b",
+    });
+  }
 
   setBaseZocket = (baseZocket: Zocket) => {
     this.baseZocket = baseZocket;
@@ -386,8 +397,23 @@ export class ZymbolFrame extends Zyact<ZymbolFramePersist, FrameRenderProps> {
 
   persistData() {
     return {
-      [ZFP_FIELDS.BASE_ZOCKET]: this.baseZocket.persist(),
+      baseZocket: this.baseZocket.persist(),
     };
+  }
+
+  async hydrateFromPartialPersist(
+    p: Partial<ZyPartialPersist<ZymbolFrameSchema, ZymbolFramePersistedSchema>>
+  ): Promise<void> {
+    await safeHydrate(p, {
+      baseZocket: async (bz) => {
+        this.baseZocket = (await hydrateChild(this, bz)) as Zocket;
+      },
+    });
+    this.children = [this.baseZocket];
+
+    this.baseZocket.setParentFrame(this);
+
+    this.reConnectParentChildren();
   }
 
   takeSelectedTransformation = (keyPressContext?: BasicContext): Cursor => {
@@ -401,19 +427,22 @@ export class ZymbolFrame extends Zyact<ZymbolFramePersist, FrameRenderProps> {
     const framePointer = this.getFullCursorPointer();
 
     if (keyPressContext)
-      addZymChangeLink(keyPressContext, {
-        zymLocation: framePointer,
-        beforeChange: {
-          zymState: {
-            [ZFP_FIELDS.BASE_ZOCKET]: beforeState,
+      addZymChangeLink<ZymbolFrameSchema, ZymbolFramePersistedSchema>(
+        keyPressContext,
+        {
+          zymLocation: framePointer,
+          beforeChange: {
+            zymState: {
+              baseZocket: beforeState,
+            },
           },
-        },
-        afterChange: {
-          zymState: {
-            [ZFP_FIELDS.BASE_ZOCKET]: this.baseZocket.persist(),
+          afterChange: {
+            zymState: {
+              baseZocket: this.baseZocket.persist(),
+            },
           },
-        },
-      });
+        }
+      );
 
     this.setNewTransformations([]);
 
@@ -453,19 +482,6 @@ export class ZymbolFrame extends Zyact<ZymbolFramePersist, FrameRenderProps> {
         return a.priority.rank - b.priority.rank;
       }
     });
-  };
-
-  hydrate = async (p: Partial<ZymbolFramePersist>): Promise<void> => {
-    await safeHydrate(p, {
-      [ZFP_FIELDS.BASE_ZOCKET]: async (bz) => {
-        this.baseZocket = (await hydrateChild(this, bz)) as Zocket;
-      },
-    });
-    this.children = [this.baseZocket];
-
-    this.baseZocket.setParentFrame(this);
-
-    this.reConnectParentChildren();
   };
 }
 
@@ -548,6 +564,8 @@ zymbolFrameMaster.implementTrait(KeyPressTrait, {
 
         if (keyPress.type === KeyPressBasicType.Enter) {
           frame.setNewTransformations([]);
+
+          setEnterUsedToConfirmTransform(keyPressContext, true);
 
           unwrapTraitResponse(
             await zym.children[nextCursorIndex].callTraitMethod(

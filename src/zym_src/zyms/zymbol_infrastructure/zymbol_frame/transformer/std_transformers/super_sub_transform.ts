@@ -1,9 +1,7 @@
 import { last } from "../../../../../../global_utils/array_utils";
 import { Zentinel } from "../../../../../../zym_lib/zentinel/zentinel";
-import {
-  SuperSubZymbol,
-  SUPER_SUB_ID,
-} from "../../../../zymbol/zymbols/super_sub";
+import { SuperSubZymbol } from "../../../../zymbol/zymbols/super_sub/super_sub";
+import { isSuperSub } from "../../../../zymbol/zymbols/super_sub/super_sub_schema";
 import { Zocket } from "../../../../zymbol/zymbols/zocket/zocket";
 import { ZymbolFrameMethod } from "../../zymbol_frame_schema";
 import {
@@ -51,8 +49,9 @@ class SuperSubTransform extends Zentinel<{}> {
 
             if (textIndex > 0) {
               let superSub: SuperSubZymbol;
-              const alreadySuperSub =
-                parent.children[textIndex - 1].getMasterId() === SUPER_SUB_ID;
+              const alreadySuperSub = isSuperSub(
+                parent.children[textIndex - 1]
+              );
 
               if (alreadySuperSub && !standalone) {
                 superSub = parent.children[textIndex - 1] as SuperSubZymbol;

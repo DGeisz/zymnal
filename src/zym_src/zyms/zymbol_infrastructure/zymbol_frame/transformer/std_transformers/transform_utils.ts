@@ -5,12 +5,10 @@ import {
   CursorIndex,
 } from "../../../../../../zym_lib/zy_god/cursor/cursor";
 import { Zymbol } from "../../../../zymbol/zymbol";
-import { isSymbolZymbol } from "../../../../zymbol/zymbols/symbol_zymbol/symbol_zymbol";
-import {
-  TextZymbol,
-  TEXT_ZYMBOL_NAME,
-} from "../../../../zymbol/zymbols/text_zymbol/text_zymbol";
-import { ZOCKET_MASTER_ID } from "../../../../zymbol/zymbols/zocket/zocket";
+import { isSymbolZymbol } from "../../../../zymbol/zymbols/symbol_zymbol/symbol_zymbol_schema";
+import { TextZymbol } from "../../../../zymbol/zymbols/text_zymbol/text_zymbol";
+import { TEXT_ZYMBOL_NAME } from "../../../../zymbol/zymbols/text_zymbol/text_zymbol_schema";
+import { ZOCKET_MASTER_ID } from "../../../../zymbol/zymbols/zocket/zocket_schema";
 
 /**
  * Basically just gets us to an assumed text zymbol and the parent */
@@ -119,18 +117,6 @@ export function recoverAllowedCursor(cursor: Cursor, root: Zymbol): Cursor {
   }
 
   return cursor;
-}
-
-/* TODO: Replace this with something more official!! */
-export const binaryOperatorTeX = [
-  "+",
-  "=",
-  "-",
-  ...["cdot", "div", "times", "pm"].map((x) => `\\${x}`),
-];
-
-export function zymbolIsBinaryOperator(zymbol: Zymbol): boolean {
-  return isSymbolZymbol(zymbol) && binaryOperatorTeX.includes(zymbol.texSymbol);
 }
 
 let integralList = [];

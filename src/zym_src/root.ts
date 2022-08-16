@@ -15,7 +15,7 @@ export function getZymTreeRoot(): Zyact {
   return root;
 }
 
-export const zyMasterList: ZyMaster<any>[] = [
+export const zyMasterList: ZyMaster[] = [
   zageMaster,
   ...zymbolInfrastructureMasters,
   ...zymbolMasterList,

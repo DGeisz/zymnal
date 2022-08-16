@@ -3,7 +3,7 @@ import {
   checkStackOperator,
   StackPosition,
   StackZymbol,
-} from "../../../../zymbol/zymbols/stack_zymbol";
+} from "../../../../zymbol/zymbols/stack_zymbol/stack_zymbol";
 import { Zocket } from "../../../../zymbol/zymbols/zocket/zocket";
 import { ZymbolFrameMethod } from "../../zymbol_frame_schema";
 import {
@@ -19,6 +19,16 @@ import {
 const CASH_STACK = "cash-stack-trans";
 
 const CASH_DELIM = "$";
+
+const CashSpecialCommands: { [key: string]: string } = {
+  fr: "frac",
+  cf: "cfrac",
+  df: "dfrac",
+  bn: "binom",
+  ch: "binom",
+  tb: "tbinom",
+  db: "dbinom",
+};
 
 class CashStack extends Zentinel<{}> {
   zyId: string = CASH_STACK;
@@ -40,12 +50,10 @@ class CashStack extends Zentinel<{}> {
           const word = text.getText().trim();
 
           if (word.startsWith(CASH_DELIM)) {
-            const op = word.slice(1);
+            let op = word.slice(1);
 
-            let rank = ZymbolTransformRank.Suggest;
-
-            if (op.length > 2) {
-              rank = ZymbolTransformRank.Suggest;
+            if (op in CashSpecialCommands) {
+              op = CashSpecialCommands[op];
             }
 
             if (checkStackOperator(op)) {
@@ -69,7 +77,7 @@ class CashStack extends Zentinel<{}> {
                   newTreeRoot: root as Zocket,
                   cursor: recoverAllowedCursor(cursorCopy, root),
                   priority: {
-                    rank: rank,
+                    rank: ZymbolTransformRank.Suggest,
                     cost: -500,
                   },
                 }),

@@ -1,10 +1,16 @@
 import _ from "underscore";
 import { Zentinel } from "../../../../../../../zym_lib/zentinel/zentinel";
+import { FunctionTransformMethod } from "../../function_transformer.ts/function_transformer_schema";
 import { DotModifiersMethod } from "../dot_modifiers/dot_modifiers_schema";
 import { InPlaceMethod } from "../in_place_symbols/in_place_symbols_schema";
 import { StdDotModMap } from "./dot_map";
 import { greekDirectMap, greekSlashMap } from "./greek";
-import { mathDirectMap, mathSlashMap } from "./math";
+import {
+  addSqrtDotModifier,
+  mathDirectMap,
+  mathSlashMap,
+  sqrtFunctionMap,
+} from "./math";
 import { physicsDirect, physicsSlash } from "./physics";
 
 class StdLibZentinel extends Zentinel<{}> {
@@ -25,6 +31,14 @@ class StdLibZentinel extends Zentinel<{}> {
 
     /* Standard Dot Modifiers */
     await this.callZentinelMethod(DotModifiersMethod.addDotMap, StdDotModMap);
+
+    /* Standard Function Maps */
+    await this.callZentinelMethod(
+      FunctionTransformMethod.addFunctionTransformerMap,
+      sqrtFunctionMap
+    );
+
+    await addSqrtDotModifier(this);
   };
 }
 

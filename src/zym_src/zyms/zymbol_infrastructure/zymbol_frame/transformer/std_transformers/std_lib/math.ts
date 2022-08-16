@@ -1,5 +1,14 @@
 import _ from "underscore";
 import { backslash } from "../../../../../../../global_utils/latex_utils";
+import { NONE, some } from "../../../../../../../zym_lib/utils/zy_option";
+import { Zentinel } from "../../../../../../../zym_lib/zentinel/zentinel";
+import { FunctionZymbol } from "../../../../../zymbol/zymbols/function_zymbol/function_zymbol";
+import { FunctionZymbolMethod } from "../../../../../zymbol/zymbols/function_zymbol/function_zymbol_schema";
+import { Zocket } from "../../../../../zymbol/zymbols/zocket/zocket";
+import {
+  FunctionTransformerMap,
+  FunctionTransformerSpecialCommand,
+} from "../../function_transformer.ts/function_transformer_schema";
 import {
   DirectMap,
   InPlaceSymbolMap,
@@ -66,3 +75,59 @@ export const mathSlashMap: InPlaceSymbolMap = {
   },
   cost: 100,
 };
+
+const nSqrtBracketZockets = { 0: true };
+
+export const sqrtFunctionMap: FunctionTransformerMap = {
+  id: {
+    group: "math",
+    item: "sqrt",
+  },
+  cost: 100,
+  map: {
+    sr: "sqrt",
+    nsr: {
+      tex: "sqrt",
+      numZockets: 2,
+      bracketZockets: nSqrtBracketZockets,
+    },
+    nsqrt: {
+      tex: "sqrt",
+      numZockets: 2,
+      bracketZockets: nSqrtBracketZockets,
+    },
+  },
+};
+
+export async function addSqrtDotModifier(zentinel: Zentinel<any>) {
+  await zentinel.callZentinelMethod(
+    FunctionZymbolMethod.addDotModifierTransformer,
+    {
+      id: {
+        group: "math",
+        item: "sqrt",
+      },
+      transform: ({ zymbol, word }) => {
+        const sqrt = zymbol as FunctionZymbol;
+
+        if (word === "^" && sqrt.baseTex === "sqrt") {
+          if (_.isEmpty(sqrt.bracketZockets)) {
+            const newZocket = new Zocket(sqrt.parentFrame, 0, sqrt);
+
+            sqrt.children = [newZocket, sqrt.children[0]];
+            sqrt.bracketZockets = nSqrtBracketZockets;
+            sqrt.numZockets = 2;
+          } else {
+            sqrt.children = [sqrt.children[1]];
+            sqrt.bracketZockets = {};
+            sqrt.numZockets = 1;
+          }
+
+          return some(sqrt);
+        }
+
+        return NONE;
+      },
+    }
+  );
+}

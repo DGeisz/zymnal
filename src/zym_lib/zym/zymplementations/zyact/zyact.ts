@@ -4,8 +4,8 @@ import { Zym } from "../../zym";
 import { withZyactComponent } from "./hoc";
 
 export abstract class Zyact<
-  Schema extends ZySchema,
-  PersistenceSchema extends ZyPersistenceSchema<Schema>,
+  Schema extends ZySchema = any,
+  PersistenceSchema extends ZyPersistenceSchema<Schema> = any,
   Props extends object = {}
 > extends Zym<Schema, PersistenceSchema, React.FC<Props>, Props> {
   private renderCount = 0;

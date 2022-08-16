@@ -4,7 +4,7 @@ import {
   hydrateChild,
   safeHydrate,
 } from "../../../../../zym_lib/zym/utils/hydrate";
-import { Zym, ZymPersist } from "../../../../../zym_lib/zym/zym";
+import { Zym } from "../../../../../zym_lib/zym/zym";
 import { ZyMaster } from "../../../../../zym_lib/zym/zy_master";
 import {
   Cursor,
@@ -29,67 +29,85 @@ import { Zymbol, ZymbolRenderArgs } from "../../zymbol";
 import { TeX } from "../../zymbol_types";
 import { Zocket } from "../zocket/zocket";
 import { deflectMethodToChild } from "../zymbol_utils";
+import {
+  FunctionBracketIndicator,
+  FunctionZymbolMethodSchema,
+  FunctionZymbolPersistenceSchema,
+  FunctionZymbolSchema,
+  FUNCTION_ZYMBOL_ID,
+} from "./function_zymbol_schema";
+import { ZyPartialPersist } from "../../../../../zym_lib/zy_schema/zy_schema";
+import {
+  DotModifiersTrait,
+  IdentifiedDotModifierZymbolTransformers,
+} from "../../../zymbol_infrastructure/zymbol_frame/transformer/std_transformers/dot_modifiers/dot_modifiers_schema";
+import { NONE } from "../../../../../zym_lib/utils/zy_option";
 
-const FZP_FIELDS: {
-  CHILDREN: "c";
-  ZOCKET_MAPPINGS: "z";
-  BASE_TEX: "b";
-} = {
-  CHILDREN: "c",
-  ZOCKET_MAPPINGS: "z",
-  BASE_TEX: "b",
-};
+class FunctionZymbolMaster extends ZyMaster<
+  FunctionZymbolSchema,
+  FunctionZymbolPersistenceSchema,
+  FunctionZymbolMethodSchema
+> {
+  zyId: string = FUNCTION_ZYMBOL_ID;
+  dotModifierTransformers: IdentifiedDotModifierZymbolTransformers[] = [];
 
-export interface FunctionZymbolPersist {
-  [FZP_FIELDS.CHILDREN]: ZymPersist<any>[];
-  [FZP_FIELDS.ZOCKET_MAPPINGS]: number[];
-  [FZP_FIELDS.BASE_TEX]: TeX;
-}
-
-class FunctionZymbolMaster extends ZyMaster {
-  zyId: string = "function-zymbol";
+  constructor() {
+    super();
+    this.setMethodImplementation({
+      addDotModifierTransformer: async (trans) => {
+        if (
+          !this.dotModifierTransformers.some((s) => _.isEqual(trans.id, s.id))
+        ) {
+          this.dotModifierTransformers.push(trans);
+        }
+      },
+    });
+  }
 
   newBlankChild(): Zym<any, any, any> {
-    return new FunctionZymbol("", 0, DUMMY_FRAME, 0, undefined);
+    return new FunctionZymbol("", 0, {}, DUMMY_FRAME, 0, undefined);
   }
 }
 
 export const functionZymbolMaster = new FunctionZymbolMaster();
 
-export class FunctionZymbol extends Zymbol<FunctionZymbolPersist> {
+export class FunctionZymbol extends Zymbol<
+  FunctionZymbolSchema,
+  FunctionZymbolPersistenceSchema
+> {
   children: Zymbol[];
-  zyMaster: ZyMaster = functionZymbolMaster;
-  zocketMapping: number[];
+  zyMaster = functionZymbolMaster;
+  numZockets: number;
+  bracketZockets: FunctionBracketIndicator;
 
   baseTex: TeX;
 
   constructor(
     baseTex: TeX,
-    zocketMapping: number[] | number,
+    numZockets: number,
+    bracketZockets: FunctionBracketIndicator,
     parentFrame: ZymbolFrame,
     cursorIndex: CursorIndex,
     parent: Zym<any, any> | undefined
   ) {
     super(parentFrame, cursorIndex, parent);
 
-    if (typeof zocketMapping === "number") {
-      let z = [];
-
-      for (let i = 0; i < zocketMapping; i++) {
-        z.push(i);
-      }
-
-      zocketMapping = z;
-    }
-
-    this.zocketMapping = zocketMapping;
+    this.numZockets = numZockets;
+    this.bracketZockets = bracketZockets;
 
     this.children = [];
-    for (let i = 0; i < zocketMapping.length; i++) {
+    for (let i = 0; i < this.numZockets; i++) {
       this.children.push(new Zocket(parentFrame, i, this));
     }
 
     this.baseTex = baseTex;
+
+    this.setPersistenceSchemaSymbols({
+      children: "c",
+      numZockets: "z",
+      bracketZockets: "bz",
+      baseTex: "b",
+    });
   }
 
   moveCursorLeft = (cursor: Cursor, ctx: BasicContext) => {
@@ -259,15 +277,6 @@ export class FunctionZymbol extends Zymbol<FunctionZymbolPersist> {
         );
       }
     );
-
-    // if (nextCursorIndex > -1) {
-    //   return wrapChildCursorResponse(
-    //     this.children[nextCursorIndex].delete(childRelativeCursor, ctx),
-    //     nextCursorIndex
-    //   );
-    // } else {
-    //   return FAILED_CURSOR_MOVE_RESPONSE;
-    // }
   }
 
   renderTex = (opts: ZymbolRenderArgs) => {
@@ -277,39 +286,74 @@ export class FunctionZymbol extends Zymbol<FunctionZymbolPersist> {
 
     let baseTex = `\\${this.baseTex}`;
 
-    for (const i of this.zocketMapping) {
-      baseTex += `{${this.children[i].renderTex({
+    for (const i of _.range(this.numZockets)) {
+      const zocketText = this.children[i].renderTex({
         ...opts,
         cursor: i === nextCursorIndex ? childRelativeCursor : [],
-      })}}`;
+      });
+
+      if (this.bracketZockets[i]) {
+        baseTex += `[{${zocketText}}]`;
+      } else {
+        baseTex += `{${zocketText}}`;
+      }
     }
 
     return baseTex;
   };
 
-  persistData = (): FunctionZymbolPersist => {
+  persistData = () => {
     return {
-      [FZP_FIELDS.CHILDREN]: this.children.map((c) => c.persist()),
-      [FZP_FIELDS.BASE_TEX]: this.baseTex,
-      [FZP_FIELDS.ZOCKET_MAPPINGS]: [...this.zocketMapping],
+      children: this.children.map((c) => c.persist()),
+      baseTex: this.baseTex,
+      numZockets: this.numZockets,
+      bracketZockets: { ...this.bracketZockets },
     };
   };
 
-  hydrate = async (p: Partial<FunctionZymbolPersist>): Promise<void> => {
+  async hydrateFromPartialPersist(
+    p: Partial<
+      ZyPartialPersist<FunctionZymbolSchema, FunctionZymbolPersistenceSchema>
+    >
+  ): Promise<void> {
     await safeHydrate(p, {
-      [FZP_FIELDS.BASE_TEX]: (tex) => {
+      baseTex: (tex) => {
         this.baseTex = tex;
       },
-      [FZP_FIELDS.CHILDREN]: async (children) => {
+      children: async (children) => {
         this.children = (await Promise.all(
           children.map((c) => hydrateChild(this, c))
         )) as Zymbol[];
       },
-      [FZP_FIELDS.ZOCKET_MAPPINGS]: async (zm) => {
-        this.zocketMapping = zm;
+      numZockets: (z) => {
+        this.numZockets = z;
+      },
+      bracketZockets: (b) => {
+        this.bracketZockets = b;
       },
     });
 
     this.reConnectParentChildren();
-  };
+  }
 }
+
+functionZymbolMaster.implementTrait(DotModifiersTrait, {
+  getNodeTransforms: async () => {
+    return {
+      id: {
+        group: "stack",
+        item: "toggle",
+      },
+      transform: ({ zymbol, word }) => {
+        for (const transformer of functionZymbolMaster.dotModifierTransformers) {
+          const res = transformer.transform({ zymbol, word });
+
+          if (res.some) return res;
+        }
+
+        return NONE;
+      },
+      cost: 100,
+    };
+  },
+});

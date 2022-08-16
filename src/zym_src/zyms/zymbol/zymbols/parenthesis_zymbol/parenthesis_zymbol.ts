@@ -1,11 +1,11 @@
-import { checkLatex } from "../../../../global_utils/latex_utils";
+import { checkLatex } from "../../../../../global_utils/latex_utils";
 import {
   hydrateChild,
   safeHydrate,
-} from "../../../../zym_lib/zym/utils/hydrate";
-import { Zym, ZymPersist } from "../../../../zym_lib/zym/zym";
-import { ZyMaster } from "../../../../zym_lib/zym/zy_master";
-import { NONE, some } from "../../../../zym_lib/utils/zy_option";
+} from "../../../../../zym_lib/zym/utils/hydrate";
+import { Zym } from "../../../../../zym_lib/zym/zym";
+import { ZyMaster } from "../../../../../zym_lib/zym/zy_master";
+import { NONE, some } from "../../../../../zym_lib/utils/zy_option";
 import {
   Cursor,
   CursorIndex,
@@ -13,45 +13,40 @@ import {
   extractCursorInfo,
   FAILED_CURSOR_MOVE_RESPONSE,
   wrapChildCursorResponse,
-} from "../../../../zym_lib/zy_god/cursor/cursor";
-import { ZymbolDirection } from "../../../../zym_lib/zy_god/event_handler/key_press";
-import { BasicContext } from "../../../../zym_lib/utils/basic_context";
+} from "../../../../../zym_lib/zy_god/cursor/cursor";
+import { ZymbolDirection } from "../../../../../zym_lib/zy_god/event_handler/key_press";
+import { BasicContext } from "../../../../../zym_lib/utils/basic_context";
 import {
   DUMMY_FRAME,
   ZymbolFrame,
-} from "../../zymbol_infrastructure/zymbol_frame/zymbol_frame";
-import { DeleteBehaviorType, deleteBehaviorNormal } from "../delete_behavior";
-import { Zymbol, ZymbolRenderArgs } from "../zymbol";
-import { extendZymbol } from "../zymbol_cmd";
-import { Zocket, ZocketPersist } from "./zocket/zocket";
-import { deflectMethodToChild } from "./zymbol_utils";
-import { DotModifiersTrait } from "../../zymbol_infrastructure/zymbol_frame/transformer/std_transformers/dot_modifiers/dot_modifiers";
+} from "../../../zymbol_infrastructure/zymbol_frame/zymbol_frame";
+import {
+  DeleteBehaviorType,
+  deleteBehaviorNormal,
+} from "../../delete_behavior";
+import { Zymbol, ZymbolRenderArgs } from "../../zymbol";
+import { extendZymbol } from "../../zymbol_cmd";
+import { Zocket } from "../zocket/zocket";
+import { deflectMethodToChild } from "../zymbol_utils";
+import {
+  ParenthesisZymbolPersistenceSchema,
+  ParenthesisZymbolSchema,
+  PARENTHESIS_ZYMBOL_ID,
+} from "./parenthesis_zymbol_schema";
+import { ZyPartialPersist } from "../../../../../zym_lib/zy_schema/zy_schema";
+import { DotModifiersTrait } from "../../../zymbol_infrastructure/zymbol_frame/transformer/std_transformers/dot_modifiers/dot_modifiers_schema";
 
-const PZP_FIELDS: {
-  BASE_ZOCKET: "b";
-  BIG_PARENTHESIS: "p";
-  LEFT: "l";
-  RIGHT: "r";
-} = {
-  BASE_ZOCKET: "b",
-  BIG_PARENTHESIS: "p",
-  LEFT: "l",
-  RIGHT: "r",
-};
-
-export interface ParenthesisPersist {
-  [PZP_FIELDS.BASE_ZOCKET]: ZymPersist<ZocketPersist>;
-  [PZP_FIELDS.BIG_PARENTHESIS]: boolean;
-  [PZP_FIELDS.LEFT]: string;
-  [PZP_FIELDS.RIGHT]: string;
-}
-
-export const PARENTHESIS_ZYMBOL_ID = "parenthesis-zymbol";
-
-class ParenthesisZymbolMaster extends ZyMaster {
+class ParenthesisZymbolMaster extends ZyMaster<
+  ParenthesisZymbolSchema,
+  ParenthesisZymbolPersistenceSchema
+> {
   zyId: string = PARENTHESIS_ZYMBOL_ID;
 
-  newBlankChild(): Zym<any, any, any> {
+  newBlankChild(): Zym<
+    ParenthesisZymbolSchema,
+    ParenthesisZymbolPersistenceSchema,
+    any
+  > {
     return new ParenthesisZymbol(DUMMY_FRAME, 0, undefined);
   }
 }
@@ -64,10 +59,13 @@ function checkParenthesisType(t: string) {
   return checkLatex(`\\l${t} a \\r${t}`);
 }
 
-export class ParenthesisZymbol extends Zymbol<ParenthesisPersist> {
+export class ParenthesisZymbol extends Zymbol<
+  ParenthesisZymbolSchema,
+  ParenthesisZymbolPersistenceSchema
+> {
   baseZocket: Zocket;
   children: Zymbol<any>[] = [];
-  zyMaster: ZyMaster = parenthesisZymbolMaster;
+  zyMaster = parenthesisZymbolMaster;
   bigParenthesis = false;
 
   left = "(";
@@ -82,6 +80,13 @@ export class ParenthesisZymbol extends Zymbol<ParenthesisPersist> {
 
     this.baseZocket = new Zocket(parentFrame, 0, this);
     this.children = [this.baseZocket];
+
+    this.setPersistenceSchemaSymbols({
+      baseZocket: "b",
+      bigParenthesis: "p",
+      left: "l",
+      right: "r",
+    });
   }
 
   moveCursorLeft = (cursor: Cursor, ctx: BasicContext) =>
@@ -175,28 +180,35 @@ export class ParenthesisZymbol extends Zymbol<ParenthesisPersist> {
     })}${right}`;
   };
 
-  persistData(): ParenthesisPersist {
+  persistData() {
     return {
-      [PZP_FIELDS.BASE_ZOCKET]: this.baseZocket.persist(),
-      [PZP_FIELDS.BIG_PARENTHESIS]: this.bigParenthesis,
-      [PZP_FIELDS.LEFT]: this.left,
-      [PZP_FIELDS.RIGHT]: this.right,
+      baseZocket: this.baseZocket.persist(),
+      bigParenthesis: this.bigParenthesis,
+      left: this.left,
+      right: this.right,
     };
   }
 
-  async hydrate(p: Partial<ParenthesisPersist>): Promise<void> {
+  async hydrateFromPartialPersist(
+    p: Partial<
+      ZyPartialPersist<
+        ParenthesisZymbolSchema,
+        ParenthesisZymbolPersistenceSchema
+      >
+    >
+  ): Promise<void> {
     await safeHydrate(p, {
-      [PZP_FIELDS.BASE_ZOCKET]: async (b) => {
+      baseZocket: async (b) => {
         this.baseZocket = (await hydrateChild(this, b)) as Zocket;
         this.children = [this.baseZocket];
       },
-      [PZP_FIELDS.BIG_PARENTHESIS]: (p) => {
+      bigParenthesis: (p) => {
         this.bigParenthesis = p;
       },
-      [PZP_FIELDS.LEFT]: (l) => {
+      left: (l) => {
         this.left = l;
       },
-      [PZP_FIELDS.RIGHT]: (r) => {
+      right: (r) => {
         this.right = r;
       },
     });

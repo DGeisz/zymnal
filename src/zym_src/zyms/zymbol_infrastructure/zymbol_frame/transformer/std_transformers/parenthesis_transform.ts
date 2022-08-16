@@ -12,11 +12,10 @@ import {
   ZymKeyPress,
 } from "../../../../../../zym_lib/zy_god/event_handler/key_press";
 import { Zymbol } from "../../../../zymbol/zymbol";
-import { ParenthesisZymbol } from "../../../../zymbol/zymbols/parenthesis_zymbol";
-import {
-  TextZymbol,
-  TEXT_ZYMBOL_NAME,
-} from "../../../../zymbol/zymbols/text_zymbol/text_zymbol";
+import { ParenthesisZymbol } from "../../../../zymbol/zymbols/parenthesis_zymbol/parenthesis_zymbol";
+import { zymbolIsBinaryOperator } from "../../../../zymbol/zymbols/symbol_zymbol/symbol_zymbol_schema";
+import { TextZymbol } from "../../../../zymbol/zymbols/text_zymbol/text_zymbol";
+import { TEXT_ZYMBOL_NAME } from "../../../../zymbol/zymbols/text_zymbol/text_zymbol_schema";
 import { Zocket } from "../../../../zymbol/zymbols/zocket/zocket";
 import { ZymbolFrameMethod } from "../../zymbol_frame_schema";
 import {
@@ -29,7 +28,6 @@ import {
   getTransformTextZymbolAndParent,
   makeHelperCursor,
   recoverAllowedCursor,
-  zymbolIsBinaryOperator,
 } from "./transform_utils";
 
 const LEFT_PARENTHESIS = "(";
@@ -260,7 +258,7 @@ class Parenthesis extends Zentinel<{}> {
 
               if (rightPar.includes(word)) {
                 /* Check if there's a left parenthesis that we're missing */
-                for (let k = 0; k < zymbolIndex; k++) {
+                for (let k = zymbolIndex - 1; k >= 0; k--) {
                   const child = parent.children[k];
 
                   if (child.getMasterId() === TEXT_ZYMBOL_NAME) {

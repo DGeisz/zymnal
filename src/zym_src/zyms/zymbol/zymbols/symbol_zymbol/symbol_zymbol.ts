@@ -26,25 +26,21 @@ import {
 import { Zymbol, ZymbolHtmlIdTrait, ZymbolRenderArgs } from "../../zymbol";
 import { extendZymbol } from "../../zymbol_cmd";
 import { TeX } from "../../zymbol_types";
-import { ZymbolModifier } from "../zocket/zocket";
-
-const SZP_FIELDS: {
-  TEX_SYMBOL: "t";
-  MODIFIERS: "m";
-} = {
-  TEX_SYMBOL: "t",
-  MODIFIERS: "m",
-};
-
-export interface SymbolZymbolPersist {
-  [SZP_FIELDS.TEX_SYMBOL]: TeX;
-  [SZP_FIELDS.MODIFIERS]: ZymbolModifier[];
-}
+import { ZymbolModifier } from "../zocket/zocket_schema";
+import {
+  SymbolZymbolPersistenceSchema,
+  SymbolZymbolSchema,
+  SYMBOL_ZYMBOL_ID,
+} from "./symbol_zymbol_schema";
+import { ZyPartialPersist } from "../../../../../zym_lib/zy_schema/zy_schema";
 
 const htmlIdBlacklist = operatorList;
 
-class SymbolZymbolMaster extends ZyMaster {
-  zyId: string = "symbol-zymbol";
+class SymbolZymbolMaster extends ZyMaster<
+  SymbolZymbolSchema,
+  SymbolZymbolPersistenceSchema
+> {
+  zyId: string = SYMBOL_ZYMBOL_ID;
 
   newBlankChild(): Zym<any, any, any> {
     return new SymbolZymbol("", DUMMY_FRAME, 0, undefined);
@@ -55,11 +51,14 @@ export const symbolZymbolMaster = new SymbolZymbolMaster();
 
 extendZymbol(symbolZymbolMaster);
 
-export class SymbolZymbol extends Zymbol<SymbolZymbolPersist> {
+export class SymbolZymbol extends Zymbol<
+  SymbolZymbolSchema,
+  SymbolZymbolPersistenceSchema
+> {
   texSymbol: TeX;
   children: Zymbol[] = [];
   modifiers: ZymbolModifier[] = [];
-  zyMaster: ZyMaster = symbolZymbolMaster;
+  zyMaster = symbolZymbolMaster;
 
   constructor(
     texSymbol: string,
@@ -69,6 +68,11 @@ export class SymbolZymbol extends Zymbol<SymbolZymbolPersist> {
   ) {
     super(parentFrame, cursorIndex, parent);
     this.texSymbol = texSymbol;
+
+    this.setPersistenceSchemaSymbols({
+      texSymbol: "t",
+      modifiers: "m",
+    });
   }
 
   toggleModifier = (mod: ZymbolModifier) => {
@@ -144,27 +148,27 @@ export class SymbolZymbol extends Zymbol<SymbolZymbolPersist> {
     return FAILED_CURSOR_MOVE_RESPONSE;
   }
 
-  persistData(): SymbolZymbolPersist {
+  persistData() {
     return {
-      [SZP_FIELDS.TEX_SYMBOL]: this.texSymbol,
-      [SZP_FIELDS.MODIFIERS]: [...this.modifiers],
+      texSymbol: this.texSymbol,
+      modifiers: [...this.modifiers],
     };
   }
 
-  hydrate = async (p: Partial<SymbolZymbolPersist>): Promise<void> => {
+  async hydrateFromPartialPersist(
+    p: Partial<
+      ZyPartialPersist<SymbolZymbolSchema, SymbolZymbolPersistenceSchema>
+    >
+  ): Promise<void> {
     await safeHydrate(p, {
-      [SZP_FIELDS.MODIFIERS]: (mod) => {
+      modifiers: (mod) => {
         this.modifiers = mod;
       },
-      [SZP_FIELDS.TEX_SYMBOL]: (tex) => {
+      texSymbol: (tex) => {
         this.texSymbol = tex;
       },
     });
-  };
-}
-
-export function isSymbolZymbol(zym: Zym): zym is SymbolZymbol {
-  return zym.getMasterId() === symbolZymbolMaster.zyId;
+  }
 }
 
 symbolZymbolMaster.implementTrait(ZymbolHtmlIdTrait, {
