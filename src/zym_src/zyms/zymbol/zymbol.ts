@@ -61,8 +61,8 @@ export interface SpliceDeleteResponse {
 }
 
 export abstract class Zymbol<
-  Schema extends ZySchema,
-  PersistenceSchema extends ZyPersistenceSchema<Schema>
+  Schema extends ZySchema = any,
+  PersistenceSchema extends ZyPersistenceSchema<Schema> = any
 > extends Zym<Schema, PersistenceSchema, TeX> {
   parentFrame: ZymbolFrame;
   abstract children: Zymbol<any, any>[];

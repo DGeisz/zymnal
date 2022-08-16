@@ -12,7 +12,6 @@ import {
 } from "../zy_trait/zy_trait";
 import {
   ZyFullPersist,
-  ZyId,
   ZyPersistenceSchema,
   ZySchema,
 } from "../zy_schema/zy_schema";
@@ -65,6 +64,4 @@ export abstract class ZyMaster<
 
     return newZym;
   }
-
-  abstract readonly zyId: ZyId;
 }

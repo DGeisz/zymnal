@@ -9,7 +9,7 @@ import {
   hydrateChild,
   safeHydrate,
 } from "../../../../../zym_lib/zym/utils/hydrate";
-import { Zym, ZymPersist } from "../../../../../zym_lib/zym/zym";
+import { Zym } from "../../../../../zym_lib/zym/zym";
 import { ZyMaster } from "../../../../../zym_lib/zym/zy_master";
 import { some } from "../../../../../zym_lib/utils/zy_option";
 import {
@@ -42,38 +42,23 @@ import {
   ZymbolRenderArgs,
 } from "../../zymbol";
 import { extendZymbol } from "../../zymbol_cmd";
-import { TeX } from "../../zymbol_types";
 import { TEXT_ZYMBOL_NAME, TextZymbol } from "../text_zymbol/text_zymbol";
 import { CursorCommandTrait } from "../../../../../zym_lib/zy_god/cursor/cursor_commands";
 import { unwrapTraitResponse } from "../../../../../zym_lib/zy_trait/zy_trait";
+import {
+  ZocketPersistenceSchema,
+  ZocketSchema,
+  ZOCKET_MASTER_ID,
+  ZymbolModifier,
+} from "./zocket_schema";
+import {
+  ZyPartialPersist,
+  ZymPersist,
+} from "../../../../../zym_lib/zy_schema/zy_schema";
 
 /* === Helper Types === */
-export interface ZymbolModifier {
-  id: {
-    group: string;
-    item: string | number;
-  };
-  pre: TeX;
-  post: TeX;
-}
 
-/* === PERSIST === */
-const ZP_FIELDS: {
-  CHILDREN: "c";
-  MODIFIERS: "m";
-} = {
-  CHILDREN: "c",
-  MODIFIERS: "m",
-};
-
-export interface ZocketPersist {
-  [ZP_FIELDS.CHILDREN]: ZymPersist<any>[];
-  [ZP_FIELDS.MODIFIERS]: ZymbolModifier[];
-}
-
-export const ZOCKET_MASTER_ID = "zocket";
-
-class ZocketMaster extends ZyMaster {
+class ZocketMaster extends ZyMaster<ZocketSchema, ZocketPersistenceSchema, {}> {
   zyId = ZOCKET_MASTER_ID;
 
   newBlankChild(): Zym<any, any, any> {
@@ -86,14 +71,14 @@ export const zocketMaster = new ZocketMaster();
 /* Extensions */
 extendZymbol(zocketMaster);
 
-export class Zocket extends Zymbol<ZocketPersist> {
-  zyMaster: ZyMaster = zocketMaster;
-  children: Zymbol[] = [];
+export class Zocket extends Zymbol<ZocketSchema, ZocketPersistenceSchema> {
+  zyMaster = zocketMaster;
+  children: Zymbol<any, any>[] = [];
   modifiers: ZymbolModifier[] = [];
 
   /* USED ONLY FOR TESTS */
   getZymbols = () => this.children;
-  setZymbols = (zymbols: Zymbol[]) => (this.children = zymbols);
+  setZymbols = (zymbols: Zymbol<any, any>[]) => (this.children = zymbols);
 
   toggleModifier = (mod: ZymbolModifier) => {
     const hasMod = this.modifiers.some(
@@ -320,6 +305,7 @@ export class Zocket extends Zymbol<ZocketPersist> {
     return FAILED_CURSOR_MOVE_RESPONSE;
   }
 
+  /* Figure out how we're handling undo-redo */
   _addZymChangeLinks = (
     ctx: BasicContext,
     beforeChildren: ZymPersist<any>[],
@@ -735,21 +721,23 @@ export class Zocket extends Zymbol<ZocketPersist> {
     return FAILED_CURSOR_MOVE_RESPONSE;
   };
 
-  persistData = (): ZocketPersist => {
+  persistData = () => {
     return {
-      [ZP_FIELDS.CHILDREN]: this.children.map((c) => c.persist()),
-      [ZP_FIELDS.MODIFIERS]: [...this.modifiers],
+      children: this.children.map((c) => c.persist()),
+      modifiers: [...this.modifiers],
     };
   };
 
-  async hydrate(p: Partial<ZocketPersist>): Promise<void> {
+  async hydrateFromPartialPersist(
+    p: Partial<ZyPartialPersist<ZocketSchema, ZocketPersistenceSchema>>
+  ): Promise<void> {
     await safeHydrate(p, {
-      [ZP_FIELDS.CHILDREN]: async (children) => {
+      children: async (children) => {
         this.children = (await Promise.all(
           children.map((c) => hydrateChild(this, c))
         )) as Zymbol[];
       },
-      [ZP_FIELDS.MODIFIERS]: (mod) => {
+      modifiers: (mod) => {
         this.modifiers = mod;
       },
     });
@@ -759,7 +747,7 @@ export class Zocket extends Zymbol<ZocketPersist> {
 }
 
 zocketMaster.implementTrait(CursorCommandTrait, {
-  async getInitialCursor(zym) {
+  async getInitialCursor() {
     return some([0]);
   },
 });

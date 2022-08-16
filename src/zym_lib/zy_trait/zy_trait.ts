@@ -12,13 +12,6 @@ export type ZyTraitSchema = {
 
 export type CreateZyTraitSchema<Schema extends ZyTraitSchema> = Schema;
 
-export type b = CreateZyTraitSchema<{
-  help: {
-    args: string;
-    return: string;
-  };
-}>;
-
 export type ZyTraitPointer<
   Schema extends ZyTraitSchema,
   Method extends keyof Schema
@@ -80,7 +73,7 @@ export type TraitMethodImplementation<
   Schema extends ZyTraitSchema,
   Method extends keyof Schema
 > = (
-  zym: Zym,
+  zym: Zym<any, any, any>,
   args: Schema[Method]["args"]
 ) => Promise<Schema[Method]["return"]>;
 
