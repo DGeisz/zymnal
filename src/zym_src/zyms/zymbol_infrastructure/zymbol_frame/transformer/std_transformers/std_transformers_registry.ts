@@ -7,6 +7,7 @@ import { inPlaceSymbols } from "./in_place_symbols/in_place_symbols";
 import { parenthesisModifiers } from "./parenthesis_transform";
 import { stdLibZentinel } from "./std_lib/std_lib_zentinel";
 import { superSubTransform } from "./super_sub_transform";
+import { groupTransformer } from "./group_transform";
 
 export const stdZymbolTransformers: Zentinel<any>[] = [
   inPlaceSymbols,
@@ -15,6 +16,7 @@ export const stdZymbolTransformers: Zentinel<any>[] = [
   functionTransformer,
   fractionTransformer,
   superSubTransform,
+  groupTransformer,
   cashStack,
   stdLibZentinel,
 ];

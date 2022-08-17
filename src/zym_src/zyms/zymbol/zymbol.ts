@@ -218,10 +218,7 @@ export abstract class Zymbol<
   spliceDelete = (
     _cursor: Cursor,
     _ctx: BasicContext
-  ): SpliceDeleteResponse | undefined => ({
-    zymbols: [],
-    putCursorAtEnd: true,
-  });
+  ): SpliceDeleteResponse | undefined => undefined;
 
   /** 
   If this returns something defined, it indicates

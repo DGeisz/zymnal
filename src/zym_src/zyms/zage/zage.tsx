@@ -14,6 +14,8 @@ import {
   ZymbolContextSchema,
 } from "../zymbol_infrastructure/zymbol_context/zymbol_context_schema";
 
+const DARK_MODE = true;
+
 /* ==== MASTER ====  */
 class ZageMaster extends ZyMaster<ZageSchema, ZagePersistenceSchema, {}> {
   zyId = "zage";
@@ -45,11 +47,12 @@ export class Zage extends Zyact<ZageSchema, ZagePersistenceSchema> {
     const BaseContextComponent = useZymponent(this.baseZymbolContext);
 
     useEffect(() => {
-      enableDarkMode({
-        brightness: 100,
-        contrast: 100,
-        sepia: 10,
-      });
+      DARK_MODE &&
+        enableDarkMode({
+          brightness: 100,
+          contrast: 100,
+          sepia: 10,
+        });
     }, []);
 
     return (

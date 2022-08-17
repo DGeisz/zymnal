@@ -4,7 +4,9 @@ import {
   IdentifiedSchema,
   ZymPersist,
 } from "../../../../../zym_lib/zy_schema/zy_schema";
+import { Zymbol } from "../../zymbol";
 import { TeX } from "../../zymbol_types";
+import { Zocket } from "./zocket";
 
 export const ZOCKET_MASTER_ID = "zocket";
 
@@ -31,4 +33,8 @@ export interface ZymbolModifier {
   };
   pre: TeX;
   post: TeX;
+}
+
+export function isZocket(zymbol: Zymbol): zymbol is Zocket {
+  return zymbol.getMasterId() === ZOCKET_MASTER_ID;
 }

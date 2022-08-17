@@ -24,9 +24,13 @@ import {
   ZymbolTransformRank,
   ZymbolTreeTransformation,
 } from "../../transformer";
-import { ZymbolModifier } from "../../../../../zymbol/zymbols/zocket/zocket_schema";
+import {
+  isZocket,
+  ZymbolModifier,
+} from "../../../../../zymbol/zymbols/zocket/zocket_schema";
 import { isSymbolZymbol } from "../../../../../zymbol/zymbols/symbol_zymbol/symbol_zymbol_schema";
 import { isSuperSub } from "../../../../../zymbol/zymbols/super_sub/super_sub_schema";
+import { isTextZymbol } from "../../../../../zymbol/zymbols/text_zymbol/text_zymbol_schema";
 
 const DOT = ".";
 
@@ -136,19 +140,12 @@ class DotModifiers extends Zentinel<DotModifiersMethodSchema> {
               if (firstWord.startsWith(DOT)) {
                 let modWord = firstWord.slice(1);
 
-                let allowed = false;
                 let rank = ZymbolTransformRank.Include;
 
                 if (checkMod(modWord)) {
-                  /* We default to suggested */
-                  allowed = true;
-
                   if (modWord.length > 2) {
                     rank = ZymbolTransformRank.Suggest;
                   }
-                }
-
-                if (allowed) {
                   const mod = {
                     id: {
                       group: "basic",
@@ -161,7 +158,7 @@ class DotModifiers extends Zentinel<DotModifiersMethodSchema> {
                   parent.children.splice(zymbolIndex, 1);
 
                   let changed = false;
-                  if (isSymbolZymbol(prevZymbol!)) {
+                  if (isSymbolZymbol(prevZymbol!) || isZocket(prevZymbol!)) {
                     prevZymbol.toggleModifier(mod);
                     changed = true;
                   } else if (isSuperSub(prevZymbol!) && zymbolIndex > 1) {
@@ -169,7 +166,10 @@ class DotModifiers extends Zentinel<DotModifiersMethodSchema> {
                       zymbolIndex - 2
                     ] as Zymbol;
 
-                    if (isSymbolZymbol(prevPrevZymbol)) {
+                    if (
+                      isSymbolZymbol(prevPrevZymbol) ||
+                      isZocket(prevPrevZymbol!)
+                    ) {
                       prevPrevZymbol.toggleModifier(mod);
                       changed = true;
                     }
@@ -226,7 +226,7 @@ class DotModifiers extends Zentinel<DotModifiersMethodSchema> {
                     parent.children.splice(zymbolIndex, 1);
 
                     let changed = false;
-                    if (isSymbolZymbol(prevZymbol!)) {
+                    if (isSymbolZymbol(prevZymbol!) || isZocket(prevZymbol!)) {
                       prevZymbol.toggleModifier(mod);
                       changed = true;
                     } else if (isSuperSub(prevZymbol!) && zymbolIndex > 1) {
@@ -234,7 +234,10 @@ class DotModifiers extends Zentinel<DotModifiersMethodSchema> {
                         zymbolIndex - 2
                       ] as Zymbol;
 
-                      if (isSymbolZymbol(prevPrevZymbol)) {
+                      if (
+                        isSymbolZymbol(prevPrevZymbol) ||
+                        isZocket(prevPrevZymbol)
+                      ) {
                         prevPrevZymbol.toggleModifier(mod);
                         changed = true;
                       }

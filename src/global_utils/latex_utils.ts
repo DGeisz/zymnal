@@ -29,6 +29,10 @@ export function wrapHtmlId(tex: string, html_id: string) {
   return `\\htmlId{${html_id}}{${tex}}`;
 }
 
+export function wrapHtmlClass(tex: string, class_name: string): string {
+  return `\\htmlClass{${class_name}}{${tex}}`;
+}
+
 export const LATEX_SPACE = "\\;";
 export const LATEX_EMPTY_SOCKET = "{\\footnotesize \\square}";
 export const LATEX_NAME = "\\LaTeX";

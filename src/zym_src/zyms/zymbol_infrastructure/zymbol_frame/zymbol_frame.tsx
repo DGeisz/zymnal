@@ -517,11 +517,15 @@ zymbolFrameMaster.implementTrait(KeyPressTrait, {
 
     /* We only have one child */
     if (nextCursorIndex === 0) {
-      let isInputKey = false;
+      let isTransformationKey = false;
+      // let isInputKey = false;
 
       /* Start out by checking if this is a key, and if we need to handle a special condition based on a potential transform */
-      if (keyPress.type === KeyPressComplexType.Key) {
-        isInputKey = true;
+      if (
+        keyPress.type === KeyPressComplexType.Key ||
+        keyPress.type === KeyPressBasicType.Delete
+      ) {
+        isTransformationKey = true;
       }
 
       /* Check if we have active transformations */
@@ -596,7 +600,7 @@ zymbolFrameMaster.implementTrait(KeyPressTrait, {
         })
       );
 
-      if (isInputKey) {
+      if (isTransformationKey) {
         /* Handle potential transformation */
         /* 1. Ask Hermes for the Transformer */
         const transformer = await frame.callZentinelMethod(

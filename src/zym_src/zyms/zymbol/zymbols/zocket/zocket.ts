@@ -1,8 +1,10 @@
 import _ from "underscore";
 import {
+  add_color_box,
   cursorToString,
   CURSOR_LATEX,
   LATEX_EMPTY_SOCKET,
+  wrapHtmlClass,
   wrapHtmlId,
 } from "../../../../../global_utils/latex_utils";
 import {
@@ -40,6 +42,7 @@ import {
 } from "../../delete_behavior";
 import {
   keyPressHasModifier,
+  SpliceDeleteResponse,
   Zymbol,
   ZymbolHtmlIdTrait,
   ZymbolRenderArgs,
@@ -59,6 +62,8 @@ import {
   ZymPersist,
 } from "../../../../../zym_lib/zy_schema/zy_schema";
 import { TEXT_ZYMBOL_NAME } from "../text_zymbol/text_zymbol_schema";
+import { palette } from "../../../../../global_styles/palette";
+import { ZYMBOL_FRAME_MASTER_ID } from "../../../zymbol_infrastructure/zymbol_frame/zymbol_frame_schema";
 
 /* === Helper Types === */
 
@@ -552,7 +557,15 @@ export class Zocket extends Zymbol<ZocketSchema, ZocketPersistenceSchema> {
   };
 
   getDeleteBehavior = (): DeleteBehavior =>
-    deleteBehaviorNormal(DeleteBehaviorType.ALLOWED);
+    deleteBehaviorNormal(DeleteBehaviorType.SPLICE);
+
+  spliceDelete = (
+    _cursor: Cursor,
+    _ctx: BasicContext
+  ): SpliceDeleteResponse | undefined => ({
+    zymbols: [...this.children],
+    putCursorAtEnd: true,
+  });
 
   renderTex = (opts: ZymbolRenderArgs) => {
     const { cursor, excludeHtmlIds } = opts;
@@ -591,6 +604,13 @@ export class Zocket extends Zymbol<ZocketSchema, ZocketPersistenceSchema> {
     /* Now wrap this in all the modifiers */
     for (const mod of this.modifiers) {
       finalTex = `${mod.pre}${finalTex}${mod.post}`;
+    }
+
+    if (
+      this.parent?.getMasterId() === ZOCKET_MASTER_ID &&
+      this.modifiers.length === 0
+    ) {
+      finalTex = wrapHtmlClass(finalTex, "zymbol-group");
     }
 
     if (!excludeHtmlIds && emptySocket) {

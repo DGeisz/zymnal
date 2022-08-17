@@ -21,3 +21,7 @@ code {
   left: 0;
   top: 0;
 }
+
+.zymbol-group {
+  background-color: rgba(11, 219, 80, 0.5);
+}
