@@ -50,13 +50,13 @@ export enum KeyPressModifier {
 export function keyPressModifierToSymbol(mod: KeyPressModifier): string {
   switch (mod) {
     case KeyPressModifier.Shift:
-      return "Shift";
+      return "⇧";
     case KeyPressModifier.Ctrl:
       return "Ctrl";
     case KeyPressModifier.Cmd:
-      return "Cmd";
+      return "⌘";
     case KeyPressModifier.Option:
-      return "Option";
+      return "⌥";
   }
 }
 
