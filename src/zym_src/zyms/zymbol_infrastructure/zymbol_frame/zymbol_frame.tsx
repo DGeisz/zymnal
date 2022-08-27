@@ -55,7 +55,10 @@ import {
   ZYMBOL_FRAME_MASTER_ID,
 } from "./zymbol_frame_schema";
 import { TexTransform } from "./building_blocks/tex_transform";
-import { VimiumHint, VimiumMode } from "./building_blocks/vimium_mode";
+import {
+  VimiumHint,
+  VimiumMode,
+} from "./building_blocks/vimium_mode/vimium_mode";
 import {
   SourcedTransformer,
   TransformerFactory,
@@ -78,17 +81,15 @@ class ZymbolFrameMaster extends ZyMaster<
   constructor() {
     super();
 
-    const self = this;
-
     this.setMethodImplementation({
-      async registerTransformer(sourcedTransformer) {
-        self.registerSourcedTransformer(sourcedTransformer);
+      registerTransformer: async (sourcedTransformer) => {
+        this.registerSourcedTransformer(sourcedTransformer);
       },
-      async registerTransformerFactory(factory) {
-        self.registerTransformerFactory(factory);
+      registerTransformerFactory: async (factory) => {
+        this.registerTransformerFactory(factory);
       },
-      async getTransformer({ cursor, keyPress }) {
-        return self.getZymbolTransformer(cursor, keyPress);
+      getTransformer: async ({ cursor, keyPress }) => {
+        return this.getZymbolTransformer(cursor, keyPress);
       },
     });
   }
@@ -285,7 +286,7 @@ export class ZymbolFrame extends Zyact<
               const hint = vimiumHints[Math.floor(i / VIMIUM_HINT_PERIOD)];
 
               if (hint === vimiumChars) {
-                this.vimiumMode.escapeVimiumMode();
+                this.vimiumMode.handleTermSelected();
                 usingTransformation && this.takeSelectedTransformation();
 
                 this.callZentinelMethod(

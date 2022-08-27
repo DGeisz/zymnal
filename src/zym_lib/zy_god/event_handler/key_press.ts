@@ -16,7 +16,6 @@ import {
   unwrapTraitResponse,
 } from "../../zy_trait/zy_trait";
 import { defaultTraitImplementationFactory } from "../../zy_trait/default_trait_zentinel/default_trait_zentinel_schema";
-import { ZyGodSchema } from "../zy_god_schema";
 
 /* === Basic keypress types ===  */
 

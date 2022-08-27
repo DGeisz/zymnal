@@ -14,17 +14,15 @@ class DefaultTraitZentinel extends Zentinel<DefaultTraitZentinelSchema> {
   constructor() {
     super();
 
-    const self = this;
-
     this.setMethodImplementation({
-      async implementTrait({ trait, implementation }) {
+      implementTrait: async ({ trait, implementation }) => {
         for (const key in implementation) {
-          self.traitMethodRegistry.set(trait[key].id, implementation[key]!);
+          this.traitMethodRegistry.set(trait[key].id, implementation[key]!);
         }
       },
-      async callTraitMethod({ zym, pointer, args }) {
+      callTraitMethod: async ({ zym, pointer, args }) => {
         const method: TraitMethodImplementation<any, any> | undefined =
-          self.traitMethodRegistry.get(pointer.id);
+          this.traitMethodRegistry.get(pointer.id);
 
         if (method) {
           return impl(await method(zym, args));

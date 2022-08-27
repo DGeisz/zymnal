@@ -104,6 +104,10 @@ class KeyEventHandler {
         keyPressType = KeyPressBasicType.Enter;
         break;
       }
+      case "Escape": {
+        keyPressType = KeyPressBasicType.Escape;
+        break;
+      }
     }
 
     if (keyPressType !== undefined) {

@@ -25,3 +25,7 @@ code {
 .zymbol-group {
   background-color: rgba(11, 219, 80, 0.5);
 }
+
+.full-cover-cursor {
+  background-color: rgba(0, 0, 0, 0.2);
+}

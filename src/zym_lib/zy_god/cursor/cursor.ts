@@ -1,6 +1,7 @@
 import { CURSOR_NAME } from "../../../global_utils/latex_utils";
 import { Zym } from "../../zym/zym";
 import { NONE, some, ZyOption } from "../../utils/zy_option";
+import { createContextVariable } from "../../utils/basic_context";
 
 export type CursorIndex = number;
 export type Cursor = CursorIndex[];
@@ -122,9 +123,20 @@ export function getRelativeCursor(
   return some(fullCursor.slice(zymCursor.length));
 }
 
+export enum CursorMode {
+  Basic,
+  /* Cursor that covers the full term that it encapsulates */
+  FullCover,
+}
+
+export const { get: getCursorMode, set: setCursorMode } =
+  createContextVariable<CursorMode>("cursor-mode");
+
 class CursorBlink {
   blinkInterval: NodeJS.Timer;
   cursorVisible: boolean = true;
+
+  private preventCursorBlink = false;
 
   constructor() {
     this.blinkInterval = this.genInterval();
@@ -140,18 +152,32 @@ class CursorBlink {
     this.blinkInterval = this.genInterval();
   }
 
+  setPreventCursorBlink = (preventCursorBlink: boolean) => {
+    if (preventCursorBlink) {
+      const cursors = document.getElementsByClassName(CURSOR_NAME);
+
+      for (const cursor of cursors) {
+        (cursor as HTMLDivElement).style.visibility = "visible";
+      }
+    }
+
+    this.preventCursorBlink = preventCursorBlink;
+  };
+
   private blink = () => {
     this.cursorVisible = !this.cursorVisible;
     this.setDOMCursorVisibility();
   };
 
   private setDOMCursorVisibility() {
-    const cursors = document.getElementsByClassName(CURSOR_NAME);
+    if (!this.preventCursorBlink) {
+      const cursors = document.getElementsByClassName(CURSOR_NAME);
 
-    for (const cursor of cursors) {
-      (cursor as HTMLDivElement).style.visibility = this.cursorVisible
-        ? "visible"
-        : "hidden";
+      for (const cursor of cursors) {
+        (cursor as HTMLDivElement).style.visibility = this.cursorVisible
+          ? "visible"
+          : "hidden";
+      }
     }
   }
 }

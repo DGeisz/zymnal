@@ -3,6 +3,7 @@ import {
   add_latex_color,
   create_tex_text,
   cursorToString,
+  textWithFullTermCursor,
   text_with_cursor,
   wrapHtmlId,
 } from "../../../../../global_utils/latex_utils";
@@ -15,6 +16,7 @@ import {
   CursorMoveResponse,
   extractCursorInfo,
   FAILED_CURSOR_MOVE_RESPONSE,
+  getCursorMode,
   successfulMoveResponse,
 } from "../../../../../zym_lib/zy_god/cursor/cursor";
 import { ZymbolDirection } from "../../../../../zym_lib/zy_god/event_handler/key_press";
@@ -228,7 +230,7 @@ export class TextZymbol extends Zymbol<
         return FAILED_CURSOR_MOVE_RESPONSE;
       }
 
-      const fullCursor = getFullContextCursor(ctx);
+      const fullCursor = getFullContextCursor(ctx)!;
       const afterCursor = [...fullCursor];
       afterCursor.splice(afterCursor.length - 1, 1, nextCursorIndex - 1);
 

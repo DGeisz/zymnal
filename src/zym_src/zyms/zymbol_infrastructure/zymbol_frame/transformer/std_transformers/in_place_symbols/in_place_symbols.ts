@@ -91,21 +91,19 @@ class InPlaceSymbols extends Zentinel<InPlaceSymbolsMethodSchema> {
   constructor() {
     super();
 
-    const self = this;
-
     this.setMethodImplementation({
-      async addSlashMap(slashMap) {
+      addSlashMap: async (slashMap) => {
         const { id } = slashMap;
 
-        if (!self.globalSlashMap.some((s) => _.isEqual(s.id, id))) {
-          self.globalSlashMap.push(slashMap);
+        if (!this.globalSlashMap.some((s) => _.isEqual(s.id, id))) {
+          this.globalSlashMap.push(slashMap);
         }
       },
-      async addDirectMap(directMap) {
+      addDirectMap: async (directMap) => {
         const { id } = directMap;
 
-        if (!self.globalDirectMap.some((s) => _.isEqual(s.id, id))) {
-          self.globalDirectMap.push(directMap);
+        if (!this.globalDirectMap.some((s) => _.isEqual(s.id, id))) {
+          this.globalDirectMap.push(directMap);
         }
       },
     });

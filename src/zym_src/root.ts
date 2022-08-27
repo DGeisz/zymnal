@@ -8,6 +8,8 @@ import {
   zymbolInfrastructureZentinels,
 } from "./zyms/zymbol_infrastructure/zymbol_infrastructure";
 import { defaultTraitZentinel } from "../zym_lib/zy_trait/default_trait_zentinel/default_trait_zentinel";
+import { vimZentinel } from "./zentinels/vim_keypress_handler/vim_keypress_handler";
+import { vimiumZentinel } from "./zyms/zymbol_infrastructure/zymbol_frame/building_blocks/vimium_mode/vimium_mode";
 
 const root = new Zage(0, undefined);
 
@@ -23,5 +25,7 @@ export const zyMasterList: ZyMaster[] = [
 
 export const zentinelList: Zentinel<any>[] = [
   defaultTraitZentinel,
+  vimZentinel,
+  vimiumZentinel,
   ...zymbolInfrastructureZentinels,
 ];

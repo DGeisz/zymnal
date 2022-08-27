@@ -6,7 +6,7 @@ import { ZyMaster } from "../zym/zy_master";
 import { isSome, NONE, some } from "../utils/zy_option";
 import { unwrapTraitResponse } from "../zy_trait/zy_trait";
 import { ZyId } from "../zy_schema/zy_schema";
-import { Cursor } from "./cursor/cursor";
+import { Cursor, cursorBlink } from "./cursor/cursor";
 import {
   CursorCommandTrait,
   defaultCursorImplFactory,
@@ -20,20 +20,17 @@ import {
   ZymKeyPress,
 } from "./event_handler/key_press";
 import { WindowEventHandler } from "./event_handler/window_event_handler";
-import { BasicContext, newContext } from "../utils/basic_context";
+import { createContextVariable, newContext } from "../utils/basic_context";
 import {
   defaultUndoRedoImplFactory,
   getZymChangeLinks,
   UndoRedoStack,
   UndoRedoTrait,
 } from "./undo_redo/undo_redo";
-import { ZyGodSchema, ZY_GOD_ID } from "./zy_god_schema";
+import { CustomKeyPressHandler, ZyGodSchema, ZY_GOD_ID } from "./zy_god_schema";
 
-export const CONTEXT_CURSOR = "context-cursor-f49";
-
-export function getFullContextCursor(ctx: BasicContext): Cursor {
-  return [...(ctx.get(CONTEXT_CURSOR) as Cursor)];
-}
+export const { get: getFullContextCursor, set: setFullContextCursor } =
+  createContextVariable<Cursor>("full-context-cursor");
 
 class ZyGod extends Zentinel<ZyGodSchema> {
   zyId: string = ZY_GOD_ID;
@@ -47,6 +44,7 @@ class ZyGod extends Zentinel<ZyGodSchema> {
   private rootAwaiter = new ControlledAwaiter();
 
   private windowInFocus = true;
+  private customKeyPressHandler: CustomKeyPressHandler | undefined;
 
   simulatedKeyPressQueue: ZymKeyPress[] = [];
   undoRedoStack: UndoRedoStack = new UndoRedoStack();
@@ -81,6 +79,15 @@ class ZyGod extends Zentinel<ZyGodSchema> {
       },
       getFullCursor: async () => {
         return this.windowInFocus ? this.cursor : [];
+      },
+      registerCustomKeyPressHandler: async (customHandlerProducer) => {
+        this.customKeyPressHandler = customHandlerProducer(
+          this.basicHandleKeyPress
+        );
+
+        cursorBlink.setPreventCursorBlink(
+          this.customKeyPressHandler.shouldPreventCursorBlink()
+        );
       },
     });
 
@@ -194,6 +201,27 @@ class ZyGod extends Zentinel<ZyGodSchema> {
   };
 
   handleKeyPress = async (event: ZymKeyPress) => {
+    if (this.customKeyPressHandler) {
+      await this.customKeyPressHandler.handleKeyPress(event);
+      cursorBlink.setPreventCursorBlink(
+        this.customKeyPressHandler.shouldPreventCursorBlink()
+      );
+    } else {
+      await this.basicHandleKeyPress(event);
+    }
+  };
+
+  basicHandleKeyPress = async (event: ZymKeyPress | undefined) => {
+    /* Handle no-op */
+    if (!event) {
+      if (this.customKeyPressHandler)
+        cursorBlink.setPreventCursorBlink(
+          this.customKeyPressHandler.shouldPreventCursorBlink()
+        );
+
+      return this.handleCursorChange(this.cursor);
+    }
+
     if (this.root) {
       if (
         event.type === KeyPressComplexType.Key &&
@@ -216,7 +244,11 @@ class ZyGod extends Zentinel<ZyGodSchema> {
       }
 
       const ctx = newContext();
-      ctx.set(CONTEXT_CURSOR, [...this.cursor]);
+      setFullContextCursor(ctx, [...this.cursor]);
+
+      if (this.customKeyPressHandler) {
+        this.customKeyPressHandler.beforeKeyPress(ctx, event);
+      }
 
       const moveResponse = unwrapTraitResponse(
         await this.root.callTraitMethod(KeyPressTrait.handleKeyPress, {
@@ -225,6 +257,10 @@ class ZyGod extends Zentinel<ZyGodSchema> {
           keyPressContext: ctx,
         })
       );
+
+      if (this.customKeyPressHandler) {
+        this.customKeyPressHandler.afterKeyPress(ctx);
+      }
 
       const beforeCursor = [...this.cursor];
 

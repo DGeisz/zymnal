@@ -11,15 +11,20 @@ interface ZyBridgeProps {
   zentinels: Zentinel<any>[];
 }
 
+let registeredRoot = false;
+
 export const ZyBridge: React.FC<ZyBridgeProps> = (props) => {
   const [ready, setReady] = useState<boolean>(false);
 
   useEffect(() => {
     (async () => {
-      zyGod.registerMasters(props.zyMasters);
-      zyGod.registerZentinels(props.zentinels);
+      if (!registeredRoot) {
+        registeredRoot = true;
+        zyGod.registerMasters(props.zyMasters);
+        zyGod.registerZentinels(props.zentinels);
 
-      await zyGod.setRoot(props.root);
+        await zyGod.setRoot(props.root);
+      }
 
       setReady(true);
     })();

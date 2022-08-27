@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import _ from "underscore";
+import { VIMIUM_MODE_ID } from "../../zym_src/zyms/zymbol_infrastructure/zymbol_frame/building_blocks/vimium_mode/vimium_mode_zen_schema";
 import { Zentinel } from "../zentinel/zentinel";
 import { Zyact } from "../zym/zymplementations/zyact/zyact";
 import { ZyId } from "../zy_schema/zy_schema";
@@ -68,12 +69,7 @@ export class Hermes {
     pointer: ZentinelMethodPointer<Schema, Method>,
     args: Schema[Method]["args"]
   ) => {
-    // if (_.isEqual(pointer, defaultTraitZentinelMethodList.callTraitMethod)) {
-    //   debugger;
-    // }
-
     const { zentinelId } = pointer;
-
     const zentinel = this.zentinelRegistry.get(zentinelId);
 
     if (zentinel) {

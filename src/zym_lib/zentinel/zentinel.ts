@@ -26,6 +26,12 @@ export abstract class Zentinel<Schema extends ZentinelMethodSchema = any> {
     pointer: ZentinelMethodPointer<Schema, Method>,
     args: Schema[Method]["args"]
   ) => {
+    if (!this.methodImplementation) {
+      throw new Error(
+        `Methods not implemented in ${this.zyId}!  Make sure to invoke setMethodImplementation in the constructor!`
+      );
+    }
+
     return this.methodImplementation![pointer.method](args);
   };
 

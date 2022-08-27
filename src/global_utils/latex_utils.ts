@@ -1,7 +1,7 @@
 import katex from "katex";
 import escape_latex from "escape-latex";
 import { palette } from "../global_styles/palette";
-import { TeX } from "../zym_src/zyms/zymbol/zymbol_types";
+import type { TeX } from "../zym_src/zyms/zymbol/zymbol_types";
 import { Cursor } from "../zym_lib/zy_god/cursor/cursor";
 
 const renderToString = katex.renderToString;
@@ -40,6 +40,8 @@ export const LATEX_NAME = "\\LaTeX";
 export const CURSOR_NAME = "cursor";
 export const CURSOR_LATEX: string = `\\htmlClass{${CURSOR_NAME}}{\\color{none} \\boldsymbol{|}}`;
 
+export const FULL_COVER_CURSOR_CLASS_NAME = "full-cover-cursor";
+
 export function text_with_cursor(
   text: string,
   cursor_position: number
@@ -47,6 +49,19 @@ export function text_with_cursor(
   return `${create_tex_text(
     text.slice(0, cursor_position)
   )}${CURSOR_LATEX}${create_tex_text(text.slice(cursor_position))}`;
+}
+
+export function fullTermCursorTex(tex: string): TeX {
+  return wrapHtmlClass(tex, FULL_COVER_CURSOR_CLASS_NAME);
+}
+
+export function textWithFullTermCursor(
+  text: string,
+  cursorPosition: number
+): string {
+  return `${create_tex_text(text.slice(0, cursorPosition))}${fullTermCursorTex(
+    create_tex_text(text.slice(cursorPosition, cursorPosition + 1))
+  )}${create_tex_text(text.slice(cursorPosition + 1))}`;
 }
 
 export const INVALID_TEX = add_latex_color(
