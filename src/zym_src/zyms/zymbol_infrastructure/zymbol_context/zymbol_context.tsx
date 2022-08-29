@@ -7,10 +7,7 @@ import { useZymponent } from "../../../../zym_lib/zym/zymplementations/zyact/hoo
 import { Zyact } from "../../../../zym_lib/zym/zymplementations/zyact/zyact";
 import { ZyMaster } from "../../../../zym_lib/zym/zy_master";
 import { CursorIndex } from "../../../../zym_lib/zy_god/cursor/cursor";
-import {
-  ZyPartialPersist,
-  IdentifiedSchema,
-} from "../../../../zym_lib/zy_schema/zy_schema";
+import { ZyPartialPersist } from "../../../../zym_lib/zy_schema/zy_schema";
 import { ZymbolProgression } from "../zymbol_progression/zymbol_progression";
 import {
   ZymbolContextPersistenceSchema,

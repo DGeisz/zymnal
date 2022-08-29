@@ -49,7 +49,8 @@ export function firstWord(s: string): string {
   return s.split(/\s+/).filter((t) => !!t)[0];
 }
 
-const hintKeys = "sadfjklewcmpgh".split("");
+/* Removing j so that we have proper escape behavior */
+const hintKeys = "sadfklewcmpgh".split("");
 
 /**
  * Proudly stole this right from Vimium
