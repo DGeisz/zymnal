@@ -1,4 +1,3 @@
-import { FC } from "react";
 import {
   hydrateChild,
   safeHydrate,
@@ -49,7 +48,7 @@ export class ZymbolProgression extends Zyact<
     });
   }
 
-  component: FC = () => {
+  component: React.FC = () => {
     const Frame = useZymponent(this.baseFrame);
 
     return (

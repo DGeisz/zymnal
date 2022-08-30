@@ -10,6 +10,10 @@ import {
 import { defaultTraitZentinel } from "../zym_lib/zy_trait/default_trait_zentinel/default_trait_zentinel";
 import { vimZentinel } from "./zentinels/vim_keypress_handler/vim_keypress_handler";
 import { vimiumZentinel } from "./zyms/zymbol_infrastructure/zymbol_frame/building_blocks/vimium_mode/vimium_mode";
+import {
+  buildingBlockMasters,
+  buildingBlockZentinels,
+} from "./zyms/basic_building_blocks/basic_building_blocks";
 
 const root = new Zage(0, undefined);
 
@@ -19,6 +23,7 @@ export function getZymTreeRoot(): Zyact {
 
 export const zyMasterList: ZyMaster[] = [
   zageMaster,
+  ...buildingBlockMasters,
   ...zymbolInfrastructureMasters,
   ...zymbolMasterList,
 ];
@@ -28,4 +33,5 @@ export const zentinelList: Zentinel<any>[] = [
   vimZentinel,
   vimiumZentinel,
   ...zymbolInfrastructureZentinels,
+  ...buildingBlockZentinels,
 ];

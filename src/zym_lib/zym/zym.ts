@@ -1,5 +1,4 @@
 import { ZentinelMethodPointer, ZentinelMethodSchema } from "../hermes/hermes";
-import { unwrapOption, ZyOption } from "../utils/zy_option";
 import {
   Cursor,
   CursorIndex,
@@ -132,7 +131,8 @@ export abstract class Zym<
   /* ===== PERSISTENCE METHODS ===== */
 
   errorMessage = () =>
-    `You haven't set Persisted Symbols for ${this.getMasterId()}! Be sure to do this in the constructor!`;
+    `You haven't set Persisted Symbols 
+    for \`${this.getMasterId()}\`! Be sure to do this in the constructor!`;
 
   /* Persists the zym */
   persist = (): ZymPersist<Schema, PersistenceSchema> => {
@@ -170,23 +170,22 @@ export abstract class Zym<
   ): Promise<void>;
 
   /* ===== TREE METHODS ===== */
+  // prettier-ignore
   clone = async (
     copies = 1,
     newParent?: Zym<any, any>
-  ): Promise<
-    Zym<Schema, PersistenceSchema, RenderContentType, RenderOptions>[]
-  > => {
+  ): Promise<Zym<Schema, PersistenceSchema, RenderContentType, RenderOptions>[]> => {
     const p = this.persist();
 
     let all: Promise<
-      ZyOption<Zym<Schema, PersistenceSchema, RenderContentType, RenderOptions>>
+      Zym<Schema, PersistenceSchema, RenderContentType, RenderOptions>
     >[] = [];
 
     for (let i = 0; i < copies; i++) {
       all.push(this.callZentinelMethod(ZyGodMethod.hydratePersistedZym, p));
     }
 
-    const finalCopies = (await Promise.all(all)).map(unwrapOption);
+    const finalCopies = await Promise.all(all);
 
     if (newParent) {
       finalCopies.forEach((f) => (f.parent = newParent));

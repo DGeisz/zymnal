@@ -427,6 +427,7 @@ export class ZymbolFrame extends Zyact<
     this.setBaseZocket(t.newTreeRoot);
     const framePointer = this.getFullCursorPointer();
 
+    /* We can probably get undo/redo info directly from the transformation */
     if (keyPressContext)
       addZymChangeLink<ZymbolFrameSchema, ZymbolFramePersistedSchema>(
         keyPressContext,
@@ -490,6 +491,7 @@ export class ZymbolFrame extends Zyact<
 
 zymbolFrameMaster.implementTrait(KeyPressTrait, {
   handleKeyPress: async (zym, args) => {
+    // debugger;
     const frame = zym as ZymbolFrame;
 
     const { keyPressContext, keyPress } = args;
@@ -519,7 +521,6 @@ zymbolFrameMaster.implementTrait(KeyPressTrait, {
     /* We only have one child */
     if (nextCursorIndex === 0) {
       let isTransformationKey = false;
-      // let isInputKey = false;
 
       /* Start out by checking if this is a key, and if we need to handle a special condition based on a potential transform */
       if (

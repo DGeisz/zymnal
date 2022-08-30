@@ -125,15 +125,17 @@ export const defaultCursorImplFactory = defaultTraitImplementationFactory(
             oldCursor: some(oRel),
           });
         } else {
-          zym.children[oI].callTraitMethod(CursorCommandTrait.cursorRender, {
-            newCursor: NONE,
-            oldCursor: some(oRel),
-          });
+          if (oI > -1)
+            zym.children[oI].callTraitMethod(CursorCommandTrait.cursorRender, {
+              newCursor: NONE,
+              oldCursor: some(oRel),
+            });
 
-          zym.children[nI].callTraitMethod(CursorCommandTrait.cursorRender, {
-            newCursor: some(nRel),
-            oldCursor: NONE,
-          });
+          if (nI > -1)
+            zym.children[nI].callTraitMethod(CursorCommandTrait.cursorRender, {
+              newCursor: some(nRel),
+              oldCursor: NONE,
+            });
         }
       } else if (isSome(oldCursor)) {
         const { childRelativeCursor: oRel, nextCursorIndex: oI } =

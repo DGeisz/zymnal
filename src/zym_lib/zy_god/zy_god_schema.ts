@@ -3,7 +3,6 @@ import {
   CreateZentinelMethodSchema,
 } from "../hermes/hermes";
 import type { Zym } from "../zym/zym";
-import { ZyOption } from "../utils/zy_option";
 import { Cursor } from "./cursor/cursor";
 import { ZymKeyPress } from "./event_handler/key_press";
 import { ZymPersist } from "../zy_schema/zy_schema";
@@ -34,7 +33,7 @@ export type ZyGodSchema = CreateZentinelMethodSchema<{
   };
   hydratePersistedZym: {
     args: ZymPersist<any, any>;
-    return: ZyOption<Zym<any, any, any>>;
+    return: Zym<any, any, any>;
   };
   queueSimulatedKeyPress: {
     args: ZymKeyPress;

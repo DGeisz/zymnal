@@ -1,5 +1,4 @@
 import clsx from "clsx";
-import { debug } from "console";
 import { Zentinel } from "../../../../../../zym_lib/zentinel/zentinel";
 import {
   KeyPressBasicType,

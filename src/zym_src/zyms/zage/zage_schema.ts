@@ -5,24 +5,22 @@ import {
   ZymPersist,
 } from "../../../zym_lib/zy_schema/zy_schema";
 import {
-  ZymbolContextPersistenceSchema,
-  ZymbolContextSchema,
-} from "../zymbol_infrastructure/zymbol_context/zymbol_context_schema";
+  ZymbolModulePersistenceSchema,
+  ZymbolModuleSchema,
+} from "../zymbol_infrastructure/zymbol_module/zymbol_module_schema";
 
 export type ZageSchema = CreateZySchema<{
-  // extends ZySchema {
-  /* Replace this with the context schema */
-  context: IdentifiedSchema<ZymbolContextSchema>;
+  module: IdentifiedSchema<ZymbolModuleSchema>;
 }>;
 
 export type ZagePersistenceSchema = CreatePersistenceSchema<
   ZageSchema,
   {
-    context: {
+    module: {
       persistenceSymbol: "c";
       persistenceType: ZymPersist<
-        ZymbolContextSchema,
-        ZymbolContextPersistenceSchema
+        ZymbolModuleSchema,
+        ZymbolModulePersistenceSchema
       >;
     };
   }

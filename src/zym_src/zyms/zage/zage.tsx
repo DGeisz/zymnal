@@ -4,15 +4,15 @@ import { Zym } from "../../../zym_lib/zym/zym";
 import { useZymponent } from "../../../zym_lib/zym/zymplementations/zyact/hooks";
 import { Zyact } from "../../../zym_lib/zym/zymplementations/zyact/zyact";
 import { ZyMaster } from "../../../zym_lib/zym/zy_master";
-import { ZymbolContext } from "../zymbol_infrastructure/zymbol_context/zymbol_context";
+import { ZymbolModule } from "../zymbol_infrastructure/zymbol_module/zymbol_module";
 import { enable as enableDarkMode } from "darkreader";
 import { CursorIndex } from "../../../zym_lib/zy_god/cursor/cursor";
 import { ZagePersistenceSchema, ZageSchema } from "./zage_schema";
 import { ZyPartialPersist } from "../../../zym_lib/zy_schema/zy_schema";
 import {
-  ZymbolContextPersistenceSchema,
-  ZymbolContextSchema,
-} from "../zymbol_infrastructure/zymbol_context/zymbol_context_schema";
+  ZymbolModulePersistenceSchema,
+  ZymbolModuleSchema,
+} from "../zymbol_infrastructure/zymbol_module/zymbol_module_schema";
 
 const DARK_MODE = true;
 
@@ -32,19 +32,19 @@ export const zageMaster = new ZageMaster();
 /* For the time being, a zage will just hold a central context */
 export class Zage extends Zyact<ZageSchema, ZagePersistenceSchema> {
   zyMaster = zageMaster;
-  baseZymbolContext: ZymbolContext = new ZymbolContext(0, this);
-  children = [this.baseZymbolContext];
+  baseZymbolModule: ZymbolModule = new ZymbolModule(0, this);
+  children = [this.baseZymbolModule];
 
   constructor(cursorIndex: CursorIndex, parent?: Zym<any, any, any>) {
     super(cursorIndex, parent);
 
     this.setPersistenceSchemaSymbols({
-      context: "c",
+      module: "c",
     });
   }
 
   component = () => {
-    const BaseContextComponent = useZymponent(this.baseZymbolContext);
+    const BaseModuleComponent = useZymponent(this.baseZymbolModule);
 
     useEffect(() => {
       DARK_MODE &&
@@ -57,14 +57,14 @@ export class Zage extends Zyact<ZageSchema, ZagePersistenceSchema> {
 
     return (
       <div className="m-16">
-        <BaseContextComponent />
+        <BaseModuleComponent />
       </div>
     );
   };
 
   persistData() {
     return {
-      context: this.baseZymbolContext.persist(),
+      module: this.baseZymbolModule.persist(),
     };
   }
 
@@ -72,14 +72,14 @@ export class Zage extends Zyact<ZageSchema, ZagePersistenceSchema> {
     p: Partial<ZyPartialPersist<ZageSchema, ZagePersistenceSchema>>
   ): Promise<void> => {
     await safeHydrate(p, {
-      context: async (ctx) => {
-        this.baseZymbolContext = (await hydrateChild<
-          ZymbolContextSchema,
-          ZymbolContextPersistenceSchema
-        >(this, ctx)) as ZymbolContext;
+      module: async (ctx) => {
+        this.baseZymbolModule = (await hydrateChild<
+          ZymbolModuleSchema,
+          ZymbolModulePersistenceSchema
+        >(this, ctx)) as ZymbolModule;
       },
     });
-    this.children = [this.baseZymbolContext];
+    this.children = [this.baseZymbolModule];
 
     this.reConnectParentChildren();
   };

@@ -1,5 +1,4 @@
 import { ZyGodMethod } from "../../zy_god/zy_god_schema";
-import { unwrapOption } from "../../utils/zy_option";
 import { Zym } from "../zym";
 import {
   ZymPersist,
@@ -14,9 +13,7 @@ export async function hydrateChild<
   zym: Zym<any, any>,
   childPersist: ZymPersist<Schema, PersistenceSchema>
 ): Promise<Zym<Schema, PersistenceSchema>> {
-  return unwrapOption(
-    await zym.callZentinelMethod(ZyGodMethod.hydratePersistedZym, childPersist)
-  );
+  return zym.callZentinelMethod(ZyGodMethod.hydratePersistedZym, childPersist);
 }
 
 export async function safeHydrate<T extends object>(

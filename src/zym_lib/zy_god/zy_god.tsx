@@ -66,10 +66,12 @@ class ZyGod extends Zentinel<ZyGodSchema> {
         if (master) {
           const zym = await master.hydrate(zymData);
 
-          return some(zym);
+          return zym;
+        } else {
+          throw new Error(
+            `Master with id: ${masterId} hasn't been registered!`
+          );
         }
-
-        return NONE;
       },
       queueSimulatedKeyPress: async (keyPress) => {
         this.simulatedKeyPressQueue.push(keyPress);
