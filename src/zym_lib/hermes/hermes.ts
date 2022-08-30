@@ -112,7 +112,8 @@ export function useHermesValue<
     (async () => {
       setValue(await zyact.callZentinelMethod(pointer, args));
     })();
-  }, [renderCount, args, ...(depArray ? depArray : [])]);
+    // Put args in dep array if you want it to be a dependency
+  }, [renderCount, ...(depArray ? depArray : [])]);
 
   return value;
 }

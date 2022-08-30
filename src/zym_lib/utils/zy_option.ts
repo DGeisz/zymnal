@@ -1,9 +1,9 @@
-interface Some<T> {
+interface ZySome<T> {
   some: true;
   val: T;
 }
 
-export function some<T>(val: T): Some<T> {
+export function zySome<T>(val: T): ZySome<T> {
   return {
     some: true,
     val,
@@ -16,9 +16,9 @@ interface None {
 
 export const NONE: None = { some: false };
 
-export type ZyOption<T> = Some<T> | None;
+export type ZyOption<T> = ZySome<T> | None;
 
-export function isSome<T>(opt: ZyOption<T>): opt is Some<T> {
+export function isSome<T>(opt: ZyOption<T>): opt is ZySome<T> {
   return opt.some;
 }
 

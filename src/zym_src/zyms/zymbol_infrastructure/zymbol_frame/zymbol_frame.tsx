@@ -43,7 +43,7 @@ import { cursorToString } from "../../../../global_utils/latex_utils";
 import { BasicContext } from "../../../../zym_lib/utils/basic_context";
 import clsx from "clsx";
 import { palette } from "../../../../global_styles/palette";
-import { vimiumHintKeys } from "../../../../global_utils/text_utils";
+import { vimiumHintKeys } from "../../../../global_utils/string_utils";
 import { ZyGodMethod } from "../../../../zym_lib/zy_god/zy_god_schema";
 import { unwrapTraitResponse } from "../../../../zym_lib/zy_trait/zy_trait";
 import { CursorCommandTrait } from "../../../../zym_lib/zy_god/cursor/cursor_commands";
@@ -491,7 +491,6 @@ export class ZymbolFrame extends Zyact<
 
 zymbolFrameMaster.implementTrait(KeyPressTrait, {
   handleKeyPress: async (zym, args) => {
-    // debugger;
     const frame = zym as ZymbolFrame;
 
     const { keyPressContext, keyPress } = args;

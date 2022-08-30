@@ -3,7 +3,7 @@ import { Hermes } from "../hermes/hermes";
 import { Zentinel } from "../zentinel/zentinel";
 import { Zym } from "../zym/zym";
 import { ZyMaster } from "../zym/zy_master";
-import { isSome, NONE, some } from "../utils/zy_option";
+import { isSome, NONE, zySome } from "../utils/zy_option";
 import { unwrapTraitResponse } from "../zy_trait/zy_trait";
 import { ZyId } from "../zy_schema/zy_schema";
 import { Cursor, cursorBlink } from "./cursor/cursor";
@@ -119,8 +119,8 @@ class ZyGod extends Zentinel<ZyGodSchema> {
 
   private handleCursorChange = (newCursor: Cursor) => {
     this.root?.callTraitMethod(CursorCommandTrait.cursorRender, {
-      oldCursor: some(this.cursor),
-      newCursor: some(newCursor),
+      oldCursor: zySome(this.cursor),
+      newCursor: zySome(newCursor),
     });
 
     this.cursor = newCursor;
@@ -131,7 +131,7 @@ class ZyGod extends Zentinel<ZyGodSchema> {
       this.windowInFocus = false;
 
       this.root?.callTraitMethod(CursorCommandTrait.cursorRender, {
-        oldCursor: some(this.cursor),
+        oldCursor: zySome(this.cursor),
         newCursor: NONE,
       });
     }
@@ -143,7 +143,7 @@ class ZyGod extends Zentinel<ZyGodSchema> {
 
       this.root?.callTraitMethod(CursorCommandTrait.cursorRender, {
         oldCursor: NONE,
-        newCursor: some(this.cursor),
+        newCursor: zySome(this.cursor),
       });
     }
   };

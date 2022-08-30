@@ -1,6 +1,6 @@
 import { CURSOR_NAME } from "../../../global_utils/latex_utils";
 import { Zym } from "../../zym/zym";
-import { NONE, some, ZyOption } from "../../utils/zy_option";
+import { NONE, zySome, ZyOption } from "../../utils/zy_option";
 import { createContextVariable } from "../../utils/basic_context";
 
 export type CursorIndex = number;
@@ -120,7 +120,7 @@ export function getRelativeCursor(
     }
   }
 
-  return some(fullCursor.slice(zymCursor.length));
+  return zySome(fullCursor.slice(zymCursor.length));
 }
 
 export enum CursorMode {

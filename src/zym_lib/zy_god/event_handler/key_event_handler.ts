@@ -111,6 +111,8 @@ class KeyEventHandler {
     }
 
     if (keyPressType !== undefined) {
+      event.preventDefault();
+
       this.invokeKeyEventHandlers({
         type: keyPressType,
         modifiers,
@@ -127,6 +129,8 @@ class KeyEventHandler {
 
   handleKeyPress = (e: KeyboardEvent) => {
     this.acquireKeyLock(KeyLock.KEYPRESS);
+
+    e.preventDefault();
 
     const char = e.key === " " ? e.key : e.key.trim();
     const modifiers = KeyEventHandler.genKeyPressModifierList(e);

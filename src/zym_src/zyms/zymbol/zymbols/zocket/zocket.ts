@@ -1,6 +1,5 @@
 import _ from "underscore";
 import {
-  add_color_box,
   cursorToString,
   CURSOR_LATEX,
   LATEX_EMPTY_SOCKET,
@@ -13,7 +12,7 @@ import {
 } from "../../../../../zym_lib/zym/utils/hydrate";
 import { Zym } from "../../../../../zym_lib/zym/zym";
 import { ZyMaster } from "../../../../../zym_lib/zym/zy_master";
-import { some } from "../../../../../zym_lib/utils/zy_option";
+import { zySome } from "../../../../../zym_lib/utils/zy_option";
 import {
   chainMoveResponse,
   Cursor,
@@ -62,8 +61,6 @@ import {
   ZymPersist,
 } from "../../../../../zym_lib/zy_schema/zy_schema";
 import { TEXT_ZYMBOL_NAME } from "../text_zymbol/text_zymbol_schema";
-import { palette } from "../../../../../global_styles/palette";
-import { ZYMBOL_FRAME_MASTER_ID } from "../../../zymbol_infrastructure/zymbol_frame/zymbol_frame_schema";
 
 /* === Helper Types === */
 
@@ -789,7 +786,7 @@ export class Zocket extends Zymbol<ZocketSchema, ZocketPersistenceSchema> {
 
 zocketMaster.implementTrait(CursorCommandTrait, {
   async getInitialCursor() {
-    return some([0]);
+    return zySome([0]);
   },
 });
 

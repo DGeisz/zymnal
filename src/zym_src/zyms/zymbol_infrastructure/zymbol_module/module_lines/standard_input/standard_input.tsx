@@ -1,3 +1,4 @@
+import { zySome } from "../../../../../../zym_lib/utils/zy_option";
 import {
   hydrateChild,
   safeHydrate,
@@ -7,8 +8,9 @@ import { useZymponent } from "../../../../../../zym_lib/zym/zymplementations/zya
 import { Zyact } from "../../../../../../zym_lib/zym/zymplementations/zyact/zyact";
 import { ZyMaster } from "../../../../../../zym_lib/zym/zy_master";
 import { CursorIndex } from "../../../../../../zym_lib/zy_god/cursor/cursor";
+import { CursorCommandTrait } from "../../../../../../zym_lib/zy_god/cursor/cursor_commands";
 import { ZyPartialPersist } from "../../../../../../zym_lib/zy_schema/zy_schema";
-import { ZymbolFrame } from "../../../zymbol_frame/zymbol_frame";
+import { Zinput } from "../../../../basic_building_blocks/zinput/zinput";
 import {
   StandardInputPersistenceSchema,
   StandardInputSchema,
@@ -33,30 +35,30 @@ export class StandardInput extends Zyact<
   StandardInputPersistenceSchema
 > {
   zyMaster: ZyMaster = standardInputMaster;
-  frame: ZymbolFrame = new ZymbolFrame(0, this);
-  children: Zym<any, any, any, any>[] = [this.frame];
+  zinput: Zinput = new Zinput(0, this);
+  children = [this.zinput];
 
   constructor(cursorIndex: CursorIndex, parent?: Zym<any, any, any>) {
     super(cursorIndex, parent);
 
     this.setPersistenceSchemaSymbols({
-      frame: "f",
+      zinput: "z",
     });
   }
 
   component: React.FC = () => {
-    const Frame = useZymponent(this.frame);
+    const Zinput = useZymponent(this.zinput);
 
     return (
       <div className="w-full">
-        <Frame />
+        <Zinput />
       </div>
     );
   };
 
   persistData() {
     return {
-      frame: this.frame.persist(),
+      zinput: this.zinput.persist(),
     };
   }
 
@@ -66,9 +68,15 @@ export class StandardInput extends Zyact<
     >
   ): Promise<void> {
     await safeHydrate(p, {
-      frame: async (frame) => {
-        this.frame = (await hydrateChild(this, frame)) as ZymbolFrame;
+      zinput: async (zinput) => {
+        this.zinput = (await hydrateChild(this, zinput)) as Zinput;
       },
     });
   }
 }
+
+standardInputMaster.implementTrait(CursorCommandTrait, {
+  async getInitialCursor() {
+    return zySome([0]);
+  },
+});

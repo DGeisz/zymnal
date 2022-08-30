@@ -5,7 +5,7 @@ import {
 } from "../../../../../zym_lib/zym/utils/hydrate";
 import { Zym } from "../../../../../zym_lib/zym/zym";
 import { ZyMaster } from "../../../../../zym_lib/zym/zy_master";
-import { NONE, some } from "../../../../../zym_lib/utils/zy_option";
+import { NONE, zySome } from "../../../../../zym_lib/utils/zy_option";
 import {
   Cursor,
   CursorIndex,
@@ -265,7 +265,7 @@ parenthesisZymbolMaster.implementTrait(DotModifiersTrait, {
         }
 
         if (changed) {
-          return some(parenthesis);
+          return zySome(parenthesis);
         } else {
           return NONE;
         }

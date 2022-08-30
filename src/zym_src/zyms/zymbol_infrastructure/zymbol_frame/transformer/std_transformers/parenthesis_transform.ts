@@ -1,5 +1,5 @@
 import { last } from "../../../../../../global_utils/array_utils";
-import { splitCursorStringAtLastWord } from "../../../../../../global_utils/text_utils";
+import { splitCursorStringAtLastWord } from "../../../../../../global_utils/string_utils";
 import { Zentinel } from "../../../../../../zym_lib/zentinel/zentinel";
 import { Zym } from "../../../../../../zym_lib/zym/zym";
 import {

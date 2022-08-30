@@ -17,6 +17,8 @@ import {
 } from "../../../zym_lib/zy_god/zy_god_schema";
 import { VimiumModeZenMethods } from "../../zyms/zymbol_infrastructure/zymbol_frame/building_blocks/vimium_mode/vimium_mode_zen_schema";
 
+const USE_VIM = true;
+
 const vimiumSelectHandler: (() => void)[] = [];
 
 enum VimMode {
@@ -112,6 +114,12 @@ class VimCustomKeyPressHandler extends CustomKeyPressHandler {
           }, 1000);
 
           return;
+        } else if (this.customKeyPress) {
+          for (const char of this.customKeyPress) {
+            await this.mainHandleKeyPress(keyKeyPress(char));
+          }
+
+          this.clearCustomKeyPress();
         }
       } else {
         this.clearCustomKeyPress();
@@ -194,17 +202,20 @@ class VimZentinel extends Zentinel {
   zyId: string = "vim-mode";
 
   onRegistration = async () => {
-    this.callZentinelMethod(
-      ZyGodMethod.registerCustomKeyPressHandler,
-      (baseKeyPressHandler) => new VimCustomKeyPressHandler(baseKeyPressHandler)
-    );
+    if (USE_VIM) {
+      this.callZentinelMethod(
+        ZyGodMethod.registerCustomKeyPressHandler,
+        (baseKeyPressHandler) =>
+          new VimCustomKeyPressHandler(baseKeyPressHandler)
+      );
 
-    this.callZentinelMethod(
-      VimiumModeZenMethods.registerOnVimiumSelectHandler,
-      () => {
-        vimiumSelectHandler.forEach((h) => h());
-      }
-    );
+      this.callZentinelMethod(
+        VimiumModeZenMethods.registerOnVimiumSelectHandler,
+        () => {
+          vimiumSelectHandler.forEach((h) => h());
+        }
+      );
+    }
   };
 }
 

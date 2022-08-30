@@ -1,6 +1,6 @@
 import _ from "underscore";
 import { backslash } from "../../../../../../../global_utils/latex_utils";
-import { NONE, some } from "../../../../../../../zym_lib/utils/zy_option";
+import { NONE, zySome } from "../../../../../../../zym_lib/utils/zy_option";
 import { Zentinel } from "../../../../../../../zym_lib/zentinel/zentinel";
 import { FunctionZymbol } from "../../../../../zymbol/zymbols/function_zymbol/function_zymbol";
 import { FunctionZymbolMethod } from "../../../../../zymbol/zymbols/function_zymbol/function_zymbol_schema";
@@ -123,7 +123,7 @@ export async function addSqrtDotModifier(zentinel: Zentinel<any>) {
             sqrt.numZockets = 1;
           }
 
-          return some(sqrt);
+          return zySome(sqrt);
         }
 
         return NONE;

@@ -6,7 +6,7 @@ import {
 } from "../../../../../zym_lib/zym/utils/hydrate";
 import type { Zym } from "../../../../../zym_lib/zym/zym";
 import { ZyMaster } from "../../../../../zym_lib/zym/zy_master";
-import { NONE, some } from "../../../../../zym_lib/utils/zy_option";
+import { NONE, zySome } from "../../../../../zym_lib/utils/zy_option";
 import {
   Cursor,
   CursorIndex,
@@ -426,7 +426,7 @@ stackZymbolMaster.implementTrait(DotModifiersTrait, {
         if (checkStackOperator(word)) {
           stack.setOperator(word);
 
-          return some(stack);
+          return zySome(stack);
         }
 
         return NONE;

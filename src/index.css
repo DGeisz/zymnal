@@ -16,6 +16,22 @@ code {
     monospace;
 }
 
+span {
+  white-space: pre;
+}
+
+textarea:focus,
+input:focus,
+input[type]:focus,
+.uneditable-input:focus {
+  border-color: transparent;
+  box-shadow: transparent;
+  /* border-color: rgba(229, 103, 23, 0.8);
+    box-shadow: 0 1px 1px rgba(229, 103, 23, 0.075) inset,
+        0 0 8px rgba(229, 103, 23, 0.6); */
+  outline: 0 none;
+}
+
 .vimium-container {
   position: absolute;
   left: 0;
@@ -28,4 +44,37 @@ code {
 
 .full-cover-cursor {
   background-color: rgba(0, 0, 0, 0.2);
+}
+
+.span-cursor {
+  display: inline-block;
+  width: 0 !important;
+  /* //position: absolute; */
+  transform: translateX(-2px) translateY(-1px) scaleY(1.1);
+}
+
+@keyframes blink-animation {
+  from {
+    /* background-color: red; */
+    border-right: solid white 10px;
+  }
+  to {
+    /* background-color: yellow; */
+    border-right: none;
+  }
+}
+
+.active-cursor-container {
+  /* animation-name: blink;
+  animation-duration: 4s; */
+  /* -webkit-animation: blink 1s infinite linear; */
+  animation: blink-animation 1060ms steps(2, start) infinite;
+  border: solid white 5px;
+  /* animation: blink 0.5s infinite 1s alternate; */
+}
+
+.active-cursor-container::after {
+  background-color: blue;
+  width: 10px;
+  height: 100px;
 }

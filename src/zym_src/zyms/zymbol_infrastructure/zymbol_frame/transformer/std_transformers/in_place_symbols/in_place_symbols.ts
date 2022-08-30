@@ -5,7 +5,7 @@ import {
   checkLatex,
   LATEX_SPACE,
 } from "../../../../../../../global_utils/latex_utils";
-import { splitCursorStringAtLastWord } from "../../../../../../../global_utils/text_utils";
+import { splitCursorStringAtLastWord } from "../../../../../../../global_utils/string_utils";
 import { Zentinel } from "../../../../../../../zym_lib/zentinel/zentinel";
 import {
   Cursor,

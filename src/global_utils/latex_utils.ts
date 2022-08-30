@@ -39,16 +39,18 @@ export const LATEX_NAME = "\\LaTeX";
 
 export const CURSOR_NAME = "cursor";
 export const CURSOR_LATEX: string = `\\htmlClass{${CURSOR_NAME}}{\\color{none} \\boldsymbol{|}}`;
+export const SPAN_CURSOR_LATEX: string = `\\htmlClass{span-cursor ${CURSOR_NAME}}{\\color{none} \\boldsymbol{|}}`;
 
 export const FULL_COVER_CURSOR_CLASS_NAME = "full-cover-cursor";
 
 export function text_with_cursor(
   text: string,
-  cursor_position: number
+  cursor_position: number,
+  spanCursor: boolean = false
 ): string {
-  return `${create_tex_text(
-    text.slice(0, cursor_position)
-  )}${CURSOR_LATEX}${create_tex_text(text.slice(cursor_position))}`;
+  return `${create_tex_text(text.slice(0, cursor_position))}${
+    spanCursor ? SPAN_CURSOR_LATEX : CURSOR_LATEX
+  }${create_tex_text(text.slice(cursor_position))}`;
 }
 
 export function fullTermCursorTex(tex: string): TeX {

@@ -14,7 +14,11 @@ export abstract class Zyact<
 
   rerender: (opts?: Props) => void = () => {};
 
-  abstract component: React.FC<Props & Props>;
+  /* Most zyacts don't actually use props, so this is needless for almost all cases */
+  // @ts-ignore
+  getInitialProps: () => Props = () => {};
+
+  abstract component: React.FC<Props>;
 
   render(opts?: Props): void {
     this.renderCount++;
@@ -23,7 +27,7 @@ export abstract class Zyact<
   }
 
   getRenderContent = (): React.FC<Props> => {
-    return withZyactComponent(this, this.component);
+    return withZyactComponent(this, this.component, this.getInitialProps());
   };
 
   setRerender(rerender: (opts?: Props) => void) {
