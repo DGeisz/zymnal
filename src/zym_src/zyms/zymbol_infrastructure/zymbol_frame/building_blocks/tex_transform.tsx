@@ -10,6 +10,7 @@ import clsx from "clsx";
 
 interface TexTransformProps {
   tex: TeX;
+  inlineTex: boolean;
   showSelector?: boolean;
   selector?: ZymKeyPress;
 }
@@ -50,7 +51,7 @@ export const TexTransform: React.FC<TexTransformProps> = (props) => {
     <div className="flex flex-row self-stretch">
       <div className="flex flex-row flex-1">
         <div>
-          <Tex tex={props.tex} />
+          <Tex {...props} />
         </div>
       </div>
       {props.showSelector && (

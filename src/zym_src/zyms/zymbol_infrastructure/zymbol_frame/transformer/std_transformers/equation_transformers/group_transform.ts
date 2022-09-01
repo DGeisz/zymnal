@@ -1,23 +1,25 @@
-import { last } from "../../../../../../global_utils/array_utils";
-import { Zentinel } from "../../../../../../zym_lib/zentinel/zentinel";
-import { Zym } from "../../../../../../zym_lib/zym/zym";
-import { Cursor } from "../../../../../../zym_lib/zy_god/cursor/cursor";
+import { last } from "../../../../../../../global_utils/array_utils";
+import { Zentinel } from "../../../../../../../zym_lib/zentinel/zentinel";
+import { Zym } from "../../../../../../../zym_lib/zym/zym";
+import { Cursor } from "../../../../../../../zym_lib/zy_god/cursor/cursor";
 import {
   KeyPressBasicType,
   ZymKeyPress,
-} from "../../../../../../zym_lib/zy_god/event_handler/key_press";
-import { Zocket } from "../../../../zymbol/zymbols/zocket/zocket";
-import { ZymbolFrameMethod } from "../../zymbol_frame_schema";
+} from "../../../../../../../zym_lib/zy_god/event_handler/key_press";
+import { Zocket } from "../../../../../zymbol/zymbols/zocket/zocket";
+import { ZymbolFrame } from "../../../zymbol_frame";
+import { ZymbolFrameMethod } from "../../../zymbol_frame_schema";
 import {
   ZymbolTransformRank,
   ZymbolTreeTransformation,
   ZymbolTreeTransformationPriority,
-} from "../transformer";
+} from "../../transformer";
+import { STD_TRANSFORMER_TYPE_FILTERS } from "../std_transformer_type_filters";
 import {
   getTransformTextZymbolAndParent,
   makeHelperCursor,
   recoverAllowedCursor,
-} from "./transform_utils";
+} from "../transform_utils";
 
 const GROUP_DELIM = "}}";
 
@@ -140,8 +142,9 @@ class CustomGroupTransformation extends ZymbolTreeTransformation {
     return this.memo;
   }
 
-  setRootParent(parent: Zym<any, any, any>): void {
+  setRootParentFrame(parent: ZymbolFrame): void {
     this.baseRoot.parent = parent;
+    this.baseRoot.setParentFrame(parent);
   }
 }
 
@@ -152,6 +155,7 @@ class GroupTransformer extends Zentinel<{}> {
     this.callZentinelMethod(ZymbolFrameMethod.registerTransformer, {
       source: GROUP_TRANSFORM,
       name: "group-trans",
+      typeFilters: [STD_TRANSFORMER_TYPE_FILTERS.EQUATION],
       transform: async (root, cursor) => {
         cursor = makeHelperCursor(cursor, root);
         const zymbolIndex = last(cursor, 2);

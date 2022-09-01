@@ -4,24 +4,56 @@ export function capitalizeFirstLetter(string: string) {
   return string.charAt(0).toUpperCase() + string.slice(1);
 }
 
-export function splitCursorStringAtLastWord(
+export function splitCursorStringWithFixedSymbols(
   str: string,
   cursor: number,
-  splitList?: string[]
+  wordSize: number
 ): {
   before: string;
   after: string;
   word: string;
 } {
-  const after = str.slice(cursor).trim();
+  if (cursor < wordSize) {
+    return {
+      before: "",
+      word: str.slice(0, cursor),
+      after: str.slice(cursor),
+    };
+  } else {
+    return {
+      before: str.slice(0, cursor - wordSize),
+      word: str.slice(cursor - wordSize, cursor),
+      after: str.slice(cursor),
+    };
+  }
+}
+
+export function splitCursorStringAtLastWord(
+  str: string,
+  cursor: number,
+  splitList?: string[],
+  preventBeforeAfterStringTrim?: boolean
+): {
+  before: string;
+  after: string;
+  word: string;
+} {
+  let after = str.slice(cursor);
+
+  if (!preventBeforeAfterStringTrim) {
+    after = after.trim();
+  }
+
   const beforeAndWord = str.slice(0, cursor);
 
   const bs = beforeAndWord.split(" ");
   let word = last(bs);
 
-  let before = beforeAndWord
-    .slice(0, beforeAndWord.length - word.length)
-    .trim();
+  let before = beforeAndWord.slice(0, beforeAndWord.length - word.length);
+
+  if (!preventBeforeAfterStringTrim) {
+    before = before.trim();
+  }
 
   if (splitList) {
     for (const split of splitList) {

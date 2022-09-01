@@ -1,14 +1,14 @@
 import {
   createZentinelMethodList,
   CreateZentinelMethodSchema,
-} from "../../../../../../../zym_lib/hermes/hermes";
-import { GroupId } from "../../../../../../../zym_lib/utils/types";
-import { ZyOption } from "../../../../../../../zym_lib/utils/zy_option";
+} from "../../../../../../../../zym_lib/hermes/hermes";
+import { GroupId } from "../../../../../../../../zym_lib/utils/types";
+import { ZyOption } from "../../../../../../../../zym_lib/utils/zy_option";
 import {
   createZyTrait,
   CreateZyTraitSchema,
-} from "../../../../../../../zym_lib/zy_trait/zy_trait";
-import { Zymbol } from "../../../../../zymbol/zymbol";
+} from "../../../../../../../../zym_lib/zy_trait/zy_trait";
+import { Zymbol } from "../../../../../../zymbol/zymbol";
 
 export const DOT_MODIFIERS_TRANSFORM = "dot-modifiers-e1125";
 

@@ -48,8 +48,10 @@ import { ZyGodMethod } from "../../../../zym_lib/zy_god/zy_god_schema";
 import { unwrapTraitResponse } from "../../../../zym_lib/zy_trait/zy_trait";
 import { CursorCommandTrait } from "../../../../zym_lib/zy_god/cursor/cursor_commands";
 import {
+  FrameLabel,
   ZymbolFrameMethod,
   ZymbolFrameMethodSchema,
+  ZymbolFrameOpts,
   ZymbolFramePersistedSchema,
   ZymbolFrameSchema,
   ZYMBOL_FRAME_MASTER_ID,
@@ -62,6 +64,7 @@ import {
 import {
   SourcedTransformer,
   TransformerFactory,
+  TransformerTypeFilter,
   ZymbolTransformRank,
   ZymbolTreeTransformation,
 } from "./transformer/transformer";
@@ -88,8 +91,8 @@ class ZymbolFrameMaster extends ZyMaster<
       registerTransformerFactory: async (factory) => {
         this.registerTransformerFactory(factory);
       },
-      getTransformer: async ({ cursor, keyPress }) => {
-        return this.getZymbolTransformer(cursor, keyPress);
+      getTransformer: async ({ cursor, keyPress, typeFilters }) => {
+        return this.getZymbolTransformer(cursor, keyPress, typeFilters);
       },
     });
   }
@@ -115,7 +118,11 @@ class ZymbolFrameMaster extends ZyMaster<
     this.transformerFactories.push(factory);
   };
 
-  getZymbolTransformer = async (cursor: Cursor, keyPress: ZymKeyPress) => {
+  getZymbolTransformer = async (
+    cursor: Cursor,
+    keyPress: ZymKeyPress,
+    typeFilters: TransformerTypeFilter[]
+  ) => {
     /* Get the zym root */
     const root = await this.callZentinelMethod(
       ZyGodMethod.getZymRoot,
@@ -124,13 +131,23 @@ class ZymbolFrameMaster extends ZyMaster<
 
     const transformers = await _.flatten(
       await Promise.all(
-        this.transformerFactories.map((factory) =>
-          factory.factory(root, cursor)
-        )
+        this.transformerFactories
+          .filter((factory) =>
+            factory.typeFilters.every((filter) => typeFilters.includes(filter))
+          )
+          .map((factory) => factory.factory(root, cursor))
       )
     );
 
-    transformers.push(...this.transformers.map((t) => t.transform));
+    transformers.push(
+      ...this.transformers
+        .filter((transformer) =>
+          transformer.typeFilters.every((filter) =>
+            typeFilters.includes(filter)
+          )
+        )
+        .map((t) => t.transform)
+    );
 
     if (!transformers.length) {
       return () => [];
@@ -183,19 +200,46 @@ export class ZymbolFrame extends Zyact<
 
   vimiumMode = new VimiumMode();
 
-  constructor(cursorIndex: CursorIndex, parent: Zym<any, any> | undefined) {
+  getTypeFilters: (cursor: Cursor) => TransformerTypeFilter[];
+  private frameLabels: FrameLabel[];
+  readonly inlineTex: boolean;
+
+  constructor(
+    cursorIndex: CursorIndex,
+    parent: Zym<any, any> | undefined,
+    opts?: Partial<ZymbolFrameOpts>
+  ) {
     super(cursorIndex, parent);
 
+    const { frameLabels, getTypeFilters, inlineTex } = _.defaults(opts, {
+      frameLabels: [],
+      getTypeFilters: (cursor: Cursor) => [],
+      inlineTex: false,
+    });
+
+    this.inlineTex = inlineTex;
+
+    this.frameLabels = frameLabels;
+
+    console.trace("me", this.iid);
+
+    this.getTypeFilters = getTypeFilters;
     this.setPersistenceSchemaSymbols({
       baseZocket: "b",
+      frameLabels: "f",
     });
   }
 
   setBaseZocket = (baseZocket: Zocket) => {
     this.baseZocket = baseZocket;
     this.baseZocket.parent = this;
+
+    this.baseZocket.setParentFrame(this);
+
     this.children = [this.baseZocket];
   };
+
+  getFrameLabels = () => this.frameLabels;
 
   component: React.FC<FrameRenderProps> = () => {
     let zocketCursor: Cursor = [];
@@ -225,6 +269,7 @@ export class ZymbolFrame extends Zyact<
 
     const frameTex = this.baseZocket.renderTex({
       cursor: zocketCursor,
+      inlineTex: this.inlineTex,
     });
 
     const vimiumActive = this.vimiumMode.isActive();
@@ -307,7 +352,7 @@ export class ZymbolFrame extends Zyact<
 
             element.style.pointerEvents = "auto";
             element.style.transitionDuration = "0.1s";
-            element.style.cursor = "pointer";
+            element.style.cursor = "text";
 
             element.onmouseover = () => {
               element.style.color = palette.mediumForestGreen;
@@ -341,6 +386,7 @@ export class ZymbolFrame extends Zyact<
           this.transformations[this.transformIndex].getCurrentTransformation();
         selectedTex = selectedTrans.newTreeRoot.renderTex({
           cursor: selectedTrans.cursor,
+          inlineTex: this.inlineTex,
         });
       } else {
         selectedTex = frameTex;
@@ -350,6 +396,7 @@ export class ZymbolFrame extends Zyact<
         const tr = t.getCurrentTransformation();
         return tr.newTreeRoot.renderTex({
           cursor: tr.cursor,
+          inlineTex: this.inlineTex,
           excludeHtmlIds: true,
         });
       });
@@ -357,6 +404,7 @@ export class ZymbolFrame extends Zyact<
       allTex.unshift(
         this.baseZocket.renderTex({
           cursor: zocketCursor,
+          inlineTex: this.inlineTex,
           excludeHtmlIds: true,
         })
       );
@@ -364,7 +412,11 @@ export class ZymbolFrame extends Zyact<
       return (
         <div className={Styles.FrameContainer}>
           <div className={Styles.MainFrameContainer}>
-            <TexTransform tex={selectedTex} showSelector />
+            <TexTransform
+              tex={selectedTex}
+              showSelector
+              inlineTex={this.inlineTex}
+            />
           </div>
           <div className="shadow-lg shadow-gray-400 py-4 px-2 rounded-lg bg-gray-100">
             {allTex.map((t, i) => (
@@ -379,6 +431,7 @@ export class ZymbolFrame extends Zyact<
                   tex={t}
                   showSelector={i === 0}
                   selector={i === 0 ? DEFAULT_SELECTOR : undefined}
+                  inlineTex={this.inlineTex}
                 />
               </div>
             ))}
@@ -389,7 +442,7 @@ export class ZymbolFrame extends Zyact<
       return (
         <div className={Styles.FrameContainer}>
           <div className={Styles.MainFrameContainer}>
-            <TexTransform tex={frameTex} />
+            <TexTransform tex={frameTex} inlineTex={this.inlineTex} />
           </div>
         </div>
       );
@@ -399,6 +452,7 @@ export class ZymbolFrame extends Zyact<
   persistData() {
     return {
       baseZocket: this.baseZocket.persist(),
+      frameLabels: [...this.frameLabels],
     };
   }
 
@@ -408,6 +462,9 @@ export class ZymbolFrame extends Zyact<
     await safeHydrate(p, {
       baseZocket: async (bz) => {
         this.baseZocket = (await hydrateChild(this, bz)) as Zocket;
+      },
+      frameLabels: (fl) => {
+        this.frameLabels = fl;
       },
     });
     this.children = [this.baseZocket];
@@ -458,7 +515,7 @@ export class ZymbolFrame extends Zyact<
     const topTrans = this.transformations[0];
 
     this.transformations.forEach((t) => {
-      t.setRootParent(this);
+      t.setRootParentFrame(this);
     });
 
     if (topTrans && topTrans.priority.rank === ZymbolTransformRank.Suggest) {
@@ -508,6 +565,7 @@ zymbolFrameMaster.implementTrait(KeyPressTrait, {
       const tex = frame.baseZocket.renderTex({
         cursor: [],
         excludeHtmlIds: true,
+        inlineTex: frame.inlineTex,
       });
 
       navigator.clipboard.writeText(tex);
@@ -609,6 +667,7 @@ zymbolFrameMaster.implementTrait(KeyPressTrait, {
           {
             cursor: frame.getFullCursorPointer(),
             keyPress,
+            typeFilters: frame.getTypeFilters(cursor),
           }
         );
         /* 2. Apply the transformer to get a list of potential transformations */

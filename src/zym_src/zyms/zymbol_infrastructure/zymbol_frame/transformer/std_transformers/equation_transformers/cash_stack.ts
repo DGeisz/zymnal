@@ -1,20 +1,21 @@
-import { Zentinel } from "../../../../../../zym_lib/zentinel/zentinel";
+import { Zentinel } from "../../../../../../../zym_lib/zentinel/zentinel";
 import {
   checkStackOperator,
   StackPosition,
   StackZymbol,
-} from "../../../../zymbol/zymbols/stack_zymbol/stack_zymbol";
-import { Zocket } from "../../../../zymbol/zymbols/zocket/zocket";
-import { ZymbolFrameMethod } from "../../zymbol_frame_schema";
+} from "../../../../../zymbol/zymbols/stack_zymbol/stack_zymbol";
+import { Zocket } from "../../../../../zymbol/zymbols/zocket/zocket";
+import { ZymbolFrameMethod } from "../../../zymbol_frame_schema";
 import {
   BasicZymbolTreeTransformation,
   ZymbolTransformRank,
-} from "../transformer";
+} from "../../transformer";
+import { STD_TRANSFORMER_TYPE_FILTERS } from "../std_transformer_type_filters";
 import {
   getTransformTextZymbolAndParent,
   makeHelperCursor,
   recoverAllowedCursor,
-} from "./transform_utils";
+} from "../transform_utils";
 
 const CASH_STACK = "cash-stack-trans";
 
@@ -37,6 +38,7 @@ class CashStack extends Zentinel<{}> {
     this.callZentinelMethod(ZymbolFrameMethod.registerTransformer, {
       source: CASH_STACK,
       name: "cash-stack",
+      typeFilters: [STD_TRANSFORMER_TYPE_FILTERS.EQUATION],
       transform(root, cursor) {
         cursor = makeHelperCursor(cursor, root);
 

@@ -13,7 +13,7 @@ import {
   DotModifierZymbolTransform,
   DotModifierZymbolTransformer,
   IdentifiedDotModifierZymbolTransformers,
-} from "../../../zymbol_infrastructure/zymbol_frame/transformer/std_transformers/dot_modifiers/dot_modifiers_schema";
+} from "../../../zymbol_infrastructure/zymbol_frame/transformer/std_transformers/equation_transformers/dot_modifiers/dot_modifiers_schema";
 import { TeX } from "../../zymbol_types";
 
 export const FUNCTION_ZYMBOL_ID = "function-zymbol";

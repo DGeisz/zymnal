@@ -40,7 +40,7 @@ import { ZyPartialPersist } from "../../../../../zym_lib/zy_schema/zy_schema";
 import {
   DotModifiersTrait,
   IdentifiedDotModifierZymbolTransformers,
-} from "../../../zymbol_infrastructure/zymbol_frame/transformer/std_transformers/dot_modifiers/dot_modifiers_schema";
+} from "../../../zymbol_infrastructure/zymbol_frame/transformer/std_transformers/equation_transformers/dot_modifiers/dot_modifiers_schema";
 import { NONE } from "../../../../../zym_lib/utils/zy_option";
 
 class FunctionZymbolMaster extends ZyMaster<

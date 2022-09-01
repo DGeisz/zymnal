@@ -46,10 +46,9 @@ input[type]:focus,
   background-color: rgba(0, 0, 0, 0.2);
 }
 
-.span-cursor {
+.cursor {
   display: inline-block;
   width: 0 !important;
-  /* //position: absolute; */
   transform: translateX(-2px) translateY(-1px) scaleY(1.1);
 }
 

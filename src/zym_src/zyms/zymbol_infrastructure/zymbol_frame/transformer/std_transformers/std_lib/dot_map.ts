@@ -1,4 +1,4 @@
-import { DotModifierMap } from "../dot_modifiers/dot_modifiers_schema";
+import { DotModifierMap } from "../equation_transformers/dot_modifiers/dot_modifiers_schema";
 
 export const StdDotModMap: DotModifierMap = {
   id: {

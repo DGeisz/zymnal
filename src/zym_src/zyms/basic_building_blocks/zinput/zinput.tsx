@@ -78,7 +78,7 @@ export class Zinput extends Zyact<
   component: FC<ZinputProps> = ({ text, cursor }) => {
     return (
       <div className="flex self-start">
-        <Tex tex={text_with_cursor(text, cursor, true)} />
+        <Tex tex={text_with_cursor(text, cursor)} inlineTex />
       </div>
     );
   };

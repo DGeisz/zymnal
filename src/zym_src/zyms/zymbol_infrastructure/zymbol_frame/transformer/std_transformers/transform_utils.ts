@@ -5,7 +5,6 @@ import {
   CursorIndex,
 } from "../../../../../../zym_lib/zy_god/cursor/cursor";
 import { Zymbol } from "../../../../zymbol/zymbol";
-import { isSymbolZymbol } from "../../../../zymbol/zymbols/symbol_zymbol/symbol_zymbol_schema";
 import { TextZymbol } from "../../../../zymbol/zymbols/text_zymbol/text_zymbol";
 import { TEXT_ZYMBOL_NAME } from "../../../../zymbol/zymbols/text_zymbol/text_zymbol_schema";
 import { ZOCKET_MASTER_ID } from "../../../../zymbol/zymbols/zocket/zocket_schema";

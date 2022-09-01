@@ -3,6 +3,7 @@ import { Cursor } from "../../../../../zym_lib/zy_god/cursor/cursor";
 import { ZymKeyPress } from "../../../../../zym_lib/zy_god/event_handler/key_press";
 import { Zymbol } from "../../../zymbol/zymbol";
 import { Zocket } from "../../../zymbol/zymbols/zocket/zocket";
+import { ZymbolFrame } from "../zymbol_frame";
 
 export enum ZymbolTransformRank {
   /* Means that the transform is immediately used to transform the input, 
@@ -35,7 +36,7 @@ export abstract class ZymbolTreeTransformation {
   /* Indicates whether the transformation did something with the keypress */
   handleKeyPress = (_keyPress: ZymKeyPress): boolean => false;
 
-  abstract setRootParent(parent: Zym): void;
+  abstract setRootParentFrame(parent: ZymbolFrame): void;
 }
 
 export type KeyPressValidator = (keyPress: ZymKeyPress) => boolean;
@@ -68,8 +69,10 @@ export class BasicZymbolTreeTransformation extends ZymbolTreeTransformation {
       ...this,
     };
   }
-  setRootParent(parent: Zym<any, any, any>): void {
+
+  setRootParentFrame(parent: ZymbolFrame): void {
     this.newTreeRoot.parent = parent;
+    this.newTreeRoot.setParentFrame(parent);
   }
 
   checkKeypressConfirms = (keyPress: ZymKeyPress): boolean => {
@@ -87,15 +90,21 @@ export type ZymbolTransformer = (
   keyPress: ZymKeyPress
 ) => Promise<ZymbolTreeTransformation[]> | ZymbolTreeTransformation[];
 
+export type TransformerTypeFilter = string;
+
 export interface SourcedTransformer {
   source: string;
   name: string;
+  /* Help indicate if a transformer should be invoked */
+  typeFilters: TransformerTypeFilter[];
   transform: ZymbolTransformer;
 }
 
 export interface TransformerFactory {
   source: string;
   name: string;
+  /* Help indicate if a transformer should be invoked */
+  typeFilters: TransformerTypeFilter[];
   factory: (
     root: Zym,
     cursor: Cursor

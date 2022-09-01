@@ -1,38 +1,38 @@
 import _ from "underscore";
-import { last } from "../../../../../../../global_utils/array_utils";
+import { last } from "../../../../../../../../global_utils/array_utils";
 import {
   backslash,
   checkLatex,
   LATEX_SPACE,
-} from "../../../../../../../global_utils/latex_utils";
-import { splitCursorStringAtLastWord } from "../../../../../../../global_utils/string_utils";
-import { Zentinel } from "../../../../../../../zym_lib/zentinel/zentinel";
+} from "../../../../../../../../global_utils/latex_utils";
+import { splitCursorStringAtLastWord } from "../../../../../../../../global_utils/string_utils";
+import { Zentinel } from "../../../../../../../../zym_lib/zentinel/zentinel";
 import {
   Cursor,
   cursorForEach,
   extendParentCursor,
-} from "../../../../../../../zym_lib/zy_god/cursor/cursor";
+} from "../../../../../../../../zym_lib/zy_god/cursor/cursor";
 import {
   KeyPressBasicType,
   KeyPressComplexType,
   KeyPressModifier,
   ZymKeyPress,
-} from "../../../../../../../zym_lib/zy_god/event_handler/key_press";
-import { Zymbol } from "../../../../../zymbol/zymbol";
-import { SymbolZymbol } from "../../../../../zymbol/zymbols/symbol_zymbol/symbol_zymbol";
-import { TextZymbol } from "../../../../../zymbol/zymbols/text_zymbol/text_zymbol";
-import { Zocket } from "../../../../../zymbol/zymbols/zocket/zocket";
-import { TeX } from "../../../../../zymbol/zymbol_types";
+} from "../../../../../../../../zym_lib/zy_god/event_handler/key_press";
+import { Zymbol } from "../../../../../../zymbol/zymbol";
+import { SymbolZymbol } from "../../../../../../zymbol/zymbols/symbol_zymbol/symbol_zymbol";
+import { TextZymbol } from "../../../../../../zymbol/zymbols/text_zymbol/text_zymbol";
+import { Zocket } from "../../../../../../zymbol/zymbols/zocket/zocket";
+import { TeX } from "../../../../../../zymbol/zymbol_types";
 import {
   getTransformTextZymbolAndParent,
   makeHelperCursor,
   recoverAllowedCursor,
-} from "../transform_utils";
-import { ZymbolFrameMethod } from "../../../zymbol_frame_schema";
+} from "../../transform_utils";
+import { ZymbolFrameMethod } from "../../../../zymbol_frame_schema";
 import {
   createZyTrait,
   CreateZyTraitSchema,
-} from "../../../../../../../zym_lib/zy_trait/zy_trait";
+} from "../../../../../../../../zym_lib/zy_trait/zy_trait";
 import {
   InPlaceSymbolsMethodSchema,
   IN_PLACE_SYMBOLS_ID,
@@ -42,7 +42,8 @@ import {
   KeyPressValidator,
   ZymbolTransformRank,
   ZymbolTreeTransformation,
-} from "../../transformer";
+} from "../../../transformer";
+import { STD_TRANSFORMER_TYPE_FILTERS } from "../../std_transformer_type_filters";
 
 /* =============================================================================================== */
 export type SlashMap = { [key: string]: string };
@@ -113,6 +114,7 @@ class InPlaceSymbols extends Zentinel<InPlaceSymbolsMethodSchema> {
     this.callZentinelMethod(ZymbolFrameMethod.registerTransformerFactory, {
       source: IN_PLACE_SYMBOLS_ID,
       name: "in-place",
+      typeFilters: [STD_TRANSFORMER_TYPE_FILTERS.EQUATION],
       factory: async (treeRoot, cursor) => {
         /* First we want to gather all the contextual transformers */
         const contextSlash: InPlaceSymbolMap[] = [];

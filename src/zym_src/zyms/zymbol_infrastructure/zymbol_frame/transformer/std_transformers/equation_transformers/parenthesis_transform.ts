@@ -1,34 +1,36 @@
-import { last } from "../../../../../../global_utils/array_utils";
-import { splitCursorStringAtLastWord } from "../../../../../../global_utils/string_utils";
-import { Zentinel } from "../../../../../../zym_lib/zentinel/zentinel";
-import { Zym } from "../../../../../../zym_lib/zym/zym";
+import { last } from "../../../../../../../global_utils/array_utils";
+import { splitCursorStringAtLastWord } from "../../../../../../../global_utils/string_utils";
+import { Zentinel } from "../../../../../../../zym_lib/zentinel/zentinel";
+import { Zym } from "../../../../../../../zym_lib/zym/zym";
 import {
   Cursor,
   extendParentCursor,
-} from "../../../../../../zym_lib/zy_god/cursor/cursor";
+} from "../../../../../../../zym_lib/zy_god/cursor/cursor";
 import {
   KeyPressBasicType,
   KeyPressComplexType,
   ZymKeyPress,
-} from "../../../../../../zym_lib/zy_god/event_handler/key_press";
-import { Zymbol } from "../../../../zymbol/zymbol";
-import { ParenthesisZymbol } from "../../../../zymbol/zymbols/parenthesis_zymbol/parenthesis_zymbol";
-import { zymbolIsBinaryOperator } from "../../../../zymbol/zymbols/symbol_zymbol/symbol_zymbol_schema";
-import { TextZymbol } from "../../../../zymbol/zymbols/text_zymbol/text_zymbol";
-import { TEXT_ZYMBOL_NAME } from "../../../../zymbol/zymbols/text_zymbol/text_zymbol_schema";
-import { Zocket } from "../../../../zymbol/zymbols/zocket/zocket";
-import { ZymbolFrameMethod } from "../../zymbol_frame_schema";
+} from "../../../../../../../zym_lib/zy_god/event_handler/key_press";
+import { Zymbol } from "../../../../../zymbol/zymbol";
+import { ParenthesisZymbol } from "../../../../../zymbol/zymbols/parenthesis_zymbol/parenthesis_zymbol";
+import { zymbolIsBinaryOperator } from "../../../../../zymbol/zymbols/symbol_zymbol/symbol_zymbol_schema";
+import { TextZymbol } from "../../../../../zymbol/zymbols/text_zymbol/text_zymbol";
+import { TEXT_ZYMBOL_NAME } from "../../../../../zymbol/zymbols/text_zymbol/text_zymbol_schema";
+import { Zocket } from "../../../../../zymbol/zymbols/zocket/zocket";
+import { ZymbolFrame } from "../../../zymbol_frame";
+import { ZymbolFrameMethod } from "../../../zymbol_frame_schema";
 import {
   BasicZymbolTreeTransformation,
   ZymbolTransformRank,
   ZymbolTreeTransformation,
   ZymbolTreeTransformationPriority,
-} from "../transformer";
+} from "../../transformer";
+import { STD_TRANSFORMER_TYPE_FILTERS } from "../std_transformer_type_filters";
 import {
   getTransformTextZymbolAndParent,
   makeHelperCursor,
   recoverAllowedCursor,
-} from "./transform_utils";
+} from "../transform_utils";
 
 const LEFT_PARENTHESIS = "(";
 const RIGHT_PARENTHESIS = ")";
@@ -174,8 +176,9 @@ class CustomParenthesisTransformation extends ZymbolTreeTransformation {
     return this.memo;
   }
 
-  setRootParent(parent: Zym<any, any, any>): void {
+  setRootParentFrame(parent: ZymbolFrame): void {
     this.baseRoot.parent = parent;
+    this.baseRoot.setParentFrame(parent);
   }
 }
 
@@ -186,6 +189,7 @@ class Parenthesis extends Zentinel<{}> {
     this.callZentinelMethod(ZymbolFrameMethod.registerTransformer, {
       source: PARENTHESIS_TRANSFORM,
       name: "par-trans",
+      typeFilters: [STD_TRANSFORMER_TYPE_FILTERS.EQUATION],
       transform: async (root, cursor) => {
         cursor = makeHelperCursor(cursor, root);
         const allTransformations: ZymbolTreeTransformation[] = [];

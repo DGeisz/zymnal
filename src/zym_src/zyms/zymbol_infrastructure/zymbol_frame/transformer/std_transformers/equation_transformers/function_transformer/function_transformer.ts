@@ -1,25 +1,26 @@
-import { checkLatex } from "../../../../../../global_utils/latex_utils";
-import { Zentinel } from "../../../../../../zym_lib/zentinel/zentinel";
-import { FunctionZymbol } from "../../../../zymbol/zymbols/function_zymbol/function_zymbol";
-import { Zocket } from "../../../../zymbol/zymbols/zocket/zocket";
-import { TeX } from "../../../../zymbol/zymbol_types";
-import { ZymbolFrameMethod } from "../../zymbol_frame_schema";
+import { checkLatex } from "../../../../../../../../global_utils/latex_utils";
+import { Zentinel } from "../../../../../../../../zym_lib/zentinel/zentinel";
+import { FunctionZymbol } from "../../../../../../zymbol/zymbols/function_zymbol/function_zymbol";
+import { Zocket } from "../../../../../../zymbol/zymbols/zocket/zocket";
+import { TeX } from "../../../../../../zymbol/zymbol_types";
+import { ZymbolFrameMethod } from "../../../../zymbol_frame_schema";
 import {
   BasicZymbolTreeTransformation,
   ZymbolTransformRank,
   ZymbolTreeTransformation,
-} from "../transformer";
+} from "../../../transformer";
 import {
   getTransformTextZymbolAndParent,
   makeHelperCursor,
   recoverAllowedCursor,
-} from "../std_transformers/transform_utils";
+} from "../../transform_utils";
 import {
   FunctionTransformerMap,
   FunctionTransformerMethodSchema,
   FUNCTION_TRANSFORMER,
 } from "./function_transformer_schema";
 import _ from "underscore";
+import { STD_TRANSFORMER_TYPE_FILTERS } from "../../std_transformer_type_filters";
 
 function getTexFunctionArgCount(fn: TeX): number {
   const operator = "{a}";
@@ -56,6 +57,7 @@ class FunctionTransformer extends Zentinel<FunctionTransformerMethodSchema> {
     this.callZentinelMethod(ZymbolFrameMethod.registerTransformer, {
       source: FUNCTION_TRANSFORMER,
       name: "fn-trans",
+      typeFilters: [STD_TRANSFORMER_TYPE_FILTERS.EQUATION],
       transform: async (root, cursor) => {
         cursor = makeHelperCursor(cursor, root);
         const universalCursorCopy = [...cursor];

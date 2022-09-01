@@ -37,6 +37,7 @@ import {
 /* Help */
 export interface ZymbolRenderArgs {
   cursor: Cursor;
+  inlineTex: boolean;
   excludeHtmlIds?: boolean;
 }
 

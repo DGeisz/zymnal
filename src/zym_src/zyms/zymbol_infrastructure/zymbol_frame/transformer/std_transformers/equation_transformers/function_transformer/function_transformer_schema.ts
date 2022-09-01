@@ -1,9 +1,9 @@
 import {
   createZentinelMethodList,
   CreateZentinelMethodSchema,
-} from "../../../../../../zym_lib/hermes/hermes";
-import { FunctionBracketIndicator } from "../../../../zymbol/zymbols/function_zymbol/function_zymbol_schema";
-import { TeX } from "../../../../zymbol/zymbol_types";
+} from "../../../../../../../../zym_lib/hermes/hermes";
+import { FunctionBracketIndicator } from "../../../../../../zymbol/zymbols/function_zymbol/function_zymbol_schema";
+import { TeX } from "../../../../../../zymbol/zymbol_types";
 
 export const FUNCTION_TRANSFORMER = "function-transformer";
 

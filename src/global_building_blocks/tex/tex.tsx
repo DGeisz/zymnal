@@ -2,10 +2,11 @@ import React, { useEffect, useRef } from "react";
 import katex from "katex";
 import { INVALID_TEX } from "../../global_utils/latex_utils";
 
-const DEV = false;
+const DEV = true;
 
 interface TexProps {
   tex: string;
+  inlineTex: boolean;
   className?: string;
 }
 
@@ -55,13 +56,14 @@ const Tex: React.FC<TexProps> = (props) => {
           ref={cRef}
           className={props.className}
           dangerouslySetInnerHTML={{
-            __html: katex.renderToString(
-              renders ? props.tex : INVALID_TEX,
-              katexOpts
-            ),
+            __html: katex.renderToString(renders ? props.tex : INVALID_TEX, {
+              ...katexOpts,
+              displayMode: !props.inlineTex,
+            }),
           }}
         />
-        <div>{props.tex}</div>
+        {/* <div>{JSON.stringify(props.inlineTex)}</div> */}
+        {/* <div>{props.tex}</div> */}
       </div>
     );
   }
@@ -82,5 +84,7 @@ const Tex: React.FC<TexProps> = (props) => {
 
 export default React.memo(
   Tex,
-  (prevProps, nextProps) => prevProps.tex === nextProps.tex
+  (prevProps, nextProps) =>
+    prevProps.tex === nextProps.tex &&
+    prevProps.inlineTex === nextProps.inlineTex
 );

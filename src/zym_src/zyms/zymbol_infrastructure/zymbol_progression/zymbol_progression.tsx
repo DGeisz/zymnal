@@ -8,7 +8,9 @@ import { Zyact } from "../../../../zym_lib/zym/zymplementations/zyact/zyact";
 import { ZyMaster } from "../../../../zym_lib/zym/zy_master";
 import { CursorIndex } from "../../../../zym_lib/zy_god/cursor/cursor";
 import { ZyPartialPersist } from "../../../../zym_lib/zy_schema/zy_schema";
+import { STD_TRANSFORMER_TYPE_FILTERS } from "../zymbol_frame/transformer/std_transformers/std_transformer_type_filters";
 import { ZymbolFrame } from "../zymbol_frame/zymbol_frame";
+import { STD_FRAME_LABELS } from "../zymbol_frame/zymbol_frame_schema";
 import {
   ZymbolProgressionPersistenceSchema,
   ZymbolProgressionSchema,
@@ -37,7 +39,10 @@ export class ZymbolProgression extends Zyact<
   ZymbolProgressionPersistenceSchema
 > {
   zyMaster = zymbolProgressionMaster;
-  baseFrame: ZymbolFrame = new ZymbolFrame(0, this);
+  baseFrame: ZymbolFrame = new ZymbolFrame(0, this, {
+    frameLabels: [STD_FRAME_LABELS.EQUATION],
+    getTypeFilters: () => [STD_TRANSFORMER_TYPE_FILTERS.EQUATION],
+  });
   children: Zym<any, any>[] = [this.baseFrame];
 
   constructor(cursorIndex: CursorIndex, parent?: Zym<any, any, any>) {

@@ -1,18 +1,19 @@
-import { last } from "../../../../../../global_utils/array_utils";
-import { Zentinel } from "../../../../../../zym_lib/zentinel/zentinel";
-import { SuperSubZymbol } from "../../../../zymbol/zymbols/super_sub/super_sub";
-import { isSuperSub } from "../../../../zymbol/zymbols/super_sub/super_sub_schema";
-import { Zocket } from "../../../../zymbol/zymbols/zocket/zocket";
-import { ZymbolFrameMethod } from "../../zymbol_frame_schema";
+import { last } from "../../../../../../../global_utils/array_utils";
+import { Zentinel } from "../../../../../../../zym_lib/zentinel/zentinel";
+import { SuperSubZymbol } from "../../../../../zymbol/zymbols/super_sub/super_sub";
+import { isSuperSub } from "../../../../../zymbol/zymbols/super_sub/super_sub_schema";
+import { Zocket } from "../../../../../zymbol/zymbols/zocket/zocket";
+import { ZymbolFrameMethod } from "../../../zymbol_frame_schema";
 import {
   BasicZymbolTreeTransformation,
   ZymbolTransformRank,
-} from "../transformer";
+} from "../../transformer";
+import { STD_TRANSFORMER_TYPE_FILTERS } from "../std_transformer_type_filters";
 import {
   getTransformTextZymbolAndParent,
   makeHelperCursor,
   recoverAllowedCursor,
-} from "./transform_utils";
+} from "../transform_utils";
 
 const SUPER_DELIM = "^";
 const SUB_DELIM = "_";
@@ -26,6 +27,7 @@ class SuperSubTransform extends Zentinel<{}> {
     this.callZentinelMethod(ZymbolFrameMethod.registerTransformer, {
       source: SUPER_SUB_TRANSFORM,
       name: "super-sub-transform",
+      typeFilters: [STD_TRANSFORMER_TYPE_FILTERS.EQUATION],
       transform: (root, cursor) => {
         cursor = makeHelperCursor(cursor, root);
         const transformText = getTransformTextZymbolAndParent(root, cursor);

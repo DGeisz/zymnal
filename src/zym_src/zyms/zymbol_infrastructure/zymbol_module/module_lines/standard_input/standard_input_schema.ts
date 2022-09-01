@@ -5,22 +5,25 @@ import {
   ZymPersist,
 } from "../../../../../../zym_lib/zy_schema/zy_schema";
 import {
-  ZinputPersistenceSchema,
-  ZinputSchema,
-} from "../../../../basic_building_blocks/zinput/zinput_schema";
+  ZymbolFramePersistedSchema,
+  ZymbolFrameSchema,
+} from "../../../zymbol_frame/zymbol_frame_schema";
 
 export const STANDARD_INPUT_ID = "standard-in";
 
 export type StandardInputSchema = CreateZySchema<{
-  zinput: IdentifiedSchema<ZinputSchema>;
+  inputFrame: IdentifiedSchema<ZymbolFrameSchema>;
 }>;
 
 export type StandardInputPersistenceSchema = CreatePersistenceSchema<
   StandardInputSchema,
   {
-    zinput: {
-      persistenceSymbol: "z";
-      persistenceType: ZymPersist<ZinputSchema, ZinputPersistenceSchema>;
+    inputFrame: {
+      persistenceSymbol: "f";
+      persistenceType: ZymPersist<
+        ZymbolFrameSchema,
+        ZymbolFramePersistedSchema
+      >;
     };
   }
 >;

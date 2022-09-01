@@ -45,6 +45,7 @@ import {
   TEXT_ZYMBOL_NAME,
 } from "./text_zymbol_schema";
 import { ZyPartialPersist } from "../../../../../zym_lib/zy_schema/zy_schema";
+import { STD_FRAME_LABELS } from "../../../zymbol_infrastructure/zymbol_frame/zymbol_frame_schema";
 
 class TextZymbolMaster extends ZyMaster<
   TextZymbolSchema,
@@ -267,17 +268,21 @@ export class TextZymbol extends Zymbol<
 
     const { excludeHtmlIds } = opts;
 
-    const finalTex = add_latex_color(() => {
+    const internalTexCreator = () => {
       if (parentOfCursorElement) {
-        return text_with_cursor(
-          this.characters.join(""),
-          nextCursorIndex,
-          true
-        );
+        return text_with_cursor(this.characters.join(""), nextCursorIndex);
       } else {
         return create_tex_text(this.characters.join(""));
       }
-    }, palette.deepBlue);
+    };
+
+    let finalTex;
+
+    if (this.parentFrame.getFrameLabels().includes(STD_FRAME_LABELS.INPUT)) {
+      finalTex = internalTexCreator();
+    } else {
+      finalTex = add_latex_color(internalTexCreator, palette.deepBlue);
+    }
 
     if (excludeHtmlIds) {
       return finalTex;

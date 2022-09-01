@@ -1,17 +1,17 @@
 import _ from "underscore";
-import { last } from "../../../../../../../global_utils/array_utils";
-import { checkLatex } from "../../../../../../../global_utils/latex_utils";
-import { Zentinel } from "../../../../../../../zym_lib/zentinel/zentinel";
-import { isSome } from "../../../../../../../zym_lib/utils/zy_option";
-import { cursorForEach } from "../../../../../../../zym_lib/zy_god/cursor/cursor";
-import { Zymbol } from "../../../../../zymbol/zymbol";
-import { Zocket } from "../../../../../zymbol/zymbols/zocket/zocket";
+import { last } from "../../../../../../../../global_utils/array_utils";
+import { checkLatex } from "../../../../../../../../global_utils/latex_utils";
+import { Zentinel } from "../../../../../../../../zym_lib/zentinel/zentinel";
+import { isSome } from "../../../../../../../../zym_lib/utils/zy_option";
+import { cursorForEach } from "../../../../../../../../zym_lib/zy_god/cursor/cursor";
+import { Zymbol } from "../../../../../../zymbol/zymbol";
+import { Zocket } from "../../../../../../zymbol/zymbols/zocket/zocket";
 import {
   getTransformTextZymbolAndParent,
   makeHelperCursor,
   recoverAllowedCursor,
-} from "../transform_utils";
-import { ZymbolFrameMethod } from "../../../zymbol_frame_schema";
+} from "../../transform_utils";
+import { ZymbolFrameMethod } from "../../../../zymbol_frame_schema";
 import {
   DotModifierMap,
   DotModifiersMethodSchema,
@@ -23,14 +23,15 @@ import {
   BasicZymbolTreeTransformation,
   ZymbolTransformRank,
   ZymbolTreeTransformation,
-} from "../../transformer";
+} from "../../../transformer";
 import {
   isZocket,
   ZymbolModifier,
-} from "../../../../../zymbol/zymbols/zocket/zocket_schema";
-import { isSymbolZymbol } from "../../../../../zymbol/zymbols/symbol_zymbol/symbol_zymbol_schema";
-import { isSuperSub } from "../../../../../zymbol/zymbols/super_sub/super_sub_schema";
-import { isTextZymbol } from "../../../../../zymbol/zymbols/text_zymbol/text_zymbol_schema";
+} from "../../../../../../zymbol/zymbols/zocket/zocket_schema";
+import { isSymbolZymbol } from "../../../../../../zymbol/zymbols/symbol_zymbol/symbol_zymbol_schema";
+import { isSuperSub } from "../../../../../../zymbol/zymbols/super_sub/super_sub_schema";
+import { isTextZymbol } from "../../../../../../zymbol/zymbols/text_zymbol/text_zymbol_schema";
+import { STD_TRANSFORMER_TYPE_FILTERS } from "../../std_transformer_type_filters";
 
 const DOT = ".";
 
@@ -90,6 +91,7 @@ class DotModifiers extends Zentinel<DotModifiersMethodSchema> {
     this.callZentinelMethod(ZymbolFrameMethod.registerTransformerFactory, {
       source: DOT_MODIFIERS_TRANSFORM,
       name: "dot-mod",
+      typeFilters: [STD_TRANSFORMER_TYPE_FILTERS.EQUATION],
       factory: async (treeRoot, cursor) => {
         const contextualTransforms: DotModifierZymbolTransform[] = [];
 

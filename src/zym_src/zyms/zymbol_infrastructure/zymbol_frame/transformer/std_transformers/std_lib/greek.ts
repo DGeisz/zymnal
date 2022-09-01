@@ -3,7 +3,7 @@ import { backslash } from "../../../../../../../global_utils/latex_utils";
 import {
   InPlaceSymbolMap,
   SlashMap,
-} from "../in_place_symbols/in_place_symbols";
+} from "../equation_transformers/in_place_symbols/in_place_symbols";
 
 const lowerGreekSlashMap: SlashMap = {
   a: "alpha",

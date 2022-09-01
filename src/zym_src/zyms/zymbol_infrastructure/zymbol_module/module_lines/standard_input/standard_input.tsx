@@ -1,4 +1,3 @@
-import { zySome } from "../../../../../../zym_lib/utils/zy_option";
 import {
   hydrateChild,
   safeHydrate,
@@ -8,9 +7,11 @@ import { useZymponent } from "../../../../../../zym_lib/zym/zymplementations/zya
 import { Zyact } from "../../../../../../zym_lib/zym/zymplementations/zyact/zyact";
 import { ZyMaster } from "../../../../../../zym_lib/zym/zy_master";
 import { CursorIndex } from "../../../../../../zym_lib/zy_god/cursor/cursor";
-import { CursorCommandTrait } from "../../../../../../zym_lib/zy_god/cursor/cursor_commands";
 import { ZyPartialPersist } from "../../../../../../zym_lib/zy_schema/zy_schema";
-import { Zinput } from "../../../../basic_building_blocks/zinput/zinput";
+import { isTextZymbol } from "../../../../zymbol/zymbols/text_zymbol/text_zymbol_schema";
+import { STD_TRANSFORMER_TYPE_FILTERS } from "../../../zymbol_frame/transformer/std_transformers/std_transformer_type_filters";
+import { ZymbolFrame } from "../../../zymbol_frame/zymbol_frame";
+import { STD_FRAME_LABELS } from "../../../zymbol_frame/zymbol_frame_schema";
 import {
   StandardInputPersistenceSchema,
   StandardInputSchema,
@@ -35,30 +36,45 @@ export class StandardInput extends Zyact<
   StandardInputPersistenceSchema
 > {
   zyMaster: ZyMaster = standardInputMaster;
-  zinput: Zinput = new Zinput(0, this);
-  children = [this.zinput];
+  inputFrame: ZymbolFrame = new ZymbolFrame(0, this, {
+    frameLabels: [STD_FRAME_LABELS.INPUT],
+    getTypeFilters: (cursor) => {
+      const potentialText = this.inputFrame.baseZocket.children[cursor[1]];
+
+      if (
+        cursor.length <= 2 ||
+        (!!potentialText && isTextZymbol(potentialText))
+      ) {
+        return [STD_TRANSFORMER_TYPE_FILTERS.INPUT];
+      } else {
+        return [STD_TRANSFORMER_TYPE_FILTERS.EQUATION];
+      }
+    },
+    inlineTex: true,
+  });
+  children = [this.inputFrame];
 
   constructor(cursorIndex: CursorIndex, parent?: Zym<any, any, any>) {
     super(cursorIndex, parent);
 
     this.setPersistenceSchemaSymbols({
-      zinput: "z",
+      inputFrame: "f",
     });
   }
 
   component: React.FC = () => {
-    const Zinput = useZymponent(this.zinput);
+    const Frame = useZymponent(this.inputFrame);
 
     return (
       <div className="w-full">
-        <Zinput />
+        <Frame />
       </div>
     );
   };
 
   persistData() {
     return {
-      zinput: this.zinput.persist(),
+      inputFrame: this.inputFrame.persist(),
     };
   }
 
@@ -68,15 +84,9 @@ export class StandardInput extends Zyact<
     >
   ): Promise<void> {
     await safeHydrate(p, {
-      zinput: async (zinput) => {
-        this.zinput = (await hydrateChild(this, zinput)) as Zinput;
+      inputFrame: async (frame) => {
+        this.inputFrame = (await hydrateChild(this, frame)) as ZymbolFrame;
       },
     });
   }
 }
-
-standardInputMaster.implementTrait(CursorCommandTrait, {
-  async getInitialCursor() {
-    return zySome([0]);
-  },
-});

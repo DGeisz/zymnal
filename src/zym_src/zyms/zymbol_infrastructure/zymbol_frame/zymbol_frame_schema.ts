@@ -17,6 +17,7 @@ import {
 import {
   SourcedTransformer,
   TransformerFactory,
+  TransformerTypeFilter,
   ZymbolTransformer,
 } from "./transformer/transformer";
 
@@ -35,6 +36,7 @@ export type ZymbolFrameMethodSchema = CreateZentinelMethodSchema<{
     args: {
       cursor: Cursor;
       keyPress: ZymKeyPress;
+      typeFilters: TransformerTypeFilter[];
     };
     return: ZymbolTransformer;
   };
@@ -47,8 +49,22 @@ export const ZymbolFrameMethod =
     getTransformer: 0,
   });
 
+export type FrameLabel = string;
+
+export const STD_FRAME_LABELS = {
+  EQUATION: "equation",
+  INPUT: "input",
+};
+
+export interface ZymbolFrameOpts {
+  frameLabels: FrameLabel[];
+  getTypeFilters: (cursor: Cursor) => TransformerTypeFilter[];
+  inlineTex: boolean;
+}
+
 export type ZymbolFrameSchema = CreateZySchema<{
   baseZocket: IdentifiedSchema<ZocketSchema>;
+  frameLabels: FrameLabel[];
 }>;
 
 export type ZymbolFramePersistedSchema = CreatePersistenceSchema<
@@ -58,5 +74,6 @@ export type ZymbolFramePersistedSchema = CreatePersistenceSchema<
       persistenceSymbol: "b";
       persistenceType: ZymPersist<ZocketSchema, ZocketPersistenceSchema>;
     };
+    frameLabels: "f";
   }
 >;

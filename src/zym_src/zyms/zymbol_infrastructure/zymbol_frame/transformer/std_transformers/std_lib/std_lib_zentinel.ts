@@ -1,8 +1,8 @@
 import _ from "underscore";
 import { Zentinel } from "../../../../../../../zym_lib/zentinel/zentinel";
-import { FunctionTransformMethod } from "../../function_transformer.ts/function_transformer_schema";
-import { DotModifiersMethod } from "../dot_modifiers/dot_modifiers_schema";
-import { InPlaceMethod } from "../in_place_symbols/in_place_symbols_schema";
+import { FunctionTransformMethod } from "../equation_transformers/function_transformer/function_transformer_schema";
+import { DotModifiersMethod } from "../equation_transformers/dot_modifiers/dot_modifiers_schema";
+import { InPlaceMethod } from "../equation_transformers/in_place_symbols/in_place_symbols_schema";
 import { StdDotModMap } from "./dot_map";
 import { greekDirectMap, greekSlashMap } from "./greek";
 import {

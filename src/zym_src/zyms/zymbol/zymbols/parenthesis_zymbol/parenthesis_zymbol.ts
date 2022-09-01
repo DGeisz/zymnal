@@ -34,7 +34,7 @@ import {
   PARENTHESIS_ZYMBOL_ID,
 } from "./parenthesis_zymbol_schema";
 import { ZyPartialPersist } from "../../../../../zym_lib/zy_schema/zy_schema";
-import { DotModifiersTrait } from "../../../zymbol_infrastructure/zymbol_frame/transformer/std_transformers/dot_modifiers/dot_modifiers_schema";
+import { DotModifiersTrait } from "../../../zymbol_infrastructure/zymbol_frame/transformer/std_transformers/equation_transformers/dot_modifiers/dot_modifiers_schema";
 
 class ParenthesisZymbolMaster extends ZyMaster<
   ParenthesisZymbolSchema,

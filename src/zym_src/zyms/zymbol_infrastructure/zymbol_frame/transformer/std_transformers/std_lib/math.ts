@@ -5,12 +5,12 @@ import { Zentinel } from "../../../../../../../zym_lib/zentinel/zentinel";
 import { FunctionZymbol } from "../../../../../zymbol/zymbols/function_zymbol/function_zymbol";
 import { FunctionZymbolMethod } from "../../../../../zymbol/zymbols/function_zymbol/function_zymbol_schema";
 import { Zocket } from "../../../../../zymbol/zymbols/zocket/zocket";
-import { FunctionTransformerMap } from "../../function_transformer.ts/function_transformer_schema";
+import { FunctionTransformerMap } from "../equation_transformers/function_transformer/function_transformer_schema";
 import {
   DirectMap,
   InPlaceSymbolMap,
   SlashMap,
-} from "../in_place_symbols/in_place_symbols";
+} from "../equation_transformers/in_place_symbols/in_place_symbols";
 
 /* +++ Basic binary operations +++ */
 const basicBinaryOperations: DirectMap = {
