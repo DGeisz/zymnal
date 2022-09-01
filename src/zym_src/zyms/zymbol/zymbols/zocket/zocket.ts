@@ -644,7 +644,6 @@ export class Zocket extends Zymbol<ZocketSchema, ZocketPersistenceSchema> {
     _ctx: BasicContext
   ): DeleteBehavior | undefined => {
     const { nextCursorIndex } = extractCursorInfo(cursor);
-    debugger;
 
     if (nextCursorIndex === 0) {
       if (this.children.length === 0) {
