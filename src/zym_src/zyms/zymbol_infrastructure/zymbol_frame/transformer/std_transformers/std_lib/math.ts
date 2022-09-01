@@ -5,10 +5,7 @@ import { Zentinel } from "../../../../../../../zym_lib/zentinel/zentinel";
 import { FunctionZymbol } from "../../../../../zymbol/zymbols/function_zymbol/function_zymbol";
 import { FunctionZymbolMethod } from "../../../../../zymbol/zymbols/function_zymbol/function_zymbol_schema";
 import { Zocket } from "../../../../../zymbol/zymbols/zocket/zocket";
-import {
-  FunctionTransformerMap,
-  FunctionTransformerSpecialCommand,
-} from "../../function_transformer.ts/function_transformer_schema";
+import { FunctionTransformerMap } from "../../function_transformer.ts/function_transformer_schema";
 import {
   DirectMap,
   InPlaceSymbolMap,
@@ -25,6 +22,12 @@ const basicBinaryOperations: DirectMap = {
 const binDirectMap: DirectMap = {
   dot: "cdot",
   "*": "cdot",
+};
+
+/* +++ Sets! +++ */
+const logicDirectMap: DirectMap = {
+  and: "wedge",
+  or: "vee",
 };
 
 /* +++ Sets! +++ */
@@ -55,6 +58,7 @@ export const mathDirectMap: InPlaceSymbolMap = {
         ...calcDirectMap,
         ...basicMathDirectMap,
         ...binDirectMap,
+        ...logicDirectMap,
       },
       backslash
     ),

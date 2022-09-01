@@ -3,6 +3,7 @@ import {
   cursorToString,
   CURSOR_LATEX,
   LATEX_EMPTY_SOCKET,
+  SPAN_CURSOR_LATEX,
   wrapHtmlClass,
   wrapHtmlId,
 } from "../../../../../global_utils/latex_utils";
@@ -580,7 +581,8 @@ export class Zocket extends Zymbol<ZocketSchema, ZocketPersistenceSchema> {
       for (let i = 0; i < this.children.length; i++) {
         if (parentOfCursorElement) {
           if (i === nextCursorIndex) {
-            finalTex += CURSOR_LATEX;
+            // finalTex += CURSOR_LATEX;
+            finalTex += SPAN_CURSOR_LATEX;
           }
 
           finalTex += this.children[i].renderTex({ ...opts, cursor: [] }) + " ";
@@ -595,7 +597,8 @@ export class Zocket extends Zymbol<ZocketSchema, ZocketPersistenceSchema> {
     }
 
     if (parentOfCursorElement && nextCursorIndex === this.children.length) {
-      finalTex += CURSOR_LATEX;
+      // finalTex += CURSOR_LATEX;
+      finalTex += SPAN_CURSOR_LATEX;
     }
 
     /* Now wrap this in all the modifiers */

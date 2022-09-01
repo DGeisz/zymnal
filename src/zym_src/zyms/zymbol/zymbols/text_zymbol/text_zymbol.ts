@@ -269,7 +269,11 @@ export class TextZymbol extends Zymbol<
 
     const finalTex = add_latex_color(() => {
       if (parentOfCursorElement) {
-        return text_with_cursor(this.characters.join(""), nextCursorIndex);
+        return text_with_cursor(
+          this.characters.join(""),
+          nextCursorIndex,
+          true
+        );
       } else {
         return create_tex_text(this.characters.join(""));
       }
