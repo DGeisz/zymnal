@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from "react";
 import katex from "katex";
 import { INVALID_TEX } from "../../global_utils/latex_utils";
 
-const DEV = true;
+const DEV = false;
 
 interface TexProps {
   tex: string;
@@ -63,7 +63,7 @@ const Tex: React.FC<TexProps> = (props) => {
           }}
         />
         {/* <div>{JSON.stringify(props.inlineTex)}</div> */}
-        {/* <div>{props.tex}</div> */}
+        <div>{props.tex}</div>
       </div>
     );
   }

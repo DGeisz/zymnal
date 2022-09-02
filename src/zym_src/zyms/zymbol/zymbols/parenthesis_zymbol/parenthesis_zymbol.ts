@@ -35,6 +35,7 @@ import {
 } from "./parenthesis_zymbol_schema";
 import { ZyPartialPersist } from "../../../../../zym_lib/zy_schema/zy_schema";
 import { DotModifiersTrait } from "../../../zymbol_infrastructure/zymbol_frame/transformer/std_transformers/equation_transformers/dot_modifiers/dot_modifiers_schema";
+import { ZymbolModifier } from "../zocket/zocket_schema";
 
 class ParenthesisZymbolMaster extends ZyMaster<
   ParenthesisZymbolSchema,
@@ -47,7 +48,7 @@ class ParenthesisZymbolMaster extends ZyMaster<
     ParenthesisZymbolPersistenceSchema,
     any
   > {
-    return new ParenthesisZymbol(DUMMY_FRAME, 0, undefined);
+    return new ParenthesisZymbol("(", ")", false, DUMMY_FRAME, 0, undefined);
   }
 }
 
@@ -66,17 +67,25 @@ export class ParenthesisZymbol extends Zymbol<
   baseZocket: Zocket;
   children: Zymbol<any>[] = [];
   zyMaster = parenthesisZymbolMaster;
-  bigParenthesis = false;
+  modifiers: ZymbolModifier[] = [];
 
-  left = "(";
-  right = ")";
+  left: string;
+  right: string;
+  bigParenthesis: boolean;
 
   constructor(
+    left: string,
+    right: string,
+    bigParenthesis: boolean,
     parentFrame: ZymbolFrame,
     cursorIndex: CursorIndex,
     parent: Zym<any, any> | undefined
   ) {
     super(parentFrame, cursorIndex, parent);
+
+    this.left = left;
+    this.right = right;
+    this.bigParenthesis = bigParenthesis;
 
     this.baseZocket = new Zocket(parentFrame, 0, this);
     this.children = [this.baseZocket];
@@ -86,8 +95,38 @@ export class ParenthesisZymbol extends Zymbol<
       bigParenthesis: "p",
       left: "l",
       right: "r",
+      modifiers: "m",
     });
   }
+
+  toggleModifier = (mod: ZymbolModifier) => {
+    const hasMod = this.modifiers.some(
+      (m) => m.id.group === mod.id.group && m.id.item === mod.id.item
+    );
+
+    if (hasMod) {
+      this.removeModifier(mod);
+    } else {
+      this.addModifier(mod);
+    }
+  };
+
+  addModifier = (mod: ZymbolModifier) => {
+    this.modifiers.push(mod);
+  };
+
+  getModsByGroup = (group: string) =>
+    this.modifiers.filter((m) => m.id.group === group);
+
+  removeGroupMods = (group: string) => {
+    this.modifiers = this.modifiers.filter((m) => !(m.id.group === group));
+  };
+
+  removeModifier = (mod: ZymbolModifier) => {
+    this.modifiers = this.modifiers.filter(
+      (m) => !(m.id.group === mod.id.group && m.id.item === mod.id.item)
+    );
+  };
 
   moveCursorLeft = (cursor: Cursor, ctx: BasicContext) =>
     deflectMethodToChild(cursor, ({ childRelativeCursor }) =>
@@ -174,10 +213,16 @@ export class ParenthesisZymbol extends Zymbol<
 
     const { childRelativeCursor } = extractCursorInfo(opts.cursor);
 
-    return `${left}${this.baseZocket.renderTex({
+    let finalTex = `${left}${this.baseZocket.renderTex({
       ...opts,
       cursor: childRelativeCursor,
     })}${right}`;
+
+    for (const mod of this.modifiers) {
+      finalTex = `${mod.pre}${finalTex}${mod.post}`;
+    }
+
+    return finalTex;
   };
 
   persistData() {
@@ -186,6 +231,7 @@ export class ParenthesisZymbol extends Zymbol<
       bigParenthesis: this.bigParenthesis,
       left: this.left,
       right: this.right,
+      modifiers: [...this.modifiers],
     };
   }
 
@@ -210,6 +256,9 @@ export class ParenthesisZymbol extends Zymbol<
       },
       right: (r) => {
         this.right = r;
+      },
+      modifiers: (m) => {
+        this.modifiers = m;
       },
     });
   }

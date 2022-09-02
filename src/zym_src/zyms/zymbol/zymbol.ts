@@ -255,6 +255,8 @@ export interface ZymbolHtmlClickInfo {
   loc: Cursor;
   /* Where the cursor should go after it's clicked */
   clickCursor: Cursor;
+  isSelectableText?: boolean;
+  selectableOffset?: number;
 }
 
 export type ZymbolHtmlIdSchema = CreateZyTraitSchema<{
@@ -301,6 +303,7 @@ export const basicZymbolHtmlIdImplementation: TraitImplementation<ZymbolHtmlIdSc
         {
           loc: pointer,
           clickCursor: nextPointer,
+          isSelectableText: false,
         },
       ];
     },

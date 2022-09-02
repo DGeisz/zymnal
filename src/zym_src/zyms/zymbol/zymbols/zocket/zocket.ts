@@ -65,9 +65,10 @@ import {
   STD_FRAME_LABELS,
   ZYMBOL_FRAME_MASTER_ID,
 } from "../../../zymbol_infrastructure/zymbol_frame/zymbol_frame_schema";
+import { palette } from "../../../../../global_styles/palette";
 
-// const GROUP_COLOR = palette.semiSoftGray;
-const GROUP_COLOR = "transparent";
+const GROUP_COLOR = palette.beneathTheWaves;
+// const GROUP_COLOR = "transparent";
 
 /* === Helper Types === */
 

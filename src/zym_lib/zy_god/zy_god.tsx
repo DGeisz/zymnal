@@ -58,6 +58,9 @@ class ZyGod extends Zentinel<ZyGodSchema> {
 
         return this.root!;
       },
+      reRender: async () => {
+        await this.handleCursorChange(this.cursor);
+      },
       hydratePersistedZym: async (persisted) => {
         const { m: masterId, d: zymData } = persisted;
 
@@ -75,6 +78,9 @@ class ZyGod extends Zentinel<ZyGodSchema> {
       },
       queueSimulatedKeyPress: async (keyPress) => {
         this.simulatedKeyPressQueue.push(keyPress);
+      },
+      simulateKeyPress: async (keyPress) => {
+        this.basicHandleKeyPress(keyPress);
       },
       takeCursor: async (cursor) => {
         this.handleCursorChange(cursor);

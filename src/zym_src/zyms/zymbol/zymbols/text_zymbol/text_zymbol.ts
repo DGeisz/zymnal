@@ -3,8 +3,7 @@ import {
   add_latex_color,
   create_tex_text,
   cursorToString,
-  textWithFullTermCursor,
-  text_with_cursor,
+  CURSOR_LATEX,
   wrapHtmlId,
 } from "../../../../../global_utils/latex_utils";
 import { safeHydrate } from "../../../../../zym_lib/zym/utils/hydrate";
@@ -16,7 +15,6 @@ import {
   CursorMoveResponse,
   extractCursorInfo,
   FAILED_CURSOR_MOVE_RESPONSE,
-  getCursorMode,
   successfulMoveResponse,
 } from "../../../../../zym_lib/zy_god/cursor/cursor";
 import { ZymbolDirection } from "../../../../../zym_lib/zy_god/event_handler/key_press";
@@ -32,12 +30,7 @@ import {
   DeleteBehaviorType,
   deleteBehaviorNormal,
 } from "../../delete_behavior";
-import {
-  basicZymbolHtmlIdImplementation,
-  Zymbol,
-  ZymbolHtmlIdTrait,
-  ZymbolRenderArgs,
-} from "../../zymbol";
+import { Zymbol, ZymbolHtmlIdTrait, ZymbolRenderArgs } from "../../zymbol";
 import { extendZymbol } from "../../zymbol_cmd";
 import {
   TextZymbolPersistenceSchema,
@@ -71,6 +64,8 @@ export class TextZymbol extends Zymbol<
 
   children: Zymbol[] = [];
   zyMaster = textZymbolMaster;
+
+  lastRenderedCursorIndex = -1;
 
   constructor(
     parentFrame: ZymbolFrame,
@@ -268,11 +263,39 @@ export class TextZymbol extends Zymbol<
 
     const { excludeHtmlIds } = opts;
 
+    const chars = this.characters.join("");
+
     const internalTexCreator = () => {
       if (parentOfCursorElement) {
-        return text_with_cursor(this.characters.join(""), nextCursorIndex);
+        this.lastRenderedCursorIndex = nextCursorIndex;
+
+        if (excludeHtmlIds) {
+          return `${create_tex_text(
+            chars.slice(0, nextCursorIndex)
+          )}${CURSOR_LATEX}${create_tex_text(chars.slice(nextCursorIndex))}`;
+        } else {
+          const fullCursor = this.getFullCursorPointer();
+
+          return `${wrapHtmlId(
+            create_tex_text(chars.slice(0, nextCursorIndex)),
+            cursorToString([...fullCursor, -1])
+          )}${CURSOR_LATEX}${wrapHtmlId(
+            create_tex_text(chars.slice(nextCursorIndex)),
+            cursorToString([...fullCursor, -2])
+          )}`;
+        }
       } else {
-        return create_tex_text(this.characters.join(""));
+        const baseTex = create_tex_text(chars);
+        this.lastRenderedCursorIndex = -1;
+
+        if (excludeHtmlIds) {
+          return baseTex;
+        } else {
+          return wrapHtmlId(
+            baseTex,
+            cursorToString(this.getFullCursorPointer())
+          );
+        }
       }
     };
 
@@ -284,11 +307,13 @@ export class TextZymbol extends Zymbol<
       finalTex = add_latex_color(internalTexCreator, palette.deepBlue);
     }
 
-    if (excludeHtmlIds) {
-      return finalTex;
-    } else {
-      return wrapHtmlId(finalTex, cursorToString(this.getFullCursorPointer()));
-    }
+    return finalTex;
+
+    // if (excludeHtmlIds) {
+    //   return finalTex;
+    // } else {
+    //   return wrapHtmlId(finalTex, cursorToString(this.getFullCursorPointer()));
+    // }
   };
 
   persistData() {
@@ -319,7 +344,35 @@ export class TextZymbol extends Zymbol<
   };
 }
 
-textZymbolMaster.implementTrait(
-  ZymbolHtmlIdTrait,
-  basicZymbolHtmlIdImplementation
-);
+textZymbolMaster.implementTrait(ZymbolHtmlIdTrait, {
+  async getAllDescendentHTMLIds(zym) {
+    const pointer = zym.getFullCursorPointer();
+
+    const nextPointer = [...pointer];
+
+    if ((zym as TextZymbol).lastRenderedCursorIndex >= 0) {
+      return [
+        {
+          loc: [...pointer, -1],
+          clickCursor: nextPointer,
+          isSelectableText: true,
+          selectableOffset: 0,
+        },
+        {
+          loc: [...pointer, -2],
+          clickCursor: nextPointer,
+          isSelectableText: true,
+          selectableOffset: (zym as TextZymbol).lastRenderedCursorIndex,
+        },
+      ];
+    } else {
+      return [
+        {
+          loc: pointer,
+          clickCursor: nextPointer,
+          isSelectableText: true,
+        },
+      ];
+    }
+  },
+});

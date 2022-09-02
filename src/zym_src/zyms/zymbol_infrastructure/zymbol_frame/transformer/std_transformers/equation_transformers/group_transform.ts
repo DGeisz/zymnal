@@ -1,6 +1,5 @@
 import { last } from "../../../../../../../global_utils/array_utils";
 import { Zentinel } from "../../../../../../../zym_lib/zentinel/zentinel";
-import { Zym } from "../../../../../../../zym_lib/zym/zym";
 import { Cursor } from "../../../../../../../zym_lib/zy_god/cursor/cursor";
 import {
   KeyPressBasicType,
@@ -21,7 +20,7 @@ import {
   recoverAllowedCursor,
 } from "../transform_utils";
 
-const GROUP_DELIM = "}}";
+const GROUP_DELIM = "@@";
 
 export const GROUP_TRANSFORM = "group-trans-7d64b";
 

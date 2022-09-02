@@ -1,7 +1,6 @@
 import { last } from "../../../../../../../global_utils/array_utils";
 import { splitCursorStringAtLastWord } from "../../../../../../../global_utils/string_utils";
 import { Zentinel } from "../../../../../../../zym_lib/zentinel/zentinel";
-import { Zym } from "../../../../../../../zym_lib/zym/zym";
 import {
   Cursor,
   extendParentCursor,
@@ -32,12 +31,36 @@ import {
   recoverAllowedCursor,
 } from "../transform_utils";
 
-const LEFT_PARENTHESIS = "(";
-const RIGHT_PARENTHESIS = ")";
+interface ParenthesisPair {
+  left: string;
+  right: string;
+  rightBig: string;
+  tex: string;
+}
 
-const BIG_RIGHT_PARENTHESIS = "))";
+const left = (l: string) => `\\l${l}`;
+const right = (r: string) => `\\r${r}`;
 
-const rightPar = [RIGHT_PARENTHESIS, BIG_RIGHT_PARENTHESIS];
+const PARENTHESIS_PAIRS: ParenthesisPair[] = [
+  {
+    left: "(",
+    right: ")",
+    rightBig: "))",
+    tex: "paren",
+  },
+  {
+    left: "[",
+    right: "]",
+    rightBig: "]]",
+    tex: "brack",
+  },
+  {
+    left: "{",
+    right: "}",
+    rightBig: "}}",
+    tex: "brace",
+  },
+];
 
 export const PARENTHESIS_TRANSFORM = "par-trans-t23dki";
 class CustomParenthesisTransformation extends ZymbolTreeTransformation {
@@ -50,14 +73,22 @@ class CustomParenthesisTransformation extends ZymbolTreeTransformation {
   changedIndex = true;
 
   memo?: { newTreeRoot: Zocket; cursor: Cursor };
+  parenthesisPair: ParenthesisPair;
 
-  constructor(baseRoot: Zocket, initialCursor: Cursor, startIndex: number) {
+  constructor(
+    baseRoot: Zocket,
+    initialCursor: Cursor,
+    startIndex: number,
+    parenthesisPair: ParenthesisPair
+  ) {
     super();
     this.startIndex = startIndex;
     this.baseRoot = baseRoot;
     this.initialCursor = initialCursor;
     this.rootCopy = baseRoot;
     this.maxIndex = last(initialCursor, 2) - 1;
+    this.parenthesisPair = parenthesisPair;
+
     this.makeCopy();
   }
 
@@ -143,7 +174,14 @@ class CustomParenthesisTransformation extends ZymbolTreeTransformation {
         parent.children.splice(Math.max(this.startIndex - 1, 0), 0, txt);
       }
 
-      const parenthesis = new ParenthesisZymbol(parent.parentFrame, 0, parent);
+      const parenthesis = new ParenthesisZymbol(
+        left(this.parenthesisPair.tex),
+        right(this.parenthesisPair.tex),
+        true,
+        parent.parentFrame,
+        0,
+        parent
+      );
 
       parenthesis.baseZocket.children = newChildren;
       parenthesis.baseZocket.reConnectParentChildren();
@@ -216,7 +254,10 @@ class Parenthesis extends Zentinel<{}> {
 
               const { word } = splitCursorStringAtLastWord(text.getText(), i);
 
-              if (word === RIGHT_PARENTHESIS) {
+              // if (word === RIGHT_PARENTHESIS) {
+              const pair = PARENTHESIS_PAIRS.find((p) => p.right === word);
+
+              if (pair) {
                 /* First we're going to wrap around a single operator */
                 let k = zymbolIndex - 1;
                 let foundOperator = false;
@@ -238,7 +279,8 @@ class Parenthesis extends Zentinel<{}> {
                 const t = new CustomParenthesisTransformation(
                   rootCopy2 as Zocket,
                   [...cursorCopy],
-                  startIndex
+                  startIndex,
+                  pair
                 );
 
                 await t.init();
@@ -260,7 +302,11 @@ class Parenthesis extends Zentinel<{}> {
 
               const cursorCopy = [...cursor];
 
-              if (rightPar.includes(word)) {
+              const pair = PARENTHESIS_PAIRS.find(
+                (p) => p.rightBig === word || p.right === word
+              );
+
+              if (pair) {
                 /* Check if there's a left parenthesis that we're missing */
                 for (let k = zymbolIndex - 1; k >= 0; k--) {
                   const child = parent.children[k];
@@ -269,7 +315,7 @@ class Parenthesis extends Zentinel<{}> {
                     const newText = child as TextZymbol;
                     const words = newText.getText().split(/\s/);
 
-                    const openIndex = words.indexOf(LEFT_PARENTHESIS);
+                    const openIndex = words.indexOf(pair.left);
 
                     if (openIndex > -1) {
                       cursorCopy.splice(cursorCopy.length - 2, 2);
@@ -325,6 +371,9 @@ class Parenthesis extends Zentinel<{}> {
                       }
 
                       const parenthesis = new ParenthesisZymbol(
+                        left(pair.tex),
+                        right(pair.tex),
+                        word === pair.rightBig,
                         parent.parentFrame,
                         0,
                         parent
@@ -347,7 +396,7 @@ class Parenthesis extends Zentinel<{}> {
                         parent.children.splice(k, 0, txt);
                       }
 
-                      parenthesis.bigParenthesis = word !== RIGHT_PARENTHESIS;
+                      parenthesis.bigParenthesis = word !== pair.right;
 
                       root.recursivelyReIndexChildren();
 
@@ -366,9 +415,9 @@ class Parenthesis extends Zentinel<{}> {
                           },
                           (keyPress: ZymKeyPress) =>
                             !(
-                              word !== BIG_RIGHT_PARENTHESIS &&
+                              word !== pair.rightBig &&
                               keyPress.type === KeyPressComplexType.Key &&
-                              keyPress.key === RIGHT_PARENTHESIS
+                              keyPress.key === pair.right
                             )
                         )
                       );

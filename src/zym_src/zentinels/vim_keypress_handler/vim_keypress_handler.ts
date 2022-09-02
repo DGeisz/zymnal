@@ -17,7 +17,7 @@ import {
 } from "../../../zym_lib/zy_god/zy_god_schema";
 import { VimiumModeZenMethods } from "../../zyms/zymbol_infrastructure/zymbol_frame/building_blocks/vimium_mode/vimium_mode_zen_schema";
 
-const USE_VIM = true;
+const USE_VIM = false;
 
 const vimiumSelectHandler: (() => void)[] = [];
 

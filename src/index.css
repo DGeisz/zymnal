@@ -23,6 +23,7 @@ span {
 textarea:focus,
 input:focus,
 input[type]:focus,
+span:focus,
 .uneditable-input:focus {
   border-color: transparent;
   box-shadow: transparent;

@@ -14,6 +14,7 @@ import {
   Cursor,
   CursorIndex,
   extendChildCursor,
+  extendParentCursor,
   extractCursorInfo,
   FAILED_CURSOR_MOVE_RESPONSE,
   getRelativeCursor,
@@ -69,6 +70,7 @@ import {
   ZymbolTreeTransformation,
 } from "./transformer/transformer";
 import { ZyPartialPersist } from "../../../../zym_lib/zy_schema/zy_schema";
+import { zyGod } from "../../../../zym_lib/zy_god/zy_god";
 
 const VIMIUM_HINT_PERIOD = 2;
 class ZymbolFrameMaster extends ZyMaster<
@@ -221,8 +223,6 @@ export class ZymbolFrame extends Zyact<
 
     this.frameLabels = frameLabels;
 
-    console.trace("me", this.iid);
-
     this.getTypeFilters = getTypeFilters;
     this.setPersistenceSchemaSymbols({
       baseZocket: "b",
@@ -351,24 +351,36 @@ export class ZymbolFrame extends Zyact<
             }
 
             element.style.pointerEvents = "auto";
-            element.style.transitionDuration = "0.1s";
             element.style.cursor = "text";
 
-            element.onmouseover = () => {
-              element.style.color = palette.mediumForestGreen;
-            };
-
-            element.onmouseout = () => {
-              element.style.color = "";
-            };
+            if (pointer.isSelectableText) {
+              element.contentEditable = "true";
+            }
 
             element.onclick = () => {
               usingTransformation && this.takeSelectedTransformation();
+              const textPointer = window.getSelection()?.anchorOffset;
 
-              this.callZentinelMethod(
-                ZyGodMethod.takeCursor,
-                pointer.clickCursor
-              );
+              element.blur();
+
+              if (pointer.isSelectableText && textPointer !== undefined) {
+                if (textPointer > 0) {
+                  this.callZentinelMethod(ZyGodMethod.takeCursor, [
+                    ...pointer.clickCursor,
+                    textPointer + (pointer.selectableOffset ?? 0),
+                  ]);
+                } else {
+                  this.callZentinelMethod(
+                    ZyGodMethod.takeCursor,
+                    pointer.clickCursor
+                  );
+                }
+              } else {
+                this.callZentinelMethod(
+                  ZyGodMethod.takeCursor,
+                  pointer.clickCursor
+                );
+              }
             };
           }
         }
@@ -426,6 +438,15 @@ export class ZymbolFrame extends Zyact<
                   this.transformIndex + 1 === i && Styles.SelectedTransContainer
                 )}
                 key={`tt::${i}`}
+                onMouseOver={() => {
+                  this.transformIndex = i - 1;
+                  this.render();
+                }}
+                onClick={() => {
+                  this.callZentinelMethod(ZyGodMethod.simulateKeyPress, {
+                    type: KeyPressBasicType.Enter,
+                  });
+                }}
               >
                 <TexTransform
                   tex={t}

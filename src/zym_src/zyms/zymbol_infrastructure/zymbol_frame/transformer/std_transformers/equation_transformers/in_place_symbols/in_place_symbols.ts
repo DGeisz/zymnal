@@ -54,7 +54,7 @@ const slashes = ["\\", "/"];
 const SINGLE_DIRECT_SYMBOL_DELIM = ":";
 const MULTI_DIRECT_SYMBOL_DELIM = ";";
 
-const stringPrefixList = ["("];
+const stringPrefixList = ["(", "[", "{"];
 
 const STRING_TEST = /^[a-zA-Z,:0-9]+$/;
 
@@ -290,7 +290,7 @@ class InPlaceSymbols extends Zentinel<InPlaceSymbolsMethodSchema> {
               const { word, before, after } = splitCursorStringAtLastWord(
                 fullText,
                 i,
-                ["("]
+                stringPrefixList
               );
 
               let changed = false;
@@ -448,7 +448,7 @@ class InPlaceSymbols extends Zentinel<InPlaceSymbolsMethodSchema> {
                 const { word, before, after } = splitCursorStringAtLastWord(
                   fullText,
                   i,
-                  ["("]
+                  stringPrefixList
                 );
 
                 let changed = false;

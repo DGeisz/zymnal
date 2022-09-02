@@ -39,8 +39,16 @@ export type ZyGodSchema = CreateZentinelMethodSchema<{
     args: ZymKeyPress;
     return: void;
   };
+  simulateKeyPress: {
+    args: ZymKeyPress;
+    return: void;
+  };
   takeCursor: {
     args: Cursor;
+    return: void;
+  };
+  reRender: {
+    args: undefined;
     return: void;
   };
   getFullCursor: {
@@ -60,4 +68,6 @@ export const ZyGodMethod = createZentinelMethodList<ZyGodSchema>(ZY_GOD_ID, {
   takeCursor: 0,
   getFullCursor: 0,
   registerCustomKeyPressHandler: 0,
+  reRender: 0,
+  simulateKeyPress: 0,
 });
