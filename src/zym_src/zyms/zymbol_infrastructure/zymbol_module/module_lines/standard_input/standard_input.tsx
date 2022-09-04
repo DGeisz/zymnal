@@ -37,7 +37,7 @@ export class StandardInput extends Zyact<
 > {
   zyMaster: ZyMaster = standardInputMaster;
   inputFrame: ZymbolFrame = new ZymbolFrame(0, this, {
-    frameLabels: [STD_FRAME_LABELS.INPUT],
+    inlineFrame: true,
     getTypeFilters: (cursor) => {
       const potentialText = this.inputFrame.baseZocket.children[cursor[1]];
 
@@ -66,7 +66,7 @@ export class StandardInput extends Zyact<
     const Frame = useZymponent(this.inputFrame);
 
     return (
-      <div className="w-full">
+      <div className="w-full m-4 p-4 shadow-xl rounded-md bg-red-100">
         <Frame />
       </div>
     );

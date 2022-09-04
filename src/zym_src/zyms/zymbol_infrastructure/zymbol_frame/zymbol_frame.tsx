@@ -14,7 +14,6 @@ import {
   Cursor,
   CursorIndex,
   extendChildCursor,
-  extendParentCursor,
   extractCursorInfo,
   FAILED_CURSOR_MOVE_RESPONSE,
   getRelativeCursor,
@@ -43,13 +42,11 @@ import {
 import { cursorToString } from "../../../../global_utils/latex_utils";
 import { BasicContext } from "../../../../zym_lib/utils/basic_context";
 import clsx from "clsx";
-import { palette } from "../../../../global_styles/palette";
 import { vimiumHintKeys } from "../../../../global_utils/string_utils";
 import { ZyGodMethod } from "../../../../zym_lib/zy_god/zy_god_schema";
 import { unwrapTraitResponse } from "../../../../zym_lib/zy_trait/zy_trait";
 import { CursorCommandTrait } from "../../../../zym_lib/zy_god/cursor/cursor_commands";
 import {
-  FrameLabel,
   ZymbolFrameMethod,
   ZymbolFrameMethodSchema,
   ZymbolFrameOpts,
@@ -70,7 +67,6 @@ import {
   ZymbolTreeTransformation,
 } from "./transformer/transformer";
 import { ZyPartialPersist } from "../../../../zym_lib/zy_schema/zy_schema";
-import { zyGod } from "../../../../zym_lib/zy_god/zy_god";
 
 const VIMIUM_HINT_PERIOD = 2;
 class ZymbolFrameMaster extends ZyMaster<
@@ -194,8 +190,8 @@ export class ZymbolFrame extends Zyact<
 > {
   zyMaster: ZyMaster = zymbolFrameMaster;
 
-  baseZocket: Zocket = new Zocket(this, 0, this);
-  children: Zym<any, any>[] = [this.baseZocket];
+  baseZocket: Zocket;
+  children: Zym<any, any>[];
 
   transformations: ZymbolTreeTransformation[] = [];
   transformIndex = -1;
@@ -203,7 +199,6 @@ export class ZymbolFrame extends Zyact<
   vimiumMode = new VimiumMode();
 
   getTypeFilters: (cursor: Cursor) => TransformerTypeFilter[];
-  private frameLabels: FrameLabel[];
   readonly inlineTex: boolean;
 
   constructor(
@@ -213,20 +208,19 @@ export class ZymbolFrame extends Zyact<
   ) {
     super(cursorIndex, parent);
 
-    const { frameLabels, getTypeFilters, inlineTex } = _.defaults(opts, {
-      frameLabels: [],
+    const { getTypeFilters, inlineTex } = _.defaults(opts, {
       getTypeFilters: (cursor: Cursor) => [],
       inlineTex: false,
     });
 
     this.inlineTex = inlineTex;
 
-    this.frameLabels = frameLabels;
+    this.baseZocket = new Zocket(this, 0, this, this.inlineTex);
+    this.children = [this.baseZocket];
 
     this.getTypeFilters = getTypeFilters;
     this.setPersistenceSchemaSymbols({
       baseZocket: "b",
-      frameLabels: "f",
     });
   }
 
@@ -238,8 +232,6 @@ export class ZymbolFrame extends Zyact<
 
     this.children = [this.baseZocket];
   };
-
-  getFrameLabels = () => this.frameLabels;
 
   component: React.FC<FrameRenderProps> = () => {
     let zocketCursor: Cursor = [];
@@ -353,35 +345,35 @@ export class ZymbolFrame extends Zyact<
             element.style.pointerEvents = "auto";
             element.style.cursor = "text";
 
-            if (pointer.isSelectableText) {
-              element.contentEditable = "true";
-            }
+            // if (pointer.isSelectableText) {
+            //   element.contentEditable = "true";
+            // }
 
-            element.onclick = () => {
-              usingTransformation && this.takeSelectedTransformation();
-              const textPointer = window.getSelection()?.anchorOffset;
+            // element.onclick = () => {
+            //   usingTransformation && this.takeSelectedTransformation();
+            //   const textPointer = window.getSelection()?.anchorOffset;
 
-              element.blur();
+            //   element.blur();
 
-              if (pointer.isSelectableText && textPointer !== undefined) {
-                if (textPointer > 0) {
-                  this.callZentinelMethod(ZyGodMethod.takeCursor, [
-                    ...pointer.clickCursor,
-                    textPointer + (pointer.selectableOffset ?? 0),
-                  ]);
-                } else {
-                  this.callZentinelMethod(
-                    ZyGodMethod.takeCursor,
-                    pointer.clickCursor
-                  );
-                }
-              } else {
-                this.callZentinelMethod(
-                  ZyGodMethod.takeCursor,
-                  pointer.clickCursor
-                );
-              }
-            };
+            //   if (pointer.isSelectableText && textPointer !== undefined) {
+            //     if (textPointer > 0) {
+            //       this.callZentinelMethod(ZyGodMethod.takeCursor, [
+            //         ...pointer.clickCursor,
+            //         textPointer + (pointer.selectableOffset ?? 0),
+            //       ]);
+            //     } else {
+            //       this.callZentinelMethod(
+            //         ZyGodMethod.takeCursor,
+            //         pointer.clickCursor
+            //       );
+            //     }
+            //   } else {
+            //     this.callZentinelMethod(
+            //       ZyGodMethod.takeCursor,
+            //       pointer.clickCursor
+            //     );
+            //   }
+            // };
           }
         }
       })();
@@ -442,11 +434,11 @@ export class ZymbolFrame extends Zyact<
                   this.transformIndex = i - 1;
                   this.render();
                 }}
-                onClick={() => {
-                  this.callZentinelMethod(ZyGodMethod.simulateKeyPress, {
-                    type: KeyPressBasicType.Enter,
-                  });
-                }}
+                // onClick={() => {
+                //   this.callZentinelMethod(ZyGodMethod.simulateKeyPress, {
+                //     type: KeyPressBasicType.Enter,
+                //   });
+                // }}
               >
                 <TexTransform
                   tex={t}
@@ -473,7 +465,6 @@ export class ZymbolFrame extends Zyact<
   persistData() {
     return {
       baseZocket: this.baseZocket.persist(),
-      frameLabels: [...this.frameLabels],
     };
   }
 
@@ -483,9 +474,6 @@ export class ZymbolFrame extends Zyact<
     await safeHydrate(p, {
       baseZocket: async (bz) => {
         this.baseZocket = (await hydrateChild(this, bz)) as Zocket;
-      },
-      frameLabels: (fl) => {
-        this.frameLabels = fl;
       },
     });
     this.children = [this.baseZocket];

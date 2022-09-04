@@ -49,10 +49,10 @@ export const TexTransform: React.FC<TexTransformProps> = (props) => {
 
   return (
     <div className="flex flex-row self-stretch">
-      <div className="flex flex-row flex-1">
-        <div>
-          <Tex {...props} />
-        </div>
+      <div className="flex flex-row flex-1 m-4 w-[200px]">
+        {/* <div> */}
+        <Tex {...props} />
+        {/* </div> */}
       </div>
       {props.showSelector && (
         <div className="flex self-end">

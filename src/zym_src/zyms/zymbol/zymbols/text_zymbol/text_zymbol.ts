@@ -39,6 +39,11 @@ import {
 } from "./text_zymbol_schema";
 import { ZyPartialPersist } from "../../../../../zym_lib/zy_schema/zy_schema";
 import { STD_FRAME_LABELS } from "../../../zymbol_infrastructure/zymbol_frame/zymbol_frame_schema";
+import {
+  zyMath,
+  zySpan,
+} from "../../../../../global_building_blocks/tex/autoRender";
+import { zymbolProgressionMaster } from "../../../zymbol_infrastructure/zymbol_progression/zymbol_progression";
 
 class TextZymbolMaster extends ZyMaster<
   TextZymbolSchema,
@@ -257,6 +262,8 @@ export class TextZymbol extends Zymbol<
   };
 
   renderTex = (opts: ZymbolRenderArgs) => {
+    const inline = this.parentFrame.inlineTex;
+
     const { parentOfCursorElement, nextCursorIndex } = extractCursorInfo(
       opts.cursor
     );
@@ -270,50 +277,69 @@ export class TextZymbol extends Zymbol<
         this.lastRenderedCursorIndex = nextCursorIndex;
 
         if (excludeHtmlIds) {
-          return `${create_tex_text(
-            chars.slice(0, nextCursorIndex)
-          )}${CURSOR_LATEX}${create_tex_text(chars.slice(nextCursorIndex))}`;
+          if (inline) {
+            return `${chars.slice(0, nextCursorIndex)}${zyMath(
+              CURSOR_LATEX
+            )}${chars.slice(nextCursorIndex)}`;
+          } else {
+            return `${create_tex_text(
+              chars.slice(0, nextCursorIndex)
+            )}${CURSOR_LATEX}${create_tex_text(chars.slice(nextCursorIndex))}`;
+          }
         } else {
           const fullCursor = this.getFullCursorPointer();
 
-          return `${wrapHtmlId(
-            create_tex_text(chars.slice(0, nextCursorIndex)),
-            cursorToString([...fullCursor, -1])
-          )}${CURSOR_LATEX}${wrapHtmlId(
-            create_tex_text(chars.slice(nextCursorIndex)),
-            cursorToString([...fullCursor, -2])
-          )}`;
+          if (inline) {
+            return `${zySpan(chars.slice(0, nextCursorIndex), {
+              id: cursorToString([...fullCursor, -1]),
+            })}${zyMath(CURSOR_LATEX)}${zySpan(chars.slice(nextCursorIndex), {
+              id: cursorToString([...fullCursor, -2]),
+            })}`;
+          } else {
+            return `${wrapHtmlId(
+              create_tex_text(chars.slice(0, nextCursorIndex)),
+              cursorToString([...fullCursor, -1])
+            )}${CURSOR_LATEX}${wrapHtmlId(
+              create_tex_text(chars.slice(nextCursorIndex)),
+              cursorToString([...fullCursor, -2])
+            )}`;
+          }
         }
       } else {
-        const baseTex = create_tex_text(chars);
         this.lastRenderedCursorIndex = -1;
 
-        if (excludeHtmlIds) {
-          return baseTex;
+        if (inline) {
+          if (excludeHtmlIds) {
+            return chars;
+          } else {
+            return zySpan(chars, {
+              id: cursorToString(this.getFullCursorPointer()),
+            });
+          }
         } else {
-          return wrapHtmlId(
-            baseTex,
-            cursorToString(this.getFullCursorPointer())
-          );
+          const baseTex = create_tex_text(chars);
+
+          if (excludeHtmlIds) {
+            return baseTex;
+          } else {
+            return wrapHtmlId(
+              baseTex,
+              cursorToString(this.getFullCursorPointer())
+            );
+          }
         }
       }
     };
 
     let finalTex;
 
-    if (this.parentFrame.getFrameLabels().includes(STD_FRAME_LABELS.INPUT)) {
+    if (inline) {
       finalTex = internalTexCreator();
     } else {
       finalTex = add_latex_color(internalTexCreator, palette.deepBlue);
     }
 
     return finalTex;
-
-    // if (excludeHtmlIds) {
-    //   return finalTex;
-    // } else {
-    //   return wrapHtmlId(finalTex, cursorToString(this.getFullCursorPointer()));
-    // }
   };
 
   persistData() {

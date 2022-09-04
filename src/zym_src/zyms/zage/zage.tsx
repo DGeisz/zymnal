@@ -13,6 +13,12 @@ import {
   ZymbolModulePersistenceSchema,
   ZymbolModuleSchema,
 } from "../zymbol_infrastructure/zymbol_module/zymbol_module_schema";
+import Tex from "../../../global_building_blocks/tex/tex";
+import {
+  create_tex_text,
+  CURSOR_LATEX,
+} from "../../../global_utils/latex_utils";
+import { zyMath } from "../../../global_building_blocks/tex/autoRender";
 
 const DARK_MODE = true;
 
@@ -54,6 +60,20 @@ export class Zage extends Zyact<ZageSchema, ZagePersistenceSchema> {
           sepia: 10,
         });
     }, []);
+
+    // return (
+    //   <div className="m-8">
+    //     {/* <Tex
+    //       tex={`hij $\\frac{1}{2}$ hi$${CURSOR_LATEX}$there as;ldkldkjasdfldkjasdf ldkjasdfldkjasdfldkjasdfldkjasdfldkjasdfldkjasdfldkjasdfl dkjasdfl dkjasdfldkjasdfldkjasdfjasdf`}
+    //       inlineTex
+    //     /> */}
+
+    //     {/* <Tex tex={"$$\\frac{1}{2}$$"} inlineTex /> */}
+    //     <Tex tex={`Hi there ${zyMath("\\frac{1}{2}")}`} inlineTex />
+    //     <Tex tex={"asdfas asd  () "} inlineTex />
+    //     {/* <Tex tex={create_tex_text("Hello there")} /> */}
+    //   </div>
+    // );
 
     return (
       <div className="m-16">

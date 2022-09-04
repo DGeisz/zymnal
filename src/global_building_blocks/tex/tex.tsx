@@ -1,12 +1,13 @@
 import React, { useEffect, useRef } from "react";
 import katex from "katex";
 import { INVALID_TEX } from "../../global_utils/latex_utils";
+import { renderMathInText } from "./autoRender";
 
-const DEV = false;
+const DEV = true;
 
 interface TexProps {
   tex: string;
-  inlineTex: boolean;
+  inlineTex?: boolean;
   className?: string;
 }
 
@@ -27,8 +28,10 @@ const katexOpts: any = {
   displayMode: true,
   output: "html",
   strict: false,
-  throwOnError: false,
+  throwOnError: true,
 };
+
+const invalid = katex.renderToString(INVALID_TEX, katexOpts);
 
 const Tex: React.FC<TexProps> = (props) => {
   const cRef = useRef<HTMLDivElement>(null);
@@ -39,14 +42,17 @@ const Tex: React.FC<TexProps> = (props) => {
     }
   }, [props.tex]);
 
-  let renders = true;
-  try {
-    katex.renderToString(props.tex, {
-      ...katexOpts,
-      throwOnError: true,
-    });
-  } catch (_e) {
-    renders = false;
+  let htmlTex = invalid;
+  if (!props.inlineTex) {
+    try {
+      htmlTex = katex.renderToString(props.tex, katexOpts);
+    } catch (_e) {}
+  } else {
+    try {
+      htmlTex = renderMathInText(props.tex, katexOpts);
+    } catch (_e) {
+      console.log(_e);
+    }
   }
 
   if (DEV) {
@@ -56,10 +62,7 @@ const Tex: React.FC<TexProps> = (props) => {
           ref={cRef}
           className={props.className}
           dangerouslySetInnerHTML={{
-            __html: katex.renderToString(renders ? props.tex : INVALID_TEX, {
-              ...katexOpts,
-              displayMode: !props.inlineTex,
-            }),
+            __html: htmlTex,
           }}
         />
         {/* <div>{JSON.stringify(props.inlineTex)}</div> */}
@@ -69,14 +72,11 @@ const Tex: React.FC<TexProps> = (props) => {
   }
 
   return (
-    <div
+    <span
       ref={cRef}
       className={props.className}
       dangerouslySetInnerHTML={{
-        __html: katex.renderToString(
-          renders ? props.tex : INVALID_TEX,
-          katexOpts
-        ),
+        __html: htmlTex,
       }}
     />
   );

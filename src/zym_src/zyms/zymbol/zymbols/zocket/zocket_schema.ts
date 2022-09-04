@@ -13,6 +13,7 @@ export const ZOCKET_MASTER_ID = "zocket";
 export type ZocketSchema = CreateZySchema<{
   children: IdentifiedSchema<any>[];
   modifiers: ZymbolModifier[];
+  inline: boolean;
 }>;
 
 export type ZocketPersistenceSchema = CreatePersistenceSchema<
@@ -23,6 +24,7 @@ export type ZocketPersistenceSchema = CreatePersistenceSchema<
       persistenceSymbol: "c";
       persistenceType: ZymPersist<any, any>[];
     };
+    inline: "i";
   }
 >;
 

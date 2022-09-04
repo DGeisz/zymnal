@@ -49,8 +49,8 @@ export class ZymbolModule extends Zyact<
     super(cursorIndex, parent);
 
     /* Start out with a single standard input as the first line */
-    // this.children = [new StandardInput(0, this)];
-    this.children = [new ZymbolProgression(0, this)];
+    this.children = [new StandardInput(0, this)];
+    // this.children = [new ZymbolProgression(0, this)];
 
     this.setPersistenceSchemaSymbols({
       children: "c",

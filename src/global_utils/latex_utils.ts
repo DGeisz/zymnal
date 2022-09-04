@@ -3,6 +3,7 @@ import escape_latex from "escape-latex";
 import { palette } from "../global_styles/palette";
 import type { TeX } from "../zym_src/zyms/zymbol/zymbol_types";
 import { Cursor } from "../zym_lib/zy_god/cursor/cursor";
+import { zyMath } from "../global_building_blocks/tex/autoRender";
 
 const renderToString = katex.renderToString;
 
@@ -39,6 +40,7 @@ export const LATEX_NAME = "\\LaTeX";
 
 export const CURSOR_NAME = "cursor";
 export const CURSOR_LATEX: string = ` \\htmlClass{${CURSOR_NAME}}{\\color{none} \\boldsymbol{|}} `;
+export const INLINE_CURSOR_LATEX: string = zyMath(CURSOR_LATEX);
 
 export const FULL_COVER_CURSOR_CLASS_NAME = "full-cover-cursor";
 
@@ -65,7 +67,7 @@ export function textWithFullTermCursor(
 }
 
 export const INVALID_TEX = add_latex_color(
-  create_tex_text("Invalid TeX"),
+  create_tex_text("Invalid ") + "\\TeX",
   palette.danger
 );
 

@@ -3,6 +3,7 @@ import {
   add_color_box,
   cursorToString,
   CURSOR_LATEX,
+  INLINE_CURSOR_LATEX,
   LATEX_EMPTY_SOCKET,
   wrapHtmlId,
 } from "../../../../../global_utils/latex_utils";
@@ -60,15 +61,15 @@ import {
   ZyPartialPersist,
   ZymPersist,
 } from "../../../../../zym_lib/zy_schema/zy_schema";
-import { TEXT_ZYMBOL_NAME } from "../text_zymbol/text_zymbol_schema";
 import {
-  STD_FRAME_LABELS,
-  ZYMBOL_FRAME_MASTER_ID,
-} from "../../../zymbol_infrastructure/zymbol_frame/zymbol_frame_schema";
+  isTextZymbol,
+  TEXT_ZYMBOL_NAME,
+} from "../text_zymbol/text_zymbol_schema";
+import { ZYMBOL_FRAME_MASTER_ID } from "../../../zymbol_infrastructure/zymbol_frame/zymbol_frame_schema";
 import { palette } from "../../../../../global_styles/palette";
+import { zyMath } from "../../../../../global_building_blocks/tex/autoRender";
 
 const GROUP_COLOR = palette.beneathTheWaves;
-// const GROUP_COLOR = "transparent";
 
 /* === Helper Types === */
 
@@ -89,17 +90,22 @@ export class Zocket extends Zymbol<ZocketSchema, ZocketPersistenceSchema> {
   zyMaster = zocketMaster;
   children: Zymbol<any, any>[] = [];
   modifiers: ZymbolModifier[] = [];
+  inline: boolean;
 
   constructor(
     parentFrame: ZymbolFrame,
     cursorIndex: CursorIndex,
-    parent: Zym<any, any> | undefined
+    parent: Zym<any, any> | undefined,
+    inline?: boolean
   ) {
     super(parentFrame, cursorIndex, parent);
+
+    this.inline = !!inline;
 
     this.setPersistenceSchemaSymbols({
       children: "c",
       modifiers: "m",
+      inline: "i",
     });
   }
 
@@ -562,42 +568,61 @@ export class Zocket extends Zymbol<ZocketSchema, ZocketPersistenceSchema> {
   };
 
   renderTex = (opts: ZymbolRenderArgs) => {
+    const inline = this.parentFrame.inlineTex;
+
     const { cursor, excludeHtmlIds } = opts;
 
     const { parentOfCursorElement, nextCursorIndex, childRelativeCursor } =
       extractCursorInfo(cursor);
 
+    const cursorTex = this.inline ? INLINE_CURSOR_LATEX : CURSOR_LATEX;
+
     let finalTex = "";
     let emptySocket = false;
 
-    if (this.children.length === 0 && !parentOfCursorElement) {
+    if (!this.inline && this.children.length === 0 && !parentOfCursorElement) {
       finalTex = LATEX_EMPTY_SOCKET;
       emptySocket = true;
     } else {
       for (let i = 0; i < this.children.length; i++) {
         if (parentOfCursorElement) {
           if (i === nextCursorIndex) {
-            finalTex += CURSOR_LATEX;
+            finalTex += cursorTex;
+          }
+          let childTex = this.children[i].renderTex({ ...opts, cursor: [] });
+
+          if (this.inline && !isTextZymbol(this.children[i])) {
+            childTex = zyMath(childTex);
           }
 
-          finalTex += this.children[i].renderTex({ ...opts, cursor: [] }) + " ";
+          finalTex += childTex + " ";
         } else {
-          finalTex +=
-            this.children[i].renderTex({
-              ...opts,
-              cursor: i === nextCursorIndex ? childRelativeCursor : [],
-            }) + " ";
+          let childTex = this.children[i].renderTex({
+            ...opts,
+            cursor: i === nextCursorIndex ? childRelativeCursor : [],
+          });
+
+          if (this.inline && !isTextZymbol(this.children[i])) {
+            childTex = zyMath(childTex);
+          }
+
+          finalTex += childTex + " ";
         }
       }
     }
 
     if (parentOfCursorElement && nextCursorIndex === this.children.length) {
-      finalTex += CURSOR_LATEX;
+      if (this.inline) {
+        finalTex = finalTex.slice(0, -1);
+      }
+      finalTex += cursorTex;
     }
 
     /* Now wrap this in all the modifiers */
-    for (const mod of this.modifiers) {
-      finalTex = `${mod.pre}${finalTex}${mod.post}`;
+    if (!this.inline) {
+      for (const mod of this.modifiers) {
+        finalTex = `${mod.pre}${finalTex}${mod.post}`;
+      }
     }
 
     const colorBoxTex = add_color_box(finalTex, GROUP_COLOR, opts.inlineTex);
@@ -606,7 +631,7 @@ export class Zocket extends Zymbol<ZocketSchema, ZocketPersistenceSchema> {
       this.parent?.getMasterId() === ZOCKET_MASTER_ID &&
       this.modifiers.length === 0
     ) {
-      if (this.parentFrame.getFrameLabels().includes(STD_FRAME_LABELS.INPUT)) {
+      if (inline) {
         if (this.parent?.parent?.getMasterId() === ZYMBOL_FRAME_MASTER_ID) {
           if (nextCursorIndex > -1) {
             finalTex = colorBoxTex;
@@ -804,6 +829,7 @@ export class Zocket extends Zymbol<ZocketSchema, ZocketPersistenceSchema> {
     return {
       children: this.children.map((c) => c.persist()),
       modifiers: [...this.modifiers],
+      inline: this.inline,
     };
   };
 
@@ -818,6 +844,9 @@ export class Zocket extends Zymbol<ZocketSchema, ZocketPersistenceSchema> {
       },
       modifiers: (mod) => {
         this.modifiers = mod;
+      },
+      inline: (i) => {
+        this.inline = i;
       },
     });
 

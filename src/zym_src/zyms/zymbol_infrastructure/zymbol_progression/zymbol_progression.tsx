@@ -40,7 +40,6 @@ export class ZymbolProgression extends Zyact<
 > {
   zyMaster = zymbolProgressionMaster;
   baseFrame: ZymbolFrame = new ZymbolFrame(0, this, {
-    frameLabels: [STD_FRAME_LABELS.EQUATION],
     getTypeFilters: () => [STD_TRANSFORMER_TYPE_FILTERS.EQUATION],
   });
   children: Zym<any, any>[] = [this.baseFrame];

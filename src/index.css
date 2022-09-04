@@ -78,3 +78,7 @@ span:focus,
   width: 10px;
   height: 100px;
 }
+
+.zytex-wrapper {
+  font-family: KaTeX_Main, "Times New Roman", serif;
+}
