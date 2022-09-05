@@ -28,6 +28,11 @@ const binDirectMap: DirectMap = {
 const logicDirectMap: DirectMap = {
   and: "wedge",
   or: "vee",
+  imp: "implies",
+  lar: "lArr",
+  rar: "rArr",
+  ex: "exists",
+  fa: "forall",
 };
 
 /* +++ Sets! +++ */

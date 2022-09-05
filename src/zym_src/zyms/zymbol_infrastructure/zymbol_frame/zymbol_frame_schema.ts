@@ -2,6 +2,7 @@ import {
   createZentinelMethodList,
   CreateZentinelMethodSchema,
 } from "../../../../zym_lib/hermes/hermes";
+import { Zym } from "../../../../zym_lib/zym/zym";
 import { Cursor } from "../../../../zym_lib/zy_god/cursor/cursor";
 import { ZymKeyPress } from "../../../../zym_lib/zy_god/event_handler/key_press";
 import {
@@ -20,6 +21,7 @@ import {
   TransformerTypeFilter,
   ZymbolTransformer,
 } from "./transformer/transformer";
+import { ZymbolFrame } from "./zymbol_frame";
 
 export const ZYMBOL_FRAME_MASTER_ID = "zymbol_frame";
 
@@ -73,3 +75,7 @@ export type ZymbolFramePersistedSchema = CreatePersistenceSchema<
     };
   }
 >;
+
+export function isZymbolFrame(zym: Zym): zym is ZymbolFrame {
+  return zym.getMasterId() === ZYMBOL_FRAME_MASTER_ID;
+}

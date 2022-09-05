@@ -94,6 +94,7 @@ class CustomFractionTransformation extends ZymbolTreeTransformation {
     this.rootCopy = (
       await this.baseRoot.clone(1, this.baseRoot.parent)
     )[0] as Zocket;
+    this.rootCopy.setParentFrame(this.baseRoot.parentFrame);
   };
 
   init = this.makeCopy;

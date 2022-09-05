@@ -47,6 +47,7 @@ import {
   zySpan,
 } from "../../../../../global_building_blocks/tex/autoRender";
 import { zymbolProgressionMaster } from "../../../zymbol_infrastructure/zymbol_progression/zymbol_progression";
+import { createTypeReferenceDirectiveResolutionCache } from "typescript";
 
 class TextZymbolMaster extends ZyMaster<
   TextZymbolSchema,
@@ -56,6 +57,16 @@ class TextZymbolMaster extends ZyMaster<
 
   newBlankChild(): Zym<any, any, any> {
     return new TextZymbol(DUMMY_FRAME, 0, undefined);
+  }
+}
+
+export function treatText(text: string, inline: boolean) {
+  return text;
+
+  if (inline) {
+    return text.replaceAll(" ", "&nbsp;<wbr>");
+  } else {
+    return text;
   }
 }
 
@@ -277,35 +288,41 @@ export class TextZymbol extends Zymbol<
 
     const chars = this.characters.join("");
 
+    const treatedChars = treatText(chars, inline);
+
+    const charSlice = (begin: number, end?: number) => {
+      return treatText(chars.slice(begin, end), inline);
+    };
+
     const internalTexCreator = () => {
       if (parentOfCursorElement) {
         this.lastRenderedCursorIndex = nextCursorIndex;
 
         if (excludeHtmlIds) {
           if (inline) {
-            return `${chars.slice(0, nextCursorIndex)}${zyMath(
+            return `${charSlice(0, nextCursorIndex)}${zyMath(
               CURSOR_LATEX
-            )}${chars.slice(nextCursorIndex)}`;
+            )}${charSlice(nextCursorIndex)}`;
           } else {
             return `${create_tex_text(
-              chars.slice(0, nextCursorIndex)
-            )}${CURSOR_LATEX}${create_tex_text(chars.slice(nextCursorIndex))}`;
+              charSlice(0, nextCursorIndex)
+            )}${CURSOR_LATEX}${create_tex_text(charSlice(nextCursorIndex))}`;
           }
         } else {
           const fullCursor = this.getFullCursorPointer();
 
           if (inline) {
-            return `${zySpan(chars.slice(0, nextCursorIndex), {
+            return `${zySpan(charSlice(0, nextCursorIndex), {
               id: cursorToString([...fullCursor, -1]),
-            })}${zyMath(CURSOR_LATEX)}${zySpan(chars.slice(nextCursorIndex), {
+            })}${zyMath(CURSOR_LATEX)}${zySpan(charSlice(nextCursorIndex), {
               id: cursorToString([...fullCursor, -2]),
             })}`;
           } else {
             return `${wrapHtmlId(
-              create_tex_text(chars.slice(0, nextCursorIndex)),
+              create_tex_text(charSlice(0, nextCursorIndex)),
               cursorToString([...fullCursor, -1])
             )}${CURSOR_LATEX}${wrapHtmlId(
-              create_tex_text(chars.slice(nextCursorIndex)),
+              create_tex_text(charSlice(nextCursorIndex)),
               cursorToString([...fullCursor, -2])
             )}`;
           }
@@ -315,14 +332,14 @@ export class TextZymbol extends Zymbol<
 
         if (inline) {
           if (excludeHtmlIds) {
-            return chars;
+            return treatedChars;
           } else {
-            return zySpan(chars, {
+            return zySpan(treatedChars, {
               id: cursorToString(this.getFullCursorPointer()),
             });
           }
         } else {
-          const baseTex = create_tex_text(chars);
+          const baseTex = create_tex_text(treatedChars);
 
           if (excludeHtmlIds) {
             return baseTex;

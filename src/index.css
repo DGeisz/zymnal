@@ -16,10 +16,6 @@ code {
     monospace;
 }
 
-span {
-  white-space: pre;
-}
-
 textarea:focus,
 input:focus,
 input[type]:focus,
@@ -82,8 +78,11 @@ span:focus,
 .zytex-wrapper {
   font-family: KaTeX_Main, "Times New Roman", serif;
   font-size: 14pt;
+  white-space: break-spaces;
 }
 
 .zytex {
   font-size: 12pt;
+  white-space: nowrap !important;
+  /* white-space: nowrap; */
 }

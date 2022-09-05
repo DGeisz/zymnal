@@ -50,9 +50,7 @@ const Tex: React.FC<TexProps> = (props) => {
   } else {
     try {
       htmlTex = renderMathInText(props.tex, katexOpts);
-    } catch (_e) {
-      console.log(_e);
-    }
+    } catch (_e) {}
   }
 
   if (DEV) {

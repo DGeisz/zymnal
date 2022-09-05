@@ -29,6 +29,8 @@ import {
 } from "./undo_redo/undo_redo";
 import { CustomKeyPressHandler, ZyGodSchema, ZY_GOD_ID } from "./zy_god_schema";
 
+const WINDOW_BLUR = false;
+
 export const { get: getFullContextCursor, set: setFullContextCursor } =
   createContextVariable<Cursor>("full-context-cursor");
 
@@ -133,7 +135,7 @@ class ZyGod extends Zentinel<ZyGodSchema> {
   };
 
   onWindowBlur = () => {
-    if (this.windowInFocus) {
+    if (WINDOW_BLUR && this.windowInFocus) {
       this.windowInFocus = false;
 
       this.root?.callTraitMethod(CursorCommandTrait.cursorRender, {
@@ -144,7 +146,7 @@ class ZyGod extends Zentinel<ZyGodSchema> {
   };
 
   onWindowFocus = () => {
-    if (!this.windowInFocus) {
+    if (WINDOW_BLUR && !this.windowInFocus) {
       this.windowInFocus = true;
 
       this.root?.callTraitMethod(CursorCommandTrait.cursorRender, {

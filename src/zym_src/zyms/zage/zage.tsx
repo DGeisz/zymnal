@@ -19,6 +19,7 @@ import {
   CURSOR_LATEX,
 } from "../../../global_utils/latex_utils";
 import { zyMath } from "../../../global_building_blocks/tex/autoRender";
+import { treatText } from "../zymbol/zymbols/text_zymbol/text_zymbol";
 
 const DARK_MODE = true;
 
@@ -63,14 +64,21 @@ export class Zage extends Zyact<ZageSchema, ZagePersistenceSchema> {
 
     // return (
     //   <div className="m-8">
-    //     {/* <Tex
-    //       tex={`hij $\\frac{1}{2}$ hi$${CURSOR_LATEX}$there as;ldkldkjasdfldkjasdf ldkjasdfldkjasdfldkjasdfldkjasdfldkjasdfldkjasdfldkjasdfl dkjasdfl dkjasdfldkjasdfldkjasdfjasdf`}
+    //     <Tex
+    //       tex={`hij      ${zyMath("\\frac{1}{2}")} hi ${zyMath(
+    //         CURSOR_LATEX
+    //       )}$there as;ldkldkjasdfldkjasdf ldkjasdfldkjasdfldkjasdfldkjasdfldkjasdfldkjasdfldkjasdfl dkjasdfl dkjasdfldkjasdfldkjasdfjasdf`}
     //       inlineTex
-    //     /> */}
+    //     />
 
     //     {/* <Tex tex={"$$\\frac{1}{2}$$"} inlineTex /> */}
-    //     <Tex tex={`Hi there ${zyMath("\\frac{1}{2}")}`} inlineTex />
-    //     <Tex tex={"asdfas asd  () "} inlineTex />
+    //     {/* <Tex
+    //       tex={treatText(
+    //         `asd     asdf asdf a;skld ajsdf ;alskjdf as;ldf a;sldkfja s;ldk f;alskdjf ;aslkd ;asdlf;alsk df;laskd f;lkajsd f;laskjdf ;alksdjf asdf`,
+    //         true
+    //       )}
+    //       inlineTex
+    //     /> */}
     //     {/* <Tex tex={create_tex_text("Hello there")} /> */}
     //   </div>
     // );

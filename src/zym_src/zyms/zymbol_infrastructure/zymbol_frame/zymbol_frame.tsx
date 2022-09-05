@@ -350,14 +350,20 @@ export class ZymbolFrame extends Zyact<
               element.contentEditable = "true";
             }
 
+            element.ondblclick = () => {
+              console.log("yeah!");
+            };
+
             element.onclick = () => {
               usingTransformation && this.takeSelectedTransformation();
-              const textPointer = window.getSelection()?.anchorOffset;
 
-              element.blur();
+              if (pointer.isSelectableText) {
+                // setTimeout(() => {
+                const textPointer = window.getSelection()?.anchorOffset;
 
-              if (pointer.isSelectableText && textPointer !== undefined) {
-                if (textPointer > 0) {
+                // console.log("window offset", window.getSelection());
+                element.blur();
+                if (textPointer !== undefined && textPointer > 0) {
                   this.callZentinelMethod(ZyGodMethod.takeCursor, [
                     ...pointer.clickCursor,
                     textPointer + (pointer.selectableOffset ?? 0),
@@ -368,6 +374,7 @@ export class ZymbolFrame extends Zyact<
                     pointer.clickCursor
                   );
                 }
+                // }, 1000);
               } else {
                 this.callZentinelMethod(
                   ZyGodMethod.takeCursor,
@@ -389,7 +396,11 @@ export class ZymbolFrame extends Zyact<
       ) {
         const selectedTrans =
           this.transformations[this.transformIndex].getCurrentTransformation();
-        selectedTex = selectedTrans.newTreeRoot.renderTex({
+        const newRoot = selectedTrans.newTreeRoot;
+        newRoot.setParentFrame(this);
+        newRoot.parent = this;
+
+        selectedTex = newRoot.renderTex({
           cursor: selectedTrans.cursor,
           inlineTex: this.inlineTex,
         });
@@ -399,7 +410,11 @@ export class ZymbolFrame extends Zyact<
 
       const allTex = this.transformations.map((t) => {
         const tr = t.getCurrentTransformation();
-        return tr.newTreeRoot.renderTex({
+        const newRoot = tr.newTreeRoot;
+        newRoot.setParentFrame(this);
+        newRoot.parent = this;
+
+        return newRoot.renderTex({
           cursor: tr.cursor,
           inlineTex: this.inlineTex,
           excludeHtmlIds: true,
@@ -431,7 +446,7 @@ export class ZymbolFrame extends Zyact<
                   this.transformIndex + 1 === i && Styles.SelectedTransContainer
                 )}
                 key={`tt::${i}`}
-                onMouseEnter={() => {
+                onMouseMove={() => {
                   this.transformIndex = i - 1;
                   this.render();
                 }}
@@ -675,8 +690,6 @@ zymbolFrameMaster.implementTrait(KeyPressTrait, {
         if (childMove.success) {
           labelCursor = [0, ...childMove.newRelativeCursor];
         }
-
-        console.log("f g tf", frame.getTypeFilters(labelCursor));
 
         /* Handle potential transformation */
         /* 1. Ask Hermes for the Transformer */

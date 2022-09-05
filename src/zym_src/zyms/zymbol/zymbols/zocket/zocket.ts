@@ -5,6 +5,7 @@ import {
   CURSOR_LATEX,
   INLINE_CURSOR_LATEX,
   LATEX_EMPTY_SOCKET,
+  LATEX_SPACE,
   wrapHtmlId,
 } from "../../../../../global_utils/latex_utils";
 import {
@@ -65,7 +66,10 @@ import {
   isTextZymbol,
   TEXT_ZYMBOL_NAME,
 } from "../text_zymbol/text_zymbol_schema";
-import { ZYMBOL_FRAME_MASTER_ID } from "../../../zymbol_infrastructure/zymbol_frame/zymbol_frame_schema";
+import {
+  isZymbolFrame,
+  ZYMBOL_FRAME_MASTER_ID,
+} from "../../../zymbol_infrastructure/zymbol_frame/zymbol_frame_schema";
 import { palette } from "../../../../../global_styles/palette";
 import { zyMath } from "../../../../../global_building_blocks/tex/autoRender";
 
@@ -588,14 +592,21 @@ export class Zocket extends Zymbol<ZocketSchema, ZocketPersistenceSchema> {
         if (parentOfCursorElement) {
           if (i === nextCursorIndex) {
             finalTex += cursorTex;
+
+            if (
+              !this.inline &&
+              this.children[i].getMasterId() === ZOCKET_MASTER_ID
+            ) {
+              finalTex += LATEX_SPACE;
+            }
           }
           let childTex = this.children[i].renderTex({ ...opts, cursor: [] });
 
           if (this.inline && !isTextZymbol(this.children[i])) {
-            childTex = zyMath(childTex);
+            finalTex += zyMath(childTex);
+          } else {
+            finalTex += childTex + " ";
           }
-
-          finalTex += childTex + " ";
         } else {
           let childTex = this.children[i].renderTex({
             ...opts,
@@ -603,17 +614,17 @@ export class Zocket extends Zymbol<ZocketSchema, ZocketPersistenceSchema> {
           });
 
           if (this.inline && !isTextZymbol(this.children[i])) {
-            childTex = zyMath(childTex);
+            finalTex += zyMath(childTex);
+          } else {
+            finalTex += childTex + " ";
           }
-
-          finalTex += childTex + " ";
         }
       }
     }
 
     if (parentOfCursorElement && nextCursorIndex === this.children.length) {
       if (this.inline) {
-        finalTex = finalTex.slice(0, -1);
+        finalTex = finalTex.trimEnd();
       }
       finalTex += cursorTex;
     }
@@ -654,8 +665,17 @@ export class Zocket extends Zymbol<ZocketSchema, ZocketPersistenceSchema> {
     return finalTex;
   };
 
-  getDeleteBehavior = (): DeleteBehavior =>
-    deleteBehaviorNormal(DeleteBehaviorType.ABSORB);
+  getDeleteBehavior = (): DeleteBehavior => {
+    if (
+      this.parentFrame.inlineTex &&
+      this.parent &&
+      isZymbolFrame(this.parent)
+    ) {
+      return deleteBehaviorNormal(DeleteBehaviorType.ABSORB);
+    } else {
+      return deleteBehaviorNormal(DeleteBehaviorType.SPLICE);
+    }
+  };
 
   spliceDelete = (
     _cursor: Cursor,
@@ -669,20 +689,15 @@ export class Zocket extends Zymbol<ZocketSchema, ZocketPersistenceSchema> {
     cursor: Cursor,
     _ctx: BasicContext
   ): DeleteBehavior | undefined => {
-    const { nextCursorIndex } = extractCursorInfo(cursor);
+    const { nextCursorIndex, parentOfCursorElement } =
+      extractCursorInfo(cursor);
 
-    if (nextCursorIndex === 0) {
+    if (parentOfCursorElement && nextCursorIndex === 0) {
       if (this.children.length === 0) {
         return deleteBehaviorNormal(DeleteBehaviorType.ALLOWED);
       } else {
         return deleteBehaviorNormal(DeleteBehaviorType.MOVE_LEFT);
       }
-    } else if (
-      nextCursorIndex === 1 &&
-      this.children.length === 1 &&
-      this.children[0].getDeleteBehavior().type === DeleteBehaviorType.ALLOWED
-    ) {
-      return deleteBehaviorNormal(DeleteBehaviorType.ALLOWED);
     }
   };
 
