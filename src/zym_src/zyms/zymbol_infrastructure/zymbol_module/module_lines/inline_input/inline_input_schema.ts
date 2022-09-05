@@ -9,14 +9,14 @@ import {
   ZymbolFrameSchema,
 } from "../../../zymbol_frame/zymbol_frame_schema";
 
-export const STANDARD_INPUT_ID = "standard-in";
+export const INLINE_INPUT_ID = "inline-in";
 
-export type StandardInputSchema = CreateZySchema<{
+export type InlineInputSchema = CreateZySchema<{
   inputFrame: IdentifiedSchema<ZymbolFrameSchema>;
 }>;
 
-export type StandardInputPersistenceSchema = CreatePersistenceSchema<
-  StandardInputSchema,
+export type InlineInputPersistenceSchema = CreatePersistenceSchema<
+  InlineInputSchema,
   {
     inputFrame: {
       persistenceSymbol: "f";

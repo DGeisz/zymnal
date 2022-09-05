@@ -13,18 +13,18 @@ import {
   DerivationSchema,
 } from "./module_lines/derivation/derivation_schema";
 import {
+  InlineInputPersistenceSchema,
+  InlineInputSchema,
+} from "./module_lines/inline_input/inline_input_schema";
+import {
   StandaloneEqSchema,
   StandalonePersistenceSchema,
 } from "./module_lines/standalone_equation/standalone_equation_schema";
-import {
-  StandardInputPersistenceSchema,
-  StandardInputSchema,
-} from "./module_lines/standard_input/standard_input_schema";
 
 export const ZYMBOL_MODULE_ID = "zymbol-module";
 
 export type ModuleLineSchema =
-  | StandardInputSchema
+  | InlineInputSchema
   | StandaloneEqSchema
   | DerivationSchema;
 
@@ -39,7 +39,7 @@ export type ZymbolModulePersistenceSchema = CreatePersistenceSchema<
       persistenceSymbol: "c";
       persistenceType: (
         | ZymPersist<StandaloneEqSchema, StandalonePersistenceSchema>
-        | ZymPersist<StandardInputSchema, StandardInputPersistenceSchema>
+        | ZymPersist<InlineInputSchema, InlineInputPersistenceSchema>
         | ZymPersist<DerivationSchema, DerivationPersistenceSchema>
         | ZymPersist<
             ZymbolProgressionSchema,

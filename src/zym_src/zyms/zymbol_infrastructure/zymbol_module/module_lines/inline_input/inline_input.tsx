@@ -11,31 +11,30 @@ import { ZyPartialPersist } from "../../../../../../zym_lib/zy_schema/zy_schema"
 import { isTextZymbol } from "../../../../zymbol/zymbols/text_zymbol/text_zymbol_schema";
 import { STD_TRANSFORMER_TYPE_FILTERS } from "../../../zymbol_frame/transformer/std_transformers/std_transformer_type_filters";
 import { ZymbolFrame } from "../../../zymbol_frame/zymbol_frame";
-import { STD_FRAME_LABELS } from "../../../zymbol_frame/zymbol_frame_schema";
 import {
-  StandardInputPersistenceSchema,
-  StandardInputSchema,
-  STANDARD_INPUT_ID,
-} from "./standard_input_schema";
+  InlineInputPersistenceSchema,
+  InlineInputSchema,
+  INLINE_INPUT_ID,
+} from "./inline_input_schema";
 
-class StandardInputMaster extends ZyMaster<
-  StandardInputSchema,
-  StandardInputPersistenceSchema
+class InlineInputMaster extends ZyMaster<
+  InlineInputSchema,
+  InlineInputPersistenceSchema
 > {
-  zyId: string = STANDARD_INPUT_ID;
+  zyId: string = INLINE_INPUT_ID;
 
   newBlankChild() {
-    return new StandardInput(0, undefined);
+    return new InlineInput(0, undefined);
   }
 }
 
-export const standardInputMaster = new StandardInputMaster();
+export const inlineInputMaster = new InlineInputMaster();
 
-export class StandardInput extends Zyact<
-  StandardInputSchema,
-  StandardInputPersistenceSchema
+export class InlineInput extends Zyact<
+  InlineInputSchema,
+  InlineInputPersistenceSchema
 > {
-  zyMaster: ZyMaster = standardInputMaster;
+  zyMaster: ZyMaster = inlineInputMaster;
   inputFrame: ZymbolFrame = new ZymbolFrame(0, this, {
     inlineFrame: true,
     getTypeFilters: (cursor) => {
@@ -80,7 +79,7 @@ export class StandardInput extends Zyact<
 
   async hydrateFromPartialPersist(
     p: Partial<
-      ZyPartialPersist<StandardInputSchema, StandardInputPersistenceSchema>
+      ZyPartialPersist<InlineInputSchema, InlineInputPersistenceSchema>
     >
   ): Promise<void> {
     await safeHydrate(p, {

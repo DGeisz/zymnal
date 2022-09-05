@@ -10,8 +10,8 @@ import { CursorIndex } from "../../../../zym_lib/zy_god/cursor/cursor";
 import { ZyPartialPersist } from "../../../../zym_lib/zy_schema/zy_schema";
 import { ZymbolProgression } from "../zymbol_progression/zymbol_progression";
 import { Derivation } from "./module_lines/derivation/derivation";
+import { InlineInput } from "./module_lines/inline_input/inline_input";
 import { StandaloneEquation } from "./module_lines/standalone_equation/standalone_equation";
-import { StandardInput } from "./module_lines/standard_input/standard_input";
 import {
   ZymbolModulePersistenceSchema,
   ZymbolModuleSchema,
@@ -34,7 +34,7 @@ export const zymbolModuleMaster = new ZymbolModuleMaster();
 
 export type ModuleLine =
   | StandaloneEquation
-  | StandardInput
+  | InlineInput
   | Derivation
   | ZymbolProgression;
 
@@ -49,8 +49,8 @@ export class ZymbolModule extends Zyact<
     super(cursorIndex, parent);
 
     /* Start out with a single standard input as the first line */
-    // this.children = [new StandardInput(0, this)];
-    this.children = [new ZymbolProgression(0, this)];
+    this.children = [new InlineInput(0, this)];
+    // this.children = [new ZymbolProgression(0, this)];
 
     this.setPersistenceSchemaSymbols({
       children: "c",
