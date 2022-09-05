@@ -38,7 +38,10 @@ import {
   TEXT_ZYMBOL_NAME,
 } from "./text_zymbol_schema";
 import { ZyPartialPersist } from "../../../../../zym_lib/zy_schema/zy_schema";
-import { STD_FRAME_LABELS } from "../../../zymbol_infrastructure/zymbol_frame/zymbol_frame_schema";
+import {
+  STD_FRAME_LABELS,
+  ZYMBOL_FRAME_MASTER_ID,
+} from "../../../zymbol_infrastructure/zymbol_frame/zymbol_frame_schema";
 import {
   zyMath,
   zySpan,
@@ -262,7 +265,9 @@ export class TextZymbol extends Zymbol<
   };
 
   renderTex = (opts: ZymbolRenderArgs) => {
-    const inline = this.parentFrame.inlineTex;
+    const inline =
+      this.parentFrame.inlineTex &&
+      this.parent?.parent?.getMasterId() === ZYMBOL_FRAME_MASTER_ID;
 
     const { parentOfCursorElement, nextCursorIndex } = extractCursorInfo(
       opts.cursor

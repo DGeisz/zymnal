@@ -63,7 +63,9 @@ export const renderMathInText = function (text: string, optionsCopy: any) {
         if (optionsCopy.preProcess) {
           math = optionsCopy.preProcess(math);
         }
-        frag += zySpan(katex.renderToString(math, optionsCopy));
+        frag += zySpan(katex.renderToString(math, optionsCopy), {
+          class: "zytex",
+        });
       } catch (e) {
         frag += zySpan(data[i].rawData!);
         continue;

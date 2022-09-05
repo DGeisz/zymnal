@@ -3,7 +3,7 @@ import katex from "katex";
 import { INVALID_TEX } from "../../global_utils/latex_utils";
 import { renderMathInText } from "./autoRender";
 
-const DEV = true;
+const DEV = false;
 
 interface TexProps {
   tex: string;

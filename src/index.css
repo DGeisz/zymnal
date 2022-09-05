@@ -81,4 +81,9 @@ span:focus,
 
 .zytex-wrapper {
   font-family: KaTeX_Main, "Times New Roman", serif;
+  font-size: 14pt;
+}
+
+.zytex {
+  font-size: 12pt;
 }

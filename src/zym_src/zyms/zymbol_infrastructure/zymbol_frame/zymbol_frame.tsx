@@ -13,6 +13,7 @@ import {
   chainMoveResponse,
   Cursor,
   CursorIndex,
+  CursorMoveResponse,
   extendChildCursor,
   extractCursorInfo,
   FAILED_CURSOR_MOVE_RESPONSE,
@@ -345,35 +346,35 @@ export class ZymbolFrame extends Zyact<
             element.style.pointerEvents = "auto";
             element.style.cursor = "text";
 
-            // if (pointer.isSelectableText) {
-            //   element.contentEditable = "true";
-            // }
+            if (pointer.isSelectableText) {
+              element.contentEditable = "true";
+            }
 
-            // element.onclick = () => {
-            //   usingTransformation && this.takeSelectedTransformation();
-            //   const textPointer = window.getSelection()?.anchorOffset;
+            element.onclick = () => {
+              usingTransformation && this.takeSelectedTransformation();
+              const textPointer = window.getSelection()?.anchorOffset;
 
-            //   element.blur();
+              element.blur();
 
-            //   if (pointer.isSelectableText && textPointer !== undefined) {
-            //     if (textPointer > 0) {
-            //       this.callZentinelMethod(ZyGodMethod.takeCursor, [
-            //         ...pointer.clickCursor,
-            //         textPointer + (pointer.selectableOffset ?? 0),
-            //       ]);
-            //     } else {
-            //       this.callZentinelMethod(
-            //         ZyGodMethod.takeCursor,
-            //         pointer.clickCursor
-            //       );
-            //     }
-            //   } else {
-            //     this.callZentinelMethod(
-            //       ZyGodMethod.takeCursor,
-            //       pointer.clickCursor
-            //     );
-            //   }
-            // };
+              if (pointer.isSelectableText && textPointer !== undefined) {
+                if (textPointer > 0) {
+                  this.callZentinelMethod(ZyGodMethod.takeCursor, [
+                    ...pointer.clickCursor,
+                    textPointer + (pointer.selectableOffset ?? 0),
+                  ]);
+                } else {
+                  this.callZentinelMethod(
+                    ZyGodMethod.takeCursor,
+                    pointer.clickCursor
+                  );
+                }
+              } else {
+                this.callZentinelMethod(
+                  ZyGodMethod.takeCursor,
+                  pointer.clickCursor
+                );
+              }
+            };
           }
         }
       })();
@@ -430,15 +431,15 @@ export class ZymbolFrame extends Zyact<
                   this.transformIndex + 1 === i && Styles.SelectedTransContainer
                 )}
                 key={`tt::${i}`}
-                onMouseOver={() => {
+                onMouseEnter={() => {
                   this.transformIndex = i - 1;
                   this.render();
                 }}
-                // onClick={() => {
-                //   this.callZentinelMethod(ZyGodMethod.simulateKeyPress, {
-                //     type: KeyPressBasicType.Enter,
-                //   });
-                // }}
+                onClick={() => {
+                  this.callZentinelMethod(ZyGodMethod.simulateKeyPress, {
+                    type: KeyPressBasicType.Enter,
+                  });
+                }}
               >
                 <TexTransform
                   tex={t}
@@ -666,9 +667,17 @@ zymbolFrameMaster.implementTrait(KeyPressTrait, {
           keyPressContext,
           keyPress,
         })
-      );
+      ) as CursorMoveResponse;
 
       if (isTransformationKey) {
+        let labelCursor = cursor;
+
+        if (childMove.success) {
+          labelCursor = [0, ...childMove.newRelativeCursor];
+        }
+
+        console.log("f g tf", frame.getTypeFilters(labelCursor));
+
         /* Handle potential transformation */
         /* 1. Ask Hermes for the Transformer */
         const transformer = await frame.callZentinelMethod(
@@ -676,7 +685,7 @@ zymbolFrameMaster.implementTrait(KeyPressTrait, {
           {
             cursor: frame.getFullCursorPointer(),
             keyPress,
-            typeFilters: frame.getTypeFilters(cursor),
+            typeFilters: frame.getTypeFilters(labelCursor),
           }
         );
         /* 2. Apply the transformer to get a list of potential transformations */
