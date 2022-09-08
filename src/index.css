@@ -84,5 +84,18 @@ span:focus,
 .zytex {
   font-size: 12pt;
   white-space: nowrap !important;
-  /* white-space: nowrap; */
+}
+
+.katex-display,
+.katex-display > .katex,
+.katex-display > .katex > .katex-html {
+  display: inline !important;
+}
+
+.katex-display {
+  text-align: left !important;
+}
+
+.katex-display > .katex {
+  text-align: left !important;
 }

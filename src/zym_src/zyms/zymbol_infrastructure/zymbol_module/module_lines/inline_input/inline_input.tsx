@@ -88,4 +88,18 @@ export class InlineInput extends Zyact<
       },
     });
   }
+
+  getCopyTex = () => {
+    const baseTex = this.inputFrame.baseZocket
+      .renderTex({
+        cursor: [],
+        excludeHtmlIds: true,
+        inlineTex: true,
+      })
+      .trim();
+
+    if (baseTex) return baseTex;
+
+    return "\\\\";
+  };
 }

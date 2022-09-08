@@ -49,6 +49,7 @@ class ZyGod extends Zentinel<ZyGodSchema> {
   private customKeyPressHandler: CustomKeyPressHandler | undefined;
 
   simulatedKeyPressQueue: ZymKeyPress[] = [];
+  keyPressCallbackQueue: (() => Promise<void>)[] = [];
   undoRedoStack: UndoRedoStack = new UndoRedoStack();
 
   constructor() {
@@ -80,6 +81,9 @@ class ZyGod extends Zentinel<ZyGodSchema> {
       },
       queueSimulatedKeyPress: async (keyPress) => {
         this.simulatedKeyPressQueue.push(keyPress);
+      },
+      queueKeyPressCallback: async (callback) => {
+        this.keyPressCallbackQueue.push(callback);
       },
       simulateKeyPress: async (keyPress) => {
         this.basicHandleKeyPress(keyPress);
@@ -290,6 +294,14 @@ class ZyGod extends Zentinel<ZyGodSchema> {
 
       if (this.simulatedKeyPressQueue.length > 0)
         this.handleKeyPress(this.simulatedKeyPressQueue.shift()!);
+
+      if (this.keyPressCallbackQueue.length > 0) {
+        for (const callback of this.keyPressCallbackQueue) {
+          await callback();
+        }
+
+        this.keyPressCallbackQueue = [];
+      }
     }
   };
 

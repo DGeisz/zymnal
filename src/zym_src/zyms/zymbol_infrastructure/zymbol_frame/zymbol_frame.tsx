@@ -68,6 +68,7 @@ import {
   ZymbolTreeTransformation,
 } from "./transformer/transformer";
 import { ZyPartialPersist } from "../../../../zym_lib/zy_schema/zy_schema";
+import { zyMath } from "../../../../global_building_blocks/tex/autoRender";
 
 const VIMIUM_HINT_PERIOD = 2;
 class ZymbolFrameMaster extends ZyMaster<
@@ -178,7 +179,7 @@ interface FrameRenderProps {
 /* Helper class */
 const Styles = {
   FrameContainer: "items-start",
-  MainFrameContainer: "m-4 mt-0",
+  MainFrameContainer: "mh-4 mt-0",
   SelectedTransContainer: "bg-gray-200 rounded-md",
 };
 
@@ -350,18 +351,12 @@ export class ZymbolFrame extends Zyact<
               element.contentEditable = "true";
             }
 
-            element.ondblclick = () => {
-              console.log("yeah!");
-            };
-
             element.onclick = () => {
               usingTransformation && this.takeSelectedTransformation();
 
               if (pointer.isSelectableText) {
-                // setTimeout(() => {
                 const textPointer = window.getSelection()?.anchorOffset;
 
-                // console.log("window offset", window.getSelection());
                 element.blur();
                 if (textPointer !== undefined && textPointer > 0) {
                   this.callZentinelMethod(ZyGodMethod.takeCursor, [
@@ -374,7 +369,6 @@ export class ZymbolFrame extends Zyact<
                     pointer.clickCursor
                   );
                 }
-                // }, 1000);
               } else {
                 this.callZentinelMethod(
                   ZyGodMethod.takeCursor,
@@ -587,11 +581,15 @@ zymbolFrameMaster.implementTrait(KeyPressTrait, {
       keyPress.key === "c" &&
       keyPress.modifiers?.includes(KeyPressModifier.Cmd)
     ) {
-      const tex = frame.baseZocket.renderTex({
+      let tex = frame.baseZocket.renderTex({
         cursor: [],
         excludeHtmlIds: true,
         inlineTex: frame.inlineTex,
       });
+
+      if (!frame.inlineTex) {
+        tex = zyMath(tex);
+      }
 
       navigator.clipboard.writeText(tex);
 

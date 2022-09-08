@@ -125,17 +125,17 @@ export const defaultCursorImplFactory = defaultTraitImplementationFactory(
         } = extractCursorInfo(newCursor.val);
 
         if (oI === nI) {
-          zym.children[oI].callTraitMethod(CursorCommandTrait.cursorRender, {
+          zym.children[oI]?.callTraitMethod(CursorCommandTrait.cursorRender, {
             newCursor: nP ? NONE : zySome(nRel),
             oldCursor: oP ? NONE : zySome(oRel),
           });
         } else {
-          zym.children[oI].callTraitMethod(CursorCommandTrait.cursorRender, {
+          zym.children[oI]?.callTraitMethod(CursorCommandTrait.cursorRender, {
             newCursor: NONE,
             oldCursor: oP ? NONE : zySome(oRel),
           });
 
-          zym.children[nI].callTraitMethod(CursorCommandTrait.cursorRender, {
+          zym.children[nI]?.callTraitMethod(CursorCommandTrait.cursorRender, {
             newCursor: nP ? NONE : zySome(nRel),
             oldCursor: NONE,
           });
@@ -147,7 +147,7 @@ export const defaultCursorImplFactory = defaultTraitImplementationFactory(
           parentOfCursorElement: oP,
         } = extractCursorInfo(oldCursor.val);
 
-        zym.children[oI].callTraitMethod(CursorCommandTrait.cursorRender, {
+        zym.children[oI]?.callTraitMethod(CursorCommandTrait.cursorRender, {
           newCursor: NONE,
           oldCursor: oP ? NONE : zySome(oRel),
         });
@@ -158,7 +158,7 @@ export const defaultCursorImplFactory = defaultTraitImplementationFactory(
           parentOfCursorElement: nP,
         } = extractCursorInfo(newCursor.val);
 
-        zym.children[nI].callTraitMethod(CursorCommandTrait.cursorRender, {
+        zym.children[nI]?.callTraitMethod(CursorCommandTrait.cursorRender, {
           newCursor: nP ? NONE : zySome(nRel),
           oldCursor: NONE,
         });

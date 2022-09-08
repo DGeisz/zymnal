@@ -19,34 +19,20 @@ export function zySpan(
 
 const zyMathDelim: Delimiter = { left: "\\(", right: "\\)", display: false };
 
+const empty = katex.renderToString(" ");
+
 export function zyMath(math: string): string {
   return `${zyMathDelim.left}${math}${zyMathDelim.right}`;
 }
 
 export const renderMathInText = function (text: string, optionsCopy: any) {
-  optionsCopy.delimiters = optionsCopy.delimiters || [
-    zyMathDelim,
+  optionsCopy = { ...optionsCopy };
 
-    // { left: "$$", right: "$$", display: true },
-    // { left: "\\(", right: "\\)", display: false },
-    // LaTeX uses $…$, but it ruins the display of normal `$` in text:
-    // { left: "$", right: "$", display: false },
-    // $ must come after $$
-    // Render AMS environments even if outside $$…$$ delimiters.
-    // { left: "\\begin{equation}", right: "\\end{equation}", display: false },
-    // { left: "\\begin{align}", right: "\\end{align}", display: true },
-    // { left: "\\begin{alignat}", right: "\\end{alignat}", display: true },
-    // { left: "\\begin{gather}", right: "\\end{gather}", display: true },
-    // { left: "\\begin{CD}", right: "\\end{CD}", display: true },
-    // { left: "\\[", right: "\\]", display: true },
-  ];
+  optionsCopy.delimiters = optionsCopy.delimiters || [zyMathDelim];
 
   const data = splitAtDelimiters(text, optionsCopy.delimiters);
   if (data.length === 1 && data[0].type === "text") {
-    // There is no formula in the text.
-    // Let's return null which means there is no need to replace
-    // the current text node with a new one.
-    return data[0].data;
+    return zySpan(data[0].data + empty, { class: "zytex-wrapper" });
   }
 
   let frag = "";
@@ -56,8 +42,6 @@ export const renderMathInText = function (text: string, optionsCopy: any) {
       frag += data[i].data;
     } else {
       let math = data[i].data;
-      // Override any display mode defined in the settings with that
-      // defined by the text itself
       optionsCopy.displayMode = data[i].display;
       try {
         if (optionsCopy.preProcess) {
@@ -73,5 +57,5 @@ export const renderMathInText = function (text: string, optionsCopy: any) {
     }
   }
 
-  return zySpan(frag, { class: "zytex-wrapper" });
+  return zySpan(frag + " ", { class: "zytex-wrapper" });
 };

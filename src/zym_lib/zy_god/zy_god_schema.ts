@@ -39,6 +39,10 @@ export type ZyGodSchema = CreateZentinelMethodSchema<{
     args: ZymKeyPress;
     return: void;
   };
+  queueKeyPressCallback: {
+    args: () => Promise<void>;
+    return: void;
+  };
   simulateKeyPress: {
     args: ZymKeyPress;
     return: void;
@@ -65,6 +69,7 @@ export const ZyGodMethod = createZentinelMethodList<ZyGodSchema>(ZY_GOD_ID, {
   getZymRoot: 0,
   hydratePersistedZym: 0,
   queueSimulatedKeyPress: 0,
+  queueKeyPressCallback: 0,
   takeCursor: 0,
   getFullCursor: 0,
   registerCustomKeyPressHandler: 0,

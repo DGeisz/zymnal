@@ -238,15 +238,6 @@ export abstract class Zymbol<
     this.parentFrame = frame;
     this.children.forEach((c) => (c as Zymbol<any, any>).setParentFrame(frame));
   };
-
-  recursivelyReIndexChildren = () => {
-    this.reIndexChildren();
-    this.reConnectParentChildren();
-
-    this.children.forEach((c) =>
-      (c as Zymbol<any, any>).recursivelyReIndexChildren()
-    );
-  };
 }
 
 export const ZYMBOL_HTML_ID_COMMANDS = "zymbol-html-id-com";

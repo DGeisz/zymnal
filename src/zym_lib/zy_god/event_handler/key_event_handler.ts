@@ -3,6 +3,7 @@ import {
   KeyPressBasicType,
   KeyPressComplexType,
   KeyPressModifier,
+  keyPressModifierToSymbol,
   ZymKeyPress,
 } from "./key_press";
 

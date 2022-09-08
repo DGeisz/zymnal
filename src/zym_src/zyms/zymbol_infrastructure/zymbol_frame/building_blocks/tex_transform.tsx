@@ -2,11 +2,10 @@ import Tex from "../../../../../global_building_blocks/tex/tex";
 import {
   KeyPressBasicType,
   KeyPressComplexType,
-  keyPressModifierToSymbol,
   ZymKeyPress,
 } from "../../../../../zym_lib/zy_god/event_handler/key_press";
 import { TeX } from "../../../zymbol/zymbol_types";
-import clsx from "clsx";
+// import clsx from "clsx";
 
 interface TexTransformProps {
   tex: TeX;
@@ -15,14 +14,14 @@ interface TexTransformProps {
   selector?: ZymKeyPress;
 }
 
-const Styles = {
-  SelectionKey: clsx(
-    "bg-green-200",
-    "rounded-md px-2 py-1",
-    "text-sm font-semibold text-green-600",
-    "shadow-sm shadow-gray"
-  ),
-};
+// const Styles = {
+//   SelectionKey: clsx(
+//     "bg-green-200",
+//     "rounded-md px-2 py-1",
+//     "text-sm font-semibold text-green-600",
+//     "shadow-sm shadow-gray"
+//   ),
+// };
 
 export const TexTransform: React.FC<TexTransformProps> = (props) => {
   let finalKey = "Any Key";
@@ -49,12 +48,12 @@ export const TexTransform: React.FC<TexTransformProps> = (props) => {
 
   return (
     <div className="flex flex-row self-stretch">
-      <div className="flex flex-row flex-1 m-4 w-[200px]">
+      <div className="flex flex-row flex-1 w-[200px]">
         {/* <div> */}
         <Tex {...props} />
         {/* </div> */}
       </div>
-      {props.showSelector && (
+      {/* {props.showSelector && (
         <div className="flex self-end">
           <span>
             {(selector?.modifiers ?? []).map((m, i) => (
@@ -68,7 +67,7 @@ export const TexTransform: React.FC<TexTransformProps> = (props) => {
             <span className={Styles.SelectionKey}>{finalKey}</span>
           </span>
         </div>
-      )}
+      )} */}
     </div>
   );
 };

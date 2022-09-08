@@ -98,12 +98,16 @@ export abstract class Zym<
     }
   };
 
+  recursivelyReIndexChildren = () => {
+    this.reIndexChildren();
+    this.reConnectParentChildren();
+
+    this.children.forEach((c) => c.recursivelyReIndexChildren());
+  };
+
   getFullCursorPointer = (): Cursor => {
     if (this.parent) {
-      return extendParentCursor(
-        this.cursorIndex,
-        this.parent.getFullCursorPointer()
-      );
+      return [...this.parent.getFullCursorPointer(), this.cursorIndex];
     } else {
       return [];
     }

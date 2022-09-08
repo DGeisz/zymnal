@@ -16,8 +16,13 @@ import {
   extractCursorInfo,
   FAILED_CURSOR_MOVE_RESPONSE,
   successfulMoveResponse,
+  wrapChildCursorResponse,
 } from "../../../../../zym_lib/zy_god/cursor/cursor";
-import { ZymbolDirection } from "../../../../../zym_lib/zy_god/event_handler/key_press";
+import {
+  KeyPressBasicType,
+  ZymbolDirection,
+  ZymKeyPress,
+} from "../../../../../zym_lib/zy_god/event_handler/key_press";
 import { BasicContext } from "../../../../../zym_lib/utils/basic_context";
 import { addZymChangeLink } from "../../../../../zym_lib/zy_god/undo_redo/undo_redo";
 import { getFullContextCursor } from "../../../../../zym_lib/zy_god/zy_god";
@@ -38,16 +43,13 @@ import {
   TEXT_ZYMBOL_NAME,
 } from "./text_zymbol_schema";
 import { ZyPartialPersist } from "../../../../../zym_lib/zy_schema/zy_schema";
-import {
-  STD_FRAME_LABELS,
-  ZYMBOL_FRAME_MASTER_ID,
-} from "../../../zymbol_infrastructure/zymbol_frame/zymbol_frame_schema";
+import { ZYMBOL_FRAME_MASTER_ID } from "../../../zymbol_infrastructure/zymbol_frame/zymbol_frame_schema";
 import {
   zyMath,
   zySpan,
 } from "../../../../../global_building_blocks/tex/autoRender";
-import { zymbolProgressionMaster } from "../../../zymbol_infrastructure/zymbol_progression/zymbol_progression";
-import { createTypeReferenceDirectiveResolutionCache } from "typescript";
+import { ZyGodMethod } from "../../../../../zym_lib/zy_god/zy_god_schema";
+import { ZymbolModuleMethod } from "../../../zymbol_infrastructure/zymbol_module/zymbol_module_schema";
 
 class TextZymbolMaster extends ZyMaster<
   TextZymbolSchema,
@@ -60,14 +62,8 @@ class TextZymbolMaster extends ZyMaster<
   }
 }
 
-export function treatText(text: string, inline: boolean) {
+export function treatText(text: string, _inline: boolean) {
   return text;
-
-  if (inline) {
-    return text.replaceAll(" ", "&nbsp;<wbr>");
-  } else {
-    return text;
-  }
 }
 
 export const textZymbolMaster = new TextZymbolMaster();
@@ -275,10 +271,12 @@ export class TextZymbol extends Zymbol<
     return false;
   };
 
+  getInline = () =>
+    this.parentFrame.inlineTex &&
+    this.parent?.parent?.getMasterId() === ZYMBOL_FRAME_MASTER_ID;
+
   renderTex = (opts: ZymbolRenderArgs) => {
-    const inline =
-      this.parentFrame.inlineTex &&
-      this.parent?.parent?.getMasterId() === ZYMBOL_FRAME_MASTER_ID;
+    const inline = this.getInline();
 
     const { parentOfCursorElement, nextCursorIndex } = extractCursorInfo(
       opts.cursor

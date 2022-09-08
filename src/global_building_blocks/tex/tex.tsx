@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from "react";
 import katex from "katex";
 import { INVALID_TEX } from "../../global_utils/latex_utils";
 import { renderMathInText } from "./autoRender";
+import { convertToObject } from "typescript";
 
 const DEV = false;
 
@@ -63,7 +64,7 @@ const Tex: React.FC<TexProps> = (props) => {
             __html: htmlTex,
           }}
         />
-        {/* <div>{JSON.stringify(props.inlineTex)}</div> */}
+        <div>{JSON.stringify(props.inlineTex)}</div>
         <div>{props.tex}</div>
       </div>
     );

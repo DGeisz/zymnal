@@ -17,6 +17,8 @@ const basicBinaryOperations: DirectMap = {
   "+": "+",
   "=": "=",
   "-": "-",
+  ">": ">",
+  "<": "<",
 };
 
 const binDirectMap: DirectMap = {
@@ -33,6 +35,11 @@ const logicDirectMap: DirectMap = {
   rar: "rArr",
   ex: "exists",
   fa: "forall",
+};
+
+/* +++ Sets! +++ */
+const dotsDirectMap: DirectMap = {
+  ooo: "dots",
 };
 
 /* +++ Sets! +++ */
@@ -64,6 +71,7 @@ export const mathDirectMap: InPlaceSymbolMap = {
         ...basicMathDirectMap,
         ...binDirectMap,
         ...logicDirectMap,
+        ...dotsDirectMap,
       },
       backslash
     ),

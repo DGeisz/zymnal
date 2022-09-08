@@ -2,6 +2,7 @@ import { CURSOR_NAME } from "../../../global_utils/latex_utils";
 import { Zym } from "../../zym/zym";
 import { NONE, zySome, ZyOption } from "../../utils/zy_option";
 import { createContextVariable } from "../../utils/basic_context";
+import { ZyId } from "../../zy_schema/zy_schema";
 
 export type CursorIndex = number;
 export type Cursor = CursorIndex[];
@@ -65,6 +66,36 @@ export function chainMoveResponse(
     return onSuccess(moveResponse.newRelativeCursor);
   } else {
     return FAILED_CURSOR_MOVE_RESPONSE;
+  }
+}
+
+export function getLastZymInCursorWithId<Z extends Zym>(
+  root: Zym,
+  cursor: Cursor,
+  id: ZyId
+): ZyOption<{ zym: Z; childRelativeCursor: Cursor }> {
+  const cursorZym = [root];
+
+  let currZym = root;
+
+  for (const i of cursor) {
+    currZym = currZym.children[i];
+    if (currZym === undefined) break;
+
+    cursorZym.push(currZym);
+  }
+
+  const lastZymI = cursorZym.reverse().findIndex((z) => z.getMasterId() === id);
+
+  if (lastZymI > -1) {
+    const lastZym = cursorZym[lastZymI];
+
+    return zySome({
+      zym: lastZym as Z,
+      childRelativeCursor: cursor.slice(cursorZym.length - 1 - lastZymI),
+    });
+  } else {
+    return NONE;
   }
 }
 

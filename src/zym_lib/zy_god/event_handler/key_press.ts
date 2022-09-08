@@ -67,9 +67,28 @@ export interface BasicKeyPress extends ModifiedKeyPress {
   type: KeyPressBasicType;
 }
 
+export function basicKeyPress(type: KeyPressBasicType): ZymKeyPress {
+  return {
+    type,
+  };
+}
+
 export interface ComplexKeyPress extends ModifiedKeyPress {
   type: KeyPressComplexType.Key;
   key: string;
+}
+
+export function isKeyPressKey(
+  keyPress: ZymKeyPress,
+  key: string | string[]
+): keyPress is ComplexKeyPress {
+  if (typeof key == "string") {
+    key = [key];
+  }
+
+  return (
+    keyPress.type === KeyPressComplexType.Key && key.includes(keyPress.key)
+  );
 }
 
 export type ZymKeyPress = BasicKeyPress | ComplexKeyPress;

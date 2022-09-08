@@ -1,3 +1,4 @@
+import { Zym } from "../../../../../../zym_lib/zym/zym";
 import {
   CreatePersistenceSchema,
   CreateZySchema,
@@ -8,6 +9,7 @@ import {
   ZymbolFramePersistedSchema,
   ZymbolFrameSchema,
 } from "../../../zymbol_frame/zymbol_frame_schema";
+import { InlineInput } from "./inline_input";
 
 export const INLINE_INPUT_ID = "inline-in";
 
@@ -27,3 +29,7 @@ export type InlineInputPersistenceSchema = CreatePersistenceSchema<
     };
   }
 >;
+
+export function zymIsInlineInput(zym: Zym): zym is InlineInput {
+  return zym.getMasterId() === INLINE_INPUT_ID;
+}

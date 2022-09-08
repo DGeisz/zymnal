@@ -85,4 +85,12 @@ export class ZymbolProgression extends Zyact<
 
     this.reConnectParentChildren();
   }
+
+  getCopyTex = () => {
+    return `$$ ${this.baseFrame.baseZocket.renderTex({
+      cursor: [],
+      excludeHtmlIds: true,
+      inlineTex: false,
+    })} $$`;
+  };
 }

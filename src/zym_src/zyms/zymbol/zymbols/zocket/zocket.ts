@@ -27,8 +27,10 @@ import {
   wrapChildCursorResponse,
 } from "../../../../../zym_lib/zy_god/cursor/cursor";
 import {
+  KeyPressBasicType,
   KeyPressModifier,
   ZymbolDirection,
+  ZymKeyPress,
 } from "../../../../../zym_lib/zy_god/event_handler/key_press";
 import { BasicContext } from "../../../../../zym_lib/utils/basic_context";
 import { addZymChangeLink } from "../../../../../zym_lib/zy_god/undo_redo/undo_redo";
@@ -72,6 +74,8 @@ import {
 } from "../../../zymbol_infrastructure/zymbol_frame/zymbol_frame_schema";
 import { palette } from "../../../../../global_styles/palette";
 import { zyMath } from "../../../../../global_building_blocks/tex/autoRender";
+import { ZyGodMethod } from "../../../../../zym_lib/zy_god/zy_god_schema";
+import { ZymbolModuleMethod } from "../../../zymbol_infrastructure/zymbol_module/zymbol_module_schema";
 
 const GROUP_COLOR = palette.beneathTheWaves;
 
@@ -409,6 +413,65 @@ export class Zocket extends Zymbol<ZocketSchema, ZocketPersistenceSchema> {
     }
   };
 
+  defaultKeyPressHandler = (
+    keyPress: ZymKeyPress,
+    cursor: Cursor,
+    ctx: BasicContext
+  ): CursorMoveResponse => {
+    const { childRelativeCursor, nextCursorIndex } = extractCursorInfo(cursor);
+
+    const child = this.children[nextCursorIndex];
+
+    if (keyPress.type === KeyPressBasicType.Enter) {
+      if (
+        this.inline &&
+        nextCursorIndex > -1 &&
+        (childRelativeCursor.length === 0 || (child && isTextZymbol(child)))
+      ) {
+        if (nextCursorIndex === 0 && childRelativeCursor.length === 0) {
+          this.callZentinelMethod(
+            ZyGodMethod.queueKeyPressCallback,
+            async () => {
+              await this.callZentinelMethod(ZymbolModuleMethod.addInlineLine, {
+                cursor: [...this.getFullCursorPointer(), ...cursor],
+              });
+            }
+          );
+        } else {
+          this.callZentinelMethod(
+            ZyGodMethod.queueKeyPressCallback,
+            async () => {
+              await this.callZentinelMethod(ZymbolModuleMethod.breakLine, {
+                cursor: [...this.getFullCursorPointer(), ...cursor],
+              });
+            }
+          );
+        }
+
+        return FAILED_CURSOR_MOVE_RESPONSE;
+      } else if (
+        cursor.length === 0 ||
+        nextCursorIndex <= -1 ||
+        nextCursorIndex >= this.children.length
+      ) {
+        this.callZentinelMethod(ZyGodMethod.queueSimulatedKeyPress, {
+          type: KeyPressBasicType.ArrowRight,
+        });
+
+        return FAILED_CURSOR_MOVE_RESPONSE;
+      }
+    }
+
+    return wrapChildCursorResponse(
+      this.children[nextCursorIndex].defaultKeyPressHandler(
+        keyPress,
+        childRelativeCursor,
+        ctx
+      ),
+      nextCursorIndex
+    );
+  };
+
   onHandleKeyPress = (res: CursorMoveResponse): CursorMoveResponse => {
     if (!res.success) {
       return res;
@@ -669,7 +732,7 @@ export class Zocket extends Zymbol<ZocketSchema, ZocketPersistenceSchema> {
     if (
       this.parentFrame.inlineTex &&
       this.parent &&
-      isZymbolFrame(this.parent)
+      isZymbolFrame(this.parent!.parent!)
     ) {
       return deleteBehaviorNormal(DeleteBehaviorType.ABSORB);
     } else {
@@ -704,6 +767,21 @@ export class Zocket extends Zymbol<ZocketSchema, ZocketPersistenceSchema> {
   delete = (cursor: Cursor, ctx: BasicContext): CursorMoveResponse => {
     const { parentOfCursorElement, nextCursorIndex, childRelativeCursor } =
       extractCursorInfo(cursor);
+
+    /* First we want to deal with line-based behavior */
+    if (
+      this.inline &&
+      nextCursorIndex === 0 &&
+      childRelativeCursor.length === 0
+    ) {
+      this.callZentinelMethod(ZyGodMethod.queueKeyPressCallback, async () => {
+        this.callZentinelMethod(ZymbolModuleMethod.joinLine, {
+          cursor: [...this.getFullCursorPointer(), ...cursor],
+        });
+      });
+
+      return FAILED_CURSOR_MOVE_RESPONSE;
+    }
 
     /* Check if the immediate child is a text element */
 

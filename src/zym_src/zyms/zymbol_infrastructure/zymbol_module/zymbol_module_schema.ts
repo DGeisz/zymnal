@@ -1,4 +1,9 @@
 import {
+  createZentinelMethodList,
+  CreateZentinelMethodSchema,
+} from "../../../../zym_lib/hermes/hermes";
+import { Cursor } from "../../../../zym_lib/zy_god/cursor/cursor";
+import {
   CreatePersistenceSchema,
   CreateZySchema,
   IdentifiedSchema,
@@ -22,6 +27,36 @@ import {
 } from "./module_lines/standalone_equation/standalone_equation_schema";
 
 export const ZYMBOL_MODULE_ID = "zymbol-module";
+
+interface BreakLineArgs {
+  cursor: Cursor;
+}
+
+interface JoinLinesArgs {
+  cursor: Cursor;
+}
+
+export type ZymbolModuleMethodSchema = CreateZentinelMethodSchema<{
+  breakLine: {
+    args: BreakLineArgs;
+    return: void;
+  };
+  joinLine: {
+    args: JoinLinesArgs;
+    return: void;
+  };
+  addInlineLine: {
+    args: { cursor: Cursor };
+    return: void;
+  };
+}>;
+
+export const ZymbolModuleMethod =
+  createZentinelMethodList<ZymbolModuleMethodSchema>(ZYMBOL_MODULE_ID, {
+    breakLine: 0,
+    joinLine: 0,
+    addInlineLine: 0,
+  });
 
 export type ModuleLineSchema =
   | InlineInputSchema
