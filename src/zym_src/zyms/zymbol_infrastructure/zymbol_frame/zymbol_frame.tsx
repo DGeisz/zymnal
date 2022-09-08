@@ -178,8 +178,9 @@ interface FrameRenderProps {
 
 /* Helper class */
 const Styles = {
-  FrameContainer: "items-start",
-  MainFrameContainer: "mh-4 mt-0",
+  // FrameContainer: "items-start bg-blue-500",
+  FrameContainer: "",
+  MainFrameContainer: "mt-3sdfasd",
   SelectedTransContainer: "bg-gray-200 rounded-md",
 };
 
@@ -432,7 +433,7 @@ export class ZymbolFrame extends Zyact<
               inlineTex={this.inlineTex}
             />
           </div>
-          <div className="shadow-lg shadow-gray-400 py-4 px-2 rounded-lg bg-gray-100">
+          {/* <div className="shadow-lg shadow-gray-400 py-4 px-2 rounded-lg bg-gray-100">
             {allTex.map((t, i) => (
               <div
                 className={clsx(
@@ -458,7 +459,7 @@ export class ZymbolFrame extends Zyact<
                 />
               </div>
             ))}
-          </div>
+          </div> */}
         </div>
       );
     } else {

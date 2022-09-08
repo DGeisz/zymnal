@@ -46,28 +46,30 @@ export const TexTransform: React.FC<TexTransformProps> = (props) => {
     }
   }
 
-  return (
-    <div className="flex flex-row self-stretch">
-      <div className="flex flex-row flex-1 w-[200px]">
-        {/* <div> */}
-        <Tex {...props} />
-        {/* </div> */}
-      </div>
-      {/* {props.showSelector && (
-        <div className="flex self-end">
-          <span>
-            {(selector?.modifiers ?? []).map((m, i) => (
-              <span key={i}>
-                <span className={Styles.SelectionKey}>
-                  {keyPressModifierToSymbol(m)}
-                </span>
-                <span className="mx-1">+</span>
-              </span>
-            ))}
-            <span className={Styles.SelectionKey}>{finalKey}</span>
-          </span>
-        </div>
-      )} */}
-    </div>
-  );
+  return <Tex {...props} />;
+
+  // return (
+  //   <div className="flex flex-row self-stretch">
+  //     <div className="flex flex-row flex-1 w-[200px]">
+  //       {/* <div> */}
+  //       <Tex {...props} />
+  //       {/* </div> */}
+  //     </div>
+  //     {/* {props.showSelector && (
+  //       <div className="flex self-end">
+  //         <span>
+  //           {(selector?.modifiers ?? []).map((m, i) => (
+  //             <span key={i}>
+  //               <span className={Styles.SelectionKey}>
+  //                 {keyPressModifierToSymbol(m)}
+  //               </span>
+  //               <span className="mx-1">+</span>
+  //             </span>
+  //           ))}
+  //           <span className={Styles.SelectionKey}>{finalKey}</span>
+  //         </span>
+  //       </div>
+  //     )} */}
+  //   </div>
+  // );
 };

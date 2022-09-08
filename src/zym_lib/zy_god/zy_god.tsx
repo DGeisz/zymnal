@@ -29,7 +29,7 @@ import {
 } from "./undo_redo/undo_redo";
 import { CustomKeyPressHandler, ZyGodSchema, ZY_GOD_ID } from "./zy_god_schema";
 
-const WINDOW_BLUR = false;
+const WINDOW_BLUR = true;
 
 export const { get: getFullContextCursor, set: setFullContextCursor } =
   createContextVariable<Cursor>("full-context-cursor");

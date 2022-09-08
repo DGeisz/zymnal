@@ -24,6 +24,7 @@ const basicBinaryOperations: DirectMap = {
 const binDirectMap: DirectMap = {
   dot: "cdot",
   "*": "cdot",
+  deq: "equiv",
 };
 
 /* +++ Sets! +++ */
@@ -40,6 +41,7 @@ const logicDirectMap: DirectMap = {
 /* +++ Sets! +++ */
 const dotsDirectMap: DirectMap = {
   ooo: "dots",
+  "...": "dots",
 };
 
 /* +++ Sets! +++ */

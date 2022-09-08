@@ -75,7 +75,10 @@ import {
 import { palette } from "../../../../../global_styles/palette";
 import { zyMath } from "../../../../../global_building_blocks/tex/autoRender";
 import { ZyGodMethod } from "../../../../../zym_lib/zy_god/zy_god_schema";
-import { ZymbolModuleMethod } from "../../../zymbol_infrastructure/zymbol_module/zymbol_module_schema";
+import {
+  ModuleLineType,
+  ZymbolModuleMethod,
+} from "../../../zymbol_infrastructure/zymbol_module/zymbol_module_schema";
 
 const GROUP_COLOR = palette.beneathTheWaves;
 
@@ -424,7 +427,8 @@ export class Zocket extends Zymbol<ZocketSchema, ZocketPersistenceSchema> {
 
     if (keyPress.type === KeyPressBasicType.Enter) {
       if (
-        this.inline &&
+        this.parent &&
+        isZymbolFrame(this.parent) &&
         nextCursorIndex > -1 &&
         (childRelativeCursor.length === 0 || (child && isTextZymbol(child)))
       ) {
@@ -434,6 +438,7 @@ export class Zocket extends Zymbol<ZocketSchema, ZocketPersistenceSchema> {
             async () => {
               await this.callZentinelMethod(ZymbolModuleMethod.addInlineLine, {
                 cursor: [...this.getFullCursorPointer(), ...cursor],
+                lineType: ModuleLineType.Inline,
               });
             }
           );

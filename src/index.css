@@ -94,6 +94,7 @@ span:focus,
 
 .katex-display {
   text-align: left !important;
+  margin: 0 !important;
 }
 
 .katex-display > .katex {

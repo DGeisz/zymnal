@@ -17,16 +17,23 @@ import {
   DerivationPersistenceSchema,
   DerivationSchema,
 } from "./module_lines/derivation/derivation_schema";
+import { DisplayEquation } from "./module_lines/display_equation/display_equation";
+import {
+  DisplayEquationPersistenceSchema,
+  DisplayEquationSchema,
+} from "./module_lines/display_equation/display_equation_schema";
+import { InlineInput } from "./module_lines/inline_input/inline_input";
 import {
   InlineInputPersistenceSchema,
   InlineInputSchema,
 } from "./module_lines/inline_input/inline_input_schema";
-import {
-  StandaloneEqSchema,
-  StandalonePersistenceSchema,
-} from "./module_lines/standalone_equation/standalone_equation_schema";
 
 export const ZYMBOL_MODULE_ID = "zymbol-module";
+
+export enum ModuleLineType {
+  Inline,
+  DisplayEquation,
+}
 
 interface BreakLineArgs {
   cursor: Cursor;
@@ -46,7 +53,7 @@ export type ZymbolModuleMethodSchema = CreateZentinelMethodSchema<{
     return: void;
   };
   addInlineLine: {
-    args: { cursor: Cursor };
+    args: { cursor: Cursor; lineType: ModuleLineType };
     return: void;
   };
 }>;
@@ -58,9 +65,11 @@ export const ZymbolModuleMethod =
     addInlineLine: 0,
   });
 
+export type ModuleLine = InlineInput | DisplayEquation;
+
 export type ModuleLineSchema =
   | InlineInputSchema
-  | StandaloneEqSchema
+  | DisplayEquationSchema
   | DerivationSchema;
 
 export type ZymbolModuleSchema = CreateZySchema<{
@@ -73,13 +82,9 @@ export type ZymbolModulePersistenceSchema = CreatePersistenceSchema<
     children: {
       persistenceSymbol: "c";
       persistenceType: (
-        | ZymPersist<StandaloneEqSchema, StandalonePersistenceSchema>
+        | ZymPersist<DisplayEquationSchema, DisplayEquationPersistenceSchema>
         | ZymPersist<InlineInputSchema, InlineInputPersistenceSchema>
         | ZymPersist<DerivationSchema, DerivationPersistenceSchema>
-        | ZymPersist<
-            ZymbolProgressionSchema,
-            ZymbolProgressionPersistenceSchema
-          >
       )[];
     };
   }

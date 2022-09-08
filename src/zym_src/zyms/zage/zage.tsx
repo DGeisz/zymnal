@@ -62,30 +62,11 @@ export class Zage extends Zyact<ZageSchema, ZagePersistenceSchema> {
         });
     }, []);
 
-    // return (
-    //   <div className="m-8">
-    //     <Tex
-    //       tex={`hij      ${zyMath("\\frac{1}{2}")} hi ${zyMath(
-    //         CURSOR_LATEX
-    //       )}$there as;ldkldkjasdfldkjasdf ldkjasdfldkjasdfldkjasdfldkjasdfldkjasdfldkjasdfldkjasdfl dkjasdfl dkjasdfldkjasdfldkjasdfjasdf`}
-    //       inlineTex
-    //     />
-
-    //     {/* <Tex tex={"$$\\frac{1}{2}$$"} inlineTex /> */}
-    //     {/* <Tex
-    //       tex={treatText(
-    //         `asd     asdf asdf a;skld ajsdf ;alskjdf as;ldf a;sldkfja s;ldk f;alskdjf ;aslkd ;asdlf;alsk df;laskd f;lkajsd f;laskjdf ;alksdjf asdf`,
-    //         true
-    //       )}
-    //       inlineTex
-    //     /> */}
-    //     {/* <Tex tex={create_tex_text("Hello there")} /> */}
-    //   </div>
-    // );
-
     return (
-      <div className="m-16">
-        <BaseModuleComponent />
+      <div className="flex justify-center">
+        <div className="flex-1 m-16 max-w-3xl">
+          <BaseModuleComponent />
+        </div>
       </div>
     );
   };

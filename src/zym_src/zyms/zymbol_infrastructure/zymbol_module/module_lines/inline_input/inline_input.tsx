@@ -64,11 +64,7 @@ export class InlineInput extends Zyact<
   component: React.FC = () => {
     const Frame = useZymponent(this.inputFrame);
 
-    return (
-      // <div className="w-full m-4 p-4 shadow-xl rounded-md bg-red-100">
-      <Frame />
-      // </div>
-    );
+    return <Frame />;
   };
 
   persistData() {
@@ -100,6 +96,6 @@ export class InlineInput extends Zyact<
 
     if (baseTex) return baseTex;
 
-    return "\\\\";
+    return "\\\\\\\\";
   };
 }

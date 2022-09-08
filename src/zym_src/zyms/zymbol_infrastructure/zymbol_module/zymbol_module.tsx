@@ -34,15 +34,19 @@ import { ZyPartialPersist } from "../../../../zym_lib/zy_schema/zy_schema";
 import { unwrapTraitResponse } from "../../../../zym_lib/zy_trait/zy_trait";
 import { TextZymbol } from "../../zymbol/zymbols/text_zymbol/text_zymbol";
 import { isTextZymbol } from "../../zymbol/zymbols/text_zymbol/text_zymbol_schema";
-import { ZymbolProgression } from "../zymbol_progression/zymbol_progression";
+import { DisplayEquation } from "./module_lines/display_equation/display_equation";
 import { InlineInput } from "./module_lines/inline_input/inline_input";
 import { zymIsInlineInput } from "./module_lines/inline_input/inline_input_schema";
 import {
+  ModuleLine,
+  ModuleLineType,
   ZymbolModuleMethodSchema,
   ZymbolModulePersistenceSchema,
   ZymbolModuleSchema,
   ZYMBOL_MODULE_ID,
 } from "./zymbol_module_schema";
+
+const LF_UNICODE = "\u000A";
 
 class ZymbolModuleMaster extends ZyMaster<
   ZymbolModuleSchema,
@@ -55,7 +59,7 @@ class ZymbolModuleMaster extends ZyMaster<
     super();
 
     this.setMethodImplementation({
-      addInlineLine: async ({ cursor }) => {
+      addInlineLine: async ({ cursor, lineType }) => {
         const root = await this.callZentinelMethod(
           ZyGodMethod.getZymRoot,
           undefined
@@ -73,7 +77,18 @@ class ZymbolModuleMaster extends ZyMaster<
           if (childRelativeCursor.length > 0) {
             const childIndex = childRelativeCursor[0];
 
-            const newLine = new InlineInput(0, module);
+            let newLine: ModuleLine;
+
+            switch (lineType) {
+              case ModuleLineType.DisplayEquation: {
+                newLine = new DisplayEquation(0, module);
+                break;
+              }
+              case ModuleLineType.Inline: {
+                newLine = new InlineInput(0, module);
+                break;
+              }
+            }
 
             module.children.splice(childIndex, 0, newLine);
             module.recursivelyReIndexChildren();
@@ -112,7 +127,6 @@ class ZymbolModuleMaster extends ZyMaster<
             const childIndex = childRelativeCursor[0];
 
             if (childIndex < module.children.length && childIndex > 0) {
-              /* Make sure both these bad bois are inline_inputs */
               if (
                 zymIsInlineInput(module.children[childIndex]) &&
                 zymIsInlineInput(module.children[childIndex - 1])
@@ -287,8 +301,6 @@ class ZymbolModuleMaster extends ZyMaster<
 
 export const zymbolModuleMaster = new ZymbolModuleMaster();
 
-export type ModuleLine = InlineInput | ZymbolProgression;
-
 export class ZymbolModule extends Zyact<
   ZymbolModuleSchema,
   ZymbolModulePersistenceSchema
@@ -301,7 +313,6 @@ export class ZymbolModule extends Zyact<
 
     /* Start out with a single standard input as the first line */
     this.children = [new InlineInput(0, this)];
-    // this.children = [new ZymbolProgression(0, this)];
 
     this.setPersistenceSchemaSymbols({
       children: "c",
@@ -322,7 +333,7 @@ export class ZymbolModule extends Zyact<
 
   addLine = (inline: boolean) => {
     this.children.push(
-      inline ? new InlineInput(0, this) : new ZymbolProgression(0, this)
+      inline ? new InlineInput(0, this) : new DisplayEquation(0, this)
     );
 
     this.reConnectParentChildren();
@@ -467,7 +478,7 @@ zymbolModuleMaster.implementTrait(KeyPressTrait, {
       ) {
         let tex = "";
         for (const c of module.children) {
-          tex += c.getCopyTex() + "\u000A";
+          tex += c.getCopyTex() + LF_UNICODE;
         }
 
         navigator.clipboard.writeText(tex);
