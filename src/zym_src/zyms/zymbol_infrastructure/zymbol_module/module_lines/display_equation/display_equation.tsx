@@ -46,7 +46,7 @@ export class DisplayEquation extends Zyact<
     const Frame = useZymponent(this.baseFrame);
 
     return (
-      <div className="flex justify-center">
+      <div className="flex justify-center mt-4">
         <Frame />
       </div>
     );
@@ -78,6 +78,7 @@ export class DisplayEquation extends Zyact<
       cursor: [],
       excludeHtmlIds: true,
       inlineTex: false,
+      copyTex: true,
     })} $$`;
   };
 }

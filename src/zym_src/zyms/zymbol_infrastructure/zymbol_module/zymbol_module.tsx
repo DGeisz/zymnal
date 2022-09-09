@@ -25,7 +25,6 @@ import {
   basicKeyPress,
   KeyPressBasicType,
   KeyPressComplexType,
-  keyPressEqual,
   KeyPressModifier,
   KeyPressTrait,
 } from "../../../../zym_lib/zy_god/event_handler/key_press";
@@ -36,7 +35,7 @@ import { TextZymbol } from "../../zymbol/zymbols/text_zymbol/text_zymbol";
 import { isTextZymbol } from "../../zymbol/zymbols/text_zymbol/text_zymbol_schema";
 import { DisplayEquation } from "./module_lines/display_equation/display_equation";
 import { InlineInput } from "./module_lines/inline_input/inline_input";
-import { zymIsInlineInput } from "./module_lines/inline_input/inline_input_schema";
+import { isInlineInput } from "./module_lines/inline_input/inline_input_schema";
 import {
   ModuleLine,
   ModuleLineType,
@@ -59,7 +58,7 @@ class ZymbolModuleMaster extends ZyMaster<
     super();
 
     this.setMethodImplementation({
-      addInlineLine: async ({ cursor, lineType }) => {
+      addLine: async ({ cursor, lineType }) => {
         const root = await this.callZentinelMethod(
           ZyGodMethod.getZymRoot,
           undefined
@@ -80,15 +79,55 @@ class ZymbolModuleMaster extends ZyMaster<
             let newLine: ModuleLine;
 
             switch (lineType) {
-              case ModuleLineType.DisplayEquation: {
-                newLine = new DisplayEquation(0, module);
-                break;
-              }
               case ModuleLineType.Inline: {
                 newLine = new InlineInput(0, module);
+
+                break;
+              }
+              case ModuleLineType.DisplayEquation: {
+                newLine = new DisplayEquation(0, module);
+
                 break;
               }
             }
+
+            module.children.splice(childIndex + 1, 0, newLine);
+            module.recursivelyReIndexChildren();
+
+            const newFullCursor = [
+              ...module.getFullCursorPointer(),
+              childIndex + 1,
+              0,
+              0,
+              0,
+            ];
+
+            await this.callZentinelMethod(
+              ZyGodMethod.takeCursor,
+              newFullCursor
+            );
+          }
+        }
+      },
+      addInlineBuffer: async ({ cursor }) => {
+        const root = await this.callZentinelMethod(
+          ZyGodMethod.getZymRoot,
+          undefined
+        );
+
+        const op = getLastZymInCursorWithId<ZymbolModule>(
+          root,
+          cursor,
+          ZYMBOL_MODULE_ID
+        );
+
+        if (isSome(op)) {
+          const { zym: module, childRelativeCursor } = op.val;
+
+          if (childRelativeCursor.length > 0) {
+            const childIndex = childRelativeCursor[0];
+
+            const newLine = new InlineInput(0, module);
 
             module.children.splice(childIndex, 0, newLine);
             module.recursivelyReIndexChildren();
@@ -108,7 +147,7 @@ class ZymbolModuleMaster extends ZyMaster<
           }
         }
       },
-      joinLine: async ({ cursor }) => {
+      handleLineFrontDelete: async ({ cursor }) => {
         const root = await this.callZentinelMethod(
           ZyGodMethod.getZymRoot,
           undefined
@@ -128,8 +167,8 @@ class ZymbolModuleMaster extends ZyMaster<
 
             if (childIndex < module.children.length && childIndex > 0) {
               if (
-                zymIsInlineInput(module.children[childIndex]) &&
-                zymIsInlineInput(module.children[childIndex - 1])
+                isInlineInput(module.children[childIndex]) &&
+                isInlineInput(module.children[childIndex - 1])
               ) {
                 const input1 = module.children[childIndex - 1] as InlineInput;
                 const input2 = module.children[childIndex] as InlineInput;
@@ -178,6 +217,28 @@ class ZymbolModuleMaster extends ZyMaster<
                   0,
                   0,
                   ...zocketRelativeCursor,
+                ];
+
+                await this.callZentinelMethod(
+                  ZyGodMethod.takeCursor,
+                  newFullCursor
+                );
+              } else {
+                if (
+                  module.children[childIndex].children[0].children[0].children
+                    .length === 0
+                ) {
+                  module.children.splice(childIndex, 1);
+                }
+
+                /* Go to previous line */
+                const newFullCursor = [
+                  ...module.getFullCursorPointer(),
+                  childIndex - 1,
+                  0,
+                  0,
+                  module.children[childIndex - 1].children[0].children[0]
+                    .children.length,
                 ];
 
                 await this.callZentinelMethod(
@@ -331,14 +392,14 @@ export class ZymbolModule extends Zyact<
     );
   };
 
-  addLine = (inline: boolean) => {
-    this.children.push(
+  addLine = (newLinePosition: number, inline: boolean) => {
+    this.children.splice(
+      newLinePosition,
+      0,
       inline ? new InlineInput(0, this) : new DisplayEquation(0, this)
     );
 
     this.reConnectParentChildren();
-
-    return this.children.length - 1;
   };
 
   deleteLine = (cursor: CursorIndex) => {
@@ -471,6 +532,7 @@ zymbolModuleMaster.implementTrait(KeyPressTrait, {
     if (nextCursorIndex >= 0) {
       const child: Zym<any, any> = zym.children[nextCursorIndex];
 
+      /* Handle copy pasting */
       if (
         keyPress.type === KeyPressComplexType.Key &&
         keyPress.key === "c" &&
@@ -486,64 +548,76 @@ zymbolModuleMaster.implementTrait(KeyPressTrait, {
         return FAILED_CURSOR_MOVE_RESPONSE;
       }
 
-      if (
-        keyPress.type === KeyPressBasicType.Enter &&
-        keyPress.modifiers?.includes(KeyPressModifier.Shift)
-      ) {
-        const lineIndex = module.addLine(false);
-
-        const lineCursor = unwrapOption(
-          unwrapTraitResponse(
-            await module.children[lineIndex].callTraitMethod(
-              CursorCommandTrait.getInitialCursor,
-              undefined
-            )
-          )
+      const deferToChild = async (): Promise<CursorMoveResponse> =>
+        unwrapTraitResponse(
+          await child.callTraitMethod(KeyPressTrait.handleKeyPress, {
+            cursor: childRelativeCursor,
+            keyPressContext,
+            keyPress,
+          })
         );
 
-        return successfulMoveResponse([lineIndex, ...lineCursor]);
-      }
+      switch (keyPress.type) {
+        case KeyPressBasicType.Enter: {
+          if (
+            keyPress.modifiers?.includes(KeyPressModifier.Shift) &&
+            nextCursorIndex > -1
+          ) {
+            const newLineIndex = nextCursorIndex + 1;
 
-      if (
-        keyPressEqual(keyPress, {
-          type: KeyPressBasicType.Delete,
-          modifiers: [KeyPressModifier.Ctrl],
-        })
-      ) {
-        if (nextCursorIndex > 0) {
-          module.deleteLine(nextCursorIndex);
+            module.addLine(newLineIndex, false);
 
-          const lineIndex = nextCursorIndex - 1;
-
-          const lineCursor = unwrapOption(
-            unwrapTraitResponse(
-              await module.children[lineIndex].callTraitMethod(
-                CursorCommandTrait.getInitialCursor,
-                undefined
+            const lineCursor = unwrapOption(
+              unwrapTraitResponse(
+                await module.children[newLineIndex].callTraitMethod(
+                  CursorCommandTrait.getInitialCursor,
+                  undefined
+                )
               )
-            )
-          );
+            );
 
-          return successfulMoveResponse([lineIndex, ...lineCursor]);
+            return successfulMoveResponse([newLineIndex, ...lineCursor]);
+          }
+          break;
+        }
+        case KeyPressBasicType.ArrowDown: {
+          return module.moveCursorDown(cursor, keyPressContext);
+        }
+        case KeyPressBasicType.ArrowUp: {
+          return module.moveCursorUp(cursor, keyPressContext);
+        }
+        case KeyPressBasicType.ArrowRight: {
+          const childMove = await deferToChild();
+
+          if (
+            !childMove.success &&
+            nextCursorIndex < module.children.length - 1
+          ) {
+            return successfulMoveResponse([nextCursorIndex + 1, 0, 0, 0]);
+          }
+
+          break;
+        }
+        case KeyPressBasicType.ArrowLeft: {
+          const childMove = await deferToChild();
+
+          if (!childMove.success && nextCursorIndex > 0) {
+            return successfulMoveResponse([
+              nextCursorIndex - 1,
+              0,
+              0,
+              module.children[nextCursorIndex - 1].children[0].children[0]
+                .children.length,
+            ]);
+          }
+
+          break;
         }
       }
 
-      if (keyPress.type === KeyPressBasicType.ArrowDown) {
-        return module.moveCursorDown(cursor, keyPressContext);
-      } else if (keyPress.type === KeyPressBasicType.ArrowUp) {
-        return module.moveCursorUp(cursor, keyPressContext);
-      }
+      const childMove = await deferToChild();
 
-      const childMove = await child.callTraitMethod(
-        KeyPressTrait.handleKeyPress,
-        {
-          cursor: childRelativeCursor,
-          keyPressContext,
-          keyPress,
-        }
-      );
-
-      return chainMoveResponse(unwrapTraitResponse(childMove), (nextCursor) => {
+      return chainMoveResponse(childMove, (nextCursor) => {
         return successfulMoveResponse(
           extendChildCursor(nextCursorIndex, nextCursor)
         );

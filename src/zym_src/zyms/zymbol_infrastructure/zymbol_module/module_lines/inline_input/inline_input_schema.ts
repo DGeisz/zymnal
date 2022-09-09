@@ -30,6 +30,6 @@ export type InlineInputPersistenceSchema = CreatePersistenceSchema<
   }
 >;
 
-export function zymIsInlineInput(zym: Zym): zym is InlineInput {
+export function isInlineInput(zym: Zym): zym is InlineInput {
   return zym.getMasterId() === INLINE_INPUT_ID;
 }

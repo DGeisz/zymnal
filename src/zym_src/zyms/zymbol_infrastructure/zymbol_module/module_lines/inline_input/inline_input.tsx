@@ -91,6 +91,7 @@ export class InlineInput extends Zyact<
         cursor: [],
         excludeHtmlIds: true,
         inlineTex: true,
+        copyTex: true,
       })
       .trim();
 

@@ -16,13 +16,8 @@ import {
   extractCursorInfo,
   FAILED_CURSOR_MOVE_RESPONSE,
   successfulMoveResponse,
-  wrapChildCursorResponse,
 } from "../../../../../zym_lib/zy_god/cursor/cursor";
-import {
-  KeyPressBasicType,
-  ZymbolDirection,
-  ZymKeyPress,
-} from "../../../../../zym_lib/zy_god/event_handler/key_press";
+import { ZymbolDirection } from "../../../../../zym_lib/zy_god/event_handler/key_press";
 import { BasicContext } from "../../../../../zym_lib/utils/basic_context";
 import { addZymChangeLink } from "../../../../../zym_lib/zy_god/undo_redo/undo_redo";
 import { getFullContextCursor } from "../../../../../zym_lib/zy_god/zy_god";
@@ -48,8 +43,6 @@ import {
   zyMath,
   zySpan,
 } from "../../../../../global_building_blocks/tex/autoRender";
-import { ZyGodMethod } from "../../../../../zym_lib/zy_god/zy_god_schema";
-import { ZymbolModuleMethod } from "../../../zymbol_infrastructure/zymbol_module/zymbol_module_schema";
 
 class TextZymbolMaster extends ZyMaster<
   TextZymbolSchema,
@@ -353,7 +346,7 @@ export class TextZymbol extends Zymbol<
 
     let finalTex;
 
-    if (inline) {
+    if (inline || opts.copyTex) {
       finalTex = internalTexCreator();
     } else {
       finalTex = add_latex_color(internalTexCreator, palette.deepBlue);

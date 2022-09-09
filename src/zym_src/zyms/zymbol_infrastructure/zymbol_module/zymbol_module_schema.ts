@@ -10,10 +10,6 @@ import {
   ZymPersist,
 } from "../../../../zym_lib/zy_schema/zy_schema";
 import {
-  ZymbolProgressionPersistenceSchema,
-  ZymbolProgressionSchema,
-} from "../zymbol_progression/zymbol_progression_schema";
-import {
   DerivationPersistenceSchema,
   DerivationSchema,
 } from "./module_lines/derivation/derivation_schema";
@@ -48,11 +44,17 @@ export type ZymbolModuleMethodSchema = CreateZentinelMethodSchema<{
     args: BreakLineArgs;
     return: void;
   };
-  joinLine: {
+  handleLineFrontDelete: {
     args: JoinLinesArgs;
     return: void;
   };
-  addInlineLine: {
+  /* Puts a new inline inputs where the cursor currently is, moves the current
+  line to the next line (for when user hits "Enter" at the beginning of a line with input) */
+  addInlineBuffer: {
+    args: { cursor: Cursor };
+    return: void;
+  };
+  addLine: {
     args: { cursor: Cursor; lineType: ModuleLineType };
     return: void;
   };
@@ -61,8 +63,9 @@ export type ZymbolModuleMethodSchema = CreateZentinelMethodSchema<{
 export const ZymbolModuleMethod =
   createZentinelMethodList<ZymbolModuleMethodSchema>(ZYMBOL_MODULE_ID, {
     breakLine: 0,
-    joinLine: 0,
-    addInlineLine: 0,
+    handleLineFrontDelete: 0,
+    addLine: 0,
+    addInlineBuffer: 0,
   });
 
 export type ModuleLine = InlineInput | DisplayEquation;

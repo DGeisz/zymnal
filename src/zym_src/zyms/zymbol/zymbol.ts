@@ -39,6 +39,7 @@ export interface ZymbolRenderArgs {
   cursor: Cursor;
   inlineTex: boolean;
   excludeHtmlIds?: boolean;
+  copyTex?: boolean;
 }
 
 export const KEYPRESS_ZYMBOL = "keypress";

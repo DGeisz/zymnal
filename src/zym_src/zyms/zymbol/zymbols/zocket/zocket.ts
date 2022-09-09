@@ -432,25 +432,41 @@ export class Zocket extends Zymbol<ZocketSchema, ZocketPersistenceSchema> {
         nextCursorIndex > -1 &&
         (childRelativeCursor.length === 0 || (child && isTextZymbol(child)))
       ) {
-        if (nextCursorIndex === 0 && childRelativeCursor.length === 0) {
-          this.callZentinelMethod(
-            ZyGodMethod.queueKeyPressCallback,
-            async () => {
-              await this.callZentinelMethod(ZymbolModuleMethod.addInlineLine, {
-                cursor: [...this.getFullCursorPointer(), ...cursor],
-                lineType: ModuleLineType.Inline,
-              });
-            }
-          );
+        if (this.inline) {
+          if (nextCursorIndex === 0 && childRelativeCursor.length === 0) {
+            this.callZentinelMethod(
+              ZyGodMethod.queueKeyPressCallback,
+              async () => {
+                await this.callZentinelMethod(
+                  ZymbolModuleMethod.addInlineBuffer,
+                  {
+                    cursor: [...this.getFullCursorPointer(), ...cursor],
+                  }
+                );
+              }
+            );
+          } else {
+            this.callZentinelMethod(
+              ZyGodMethod.queueKeyPressCallback,
+              async () => {
+                await this.callZentinelMethod(ZymbolModuleMethod.breakLine, {
+                  cursor: [...this.getFullCursorPointer(), ...cursor],
+                });
+              }
+            );
+          }
         } else {
-          this.callZentinelMethod(
-            ZyGodMethod.queueKeyPressCallback,
-            async () => {
-              await this.callZentinelMethod(ZymbolModuleMethod.breakLine, {
-                cursor: [...this.getFullCursorPointer(), ...cursor],
-              });
-            }
-          );
+          if (nextCursorIndex === 0 && childRelativeCursor.length === 0) {
+            this.callZentinelMethod(
+              ZyGodMethod.queueKeyPressCallback,
+              async () => {
+                await this.callZentinelMethod(ZymbolModuleMethod.addLine, {
+                  cursor: [...this.getFullCursorPointer(), ...cursor],
+                  lineType: ModuleLineType.Inline,
+                });
+              }
+            );
+          }
         }
 
         return FAILED_CURSOR_MOVE_RESPONSE;
@@ -769,18 +785,20 @@ export class Zocket extends Zymbol<ZocketSchema, ZocketPersistenceSchema> {
     }
   };
 
+  isBaseZocket = () => !!(this.parent && isZymbolFrame(this.parent));
+
   delete = (cursor: Cursor, ctx: BasicContext): CursorMoveResponse => {
     const { parentOfCursorElement, nextCursorIndex, childRelativeCursor } =
       extractCursorInfo(cursor);
 
     /* First we want to deal with line-based behavior */
     if (
-      this.inline &&
+      this.isBaseZocket() &&
       nextCursorIndex === 0 &&
       childRelativeCursor.length === 0
     ) {
       this.callZentinelMethod(ZyGodMethod.queueKeyPressCallback, async () => {
-        this.callZentinelMethod(ZymbolModuleMethod.joinLine, {
+        this.callZentinelMethod(ZymbolModuleMethod.handleLineFrontDelete, {
           cursor: [...this.getFullCursorPointer(), ...cursor],
         });
       });
