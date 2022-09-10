@@ -1,7 +1,6 @@
 import {
-  CreatePersistenceSchema,
   CreateZySchema,
-  IdentifiedSchema,
+  IdentifiedBaseSchema,
   ZymPersist,
 } from "../../../../../zym_lib/zy_schema/zy_schema";
 import type { Zymbol } from "../../zymbol";
@@ -27,14 +26,12 @@ export enum SuperSubBothIndex {
   Sub = 1,
 }
 
-export type SuperSubSchema = CreateZySchema<{
-  children: IdentifiedSchema<any>[];
-  status: SuperSubStatus;
-  standalone: boolean;
-}>;
-
-export type SuperSubPersistedSchema = CreatePersistenceSchema<
-  SuperSubSchema,
+export type SuperSubSchema = CreateZySchema<
+  {
+    children: IdentifiedBaseSchema<any>[];
+    status: SuperSubStatus;
+    standalone: boolean;
+  },
   {
     children: {
       persistenceSymbol: "c";

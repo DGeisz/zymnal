@@ -28,6 +28,12 @@ const binDirectMap: DirectMap = {
 };
 
 /* +++ Sets! +++ */
+const textSymbols: DirectMap = {
+  det: "text{det}",
+  erf: "text{erf}",
+};
+
+/* +++ Sets! +++ */
 const logicDirectMap: DirectMap = {
   and: "wedge",
   or: "vee",
@@ -74,6 +80,7 @@ export const mathDirectMap: InPlaceSymbolMap = {
         ...binDirectMap,
         ...logicDirectMap,
         ...dotsDirectMap,
+        ...textSymbols,
       },
       backslash
     ),

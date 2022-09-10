@@ -42,7 +42,6 @@ import {
 } from "../../../../zym_lib/zy_god/undo_redo/undo_redo";
 import { cursorToString } from "../../../../global_utils/latex_utils";
 import { BasicContext } from "../../../../zym_lib/utils/basic_context";
-import clsx from "clsx";
 import { vimiumHintKeys } from "../../../../global_utils/string_utils";
 import { ZyGodMethod } from "../../../../zym_lib/zy_god/zy_god_schema";
 import { unwrapTraitResponse } from "../../../../zym_lib/zy_trait/zy_trait";
@@ -51,7 +50,6 @@ import {
   ZymbolFrameMethod,
   ZymbolFrameMethodSchema,
   ZymbolFrameOpts,
-  ZymbolFramePersistedSchema,
   ZymbolFrameSchema,
   ZYMBOL_FRAME_MASTER_ID,
 } from "./zymbol_frame_schema";
@@ -73,7 +71,6 @@ import { zyMath } from "../../../../global_building_blocks/tex/autoRender";
 const VIMIUM_HINT_PERIOD = 2;
 class ZymbolFrameMaster extends ZyMaster<
   ZymbolFrameSchema,
-  ZymbolFramePersistedSchema,
   ZymbolFrameMethodSchema
 > {
   zyId = ZYMBOL_FRAME_MASTER_ID;
@@ -97,7 +94,7 @@ class ZymbolFrameMaster extends ZyMaster<
     });
   }
 
-  newBlankChild(): Zym<ZymbolFrameSchema, ZymbolFramePersistedSchema, any> {
+  newBlankChild() {
     return new ZymbolFrame(0, undefined);
   }
 
@@ -186,11 +183,7 @@ const Styles = {
 
 /* Helper components */
 /* === Zym ====  */
-export class ZymbolFrame extends Zyact<
-  ZymbolFrameSchema,
-  ZymbolFramePersistedSchema,
-  FrameRenderProps
-> {
+export class ZymbolFrame extends Zyact<ZymbolFrameSchema, FrameRenderProps> {
   zyMaster: ZyMaster = zymbolFrameMaster;
 
   baseZocket: Zocket;
@@ -480,7 +473,7 @@ export class ZymbolFrame extends Zyact<
   }
 
   async hydrateFromPartialPersist(
-    p: Partial<ZyPartialPersist<ZymbolFrameSchema, ZymbolFramePersistedSchema>>
+    p: Partial<ZyPartialPersist<ZymbolFrameSchema>>
   ): Promise<void> {
     await safeHydrate(p, {
       baseZocket: async (bz) => {
@@ -506,22 +499,19 @@ export class ZymbolFrame extends Zyact<
 
     /* We can probably get undo/redo info directly from the transformation */
     if (keyPressContext)
-      addZymChangeLink<ZymbolFrameSchema, ZymbolFramePersistedSchema>(
-        keyPressContext,
-        {
-          zymLocation: framePointer,
-          beforeChange: {
-            zymState: {
-              baseZocket: beforeState,
-            },
+      addZymChangeLink<ZymbolFrameSchema>(keyPressContext, {
+        zymLocation: framePointer,
+        beforeChange: {
+          zymState: {
+            baseZocket: beforeState,
           },
-          afterChange: {
-            zymState: {
-              baseZocket: this.baseZocket.persist(),
-            },
+        },
+        afterChange: {
+          zymState: {
+            baseZocket: this.baseZocket.persist(),
           },
-        }
-      );
+        },
+      });
 
     this.setNewTransformations([]);
 

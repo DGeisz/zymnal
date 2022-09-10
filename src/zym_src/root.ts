@@ -28,7 +28,7 @@ export const zyMasterList: ZyMaster[] = [
   ...zymbolMasterList,
 ];
 
-export const zentinelList: Zentinel<any>[] = [
+export const zentinelList: Zentinel[] = [
   defaultTraitZentinel,
   vimZentinel,
   vimiumZentinel,

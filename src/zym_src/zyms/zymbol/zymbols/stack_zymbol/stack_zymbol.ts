@@ -42,11 +42,7 @@ import { TeX } from "../../zymbol_types";
 import { Zocket } from "../zocket/zocket";
 import { deflectMethodToChild } from "../zymbol_utils";
 import { ZyGodMethod } from "../../../../../zym_lib/zy_god/zy_god_schema";
-import {
-  StackZymbolPersistenceSchema,
-  StackZymbolSchema,
-  STACK_ZYMBOL_ID,
-} from "./stack_zymbol_schema";
+import { StackZymbolSchema, STACK_ZYMBOL_ID } from "./stack_zymbol_schema";
 import { ZyPartialPersist } from "../../../../../zym_lib/zy_schema/zy_schema";
 import { DotModifiersTrait } from "../../../zymbol_infrastructure/zymbol_frame/transformer/std_transformers/equation_transformers/dot_modifiers/dot_modifiers_schema";
 
@@ -58,13 +54,10 @@ export function checkStackOperator(op: TeX): boolean {
   );
 }
 
-class StackZymbolMaster extends ZyMaster<
-  StackZymbolSchema,
-  StackZymbolPersistenceSchema
-> {
+class StackZymbolMaster extends ZyMaster<StackZymbolSchema> {
   zyId: string = STACK_ZYMBOL_ID;
 
-  newBlankChild(): Zym<StackZymbolSchema, StackZymbolPersistenceSchema, any> {
+  newBlankChild() {
     return new StackZymbol("", DUMMY_FRAME, 0, undefined);
   }
 }
@@ -78,10 +71,7 @@ export enum StackPosition {
   BOTTOM = 1,
 }
 
-export class StackZymbol extends Zymbol<
-  StackZymbolSchema,
-  StackZymbolPersistenceSchema
-> {
+export class StackZymbol extends Zymbol<StackZymbolSchema> {
   zyMaster = stackZymbolMaster;
   /* 0 is at the top, 1 is at the bottom */
   children: [Zocket, Zocket];
@@ -381,9 +371,7 @@ export class StackZymbol extends Zymbol<
   };
 
   async hydrateFromPartialPersist(
-    p: Partial<
-      ZyPartialPersist<StackZymbolSchema, StackZymbolPersistenceSchema>
-    >
+    p: Partial<ZyPartialPersist<StackZymbolSchema>>
   ): Promise<void> {
     await safeHydrate(p, {
       children: async (children) => {

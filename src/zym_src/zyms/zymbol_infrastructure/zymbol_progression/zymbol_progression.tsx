@@ -10,34 +10,22 @@ import { CursorIndex } from "../../../../zym_lib/zy_god/cursor/cursor";
 import { ZyPartialPersist } from "../../../../zym_lib/zy_schema/zy_schema";
 import { STD_TRANSFORMER_TYPE_FILTERS } from "../zymbol_frame/transformer/std_transformers/std_transformer_type_filters";
 import { ZymbolFrame } from "../zymbol_frame/zymbol_frame";
-import { STD_FRAME_LABELS } from "../zymbol_frame/zymbol_frame_schema";
 import {
-  ZymbolProgressionPersistenceSchema,
   ZymbolProgressionSchema,
   ZYMBOL_PROGRESSION_ID,
 } from "./zymbol_progression_schema";
 
-class ZymbolProgressionMaster extends ZyMaster<
-  ZymbolProgressionSchema,
-  ZymbolProgressionPersistenceSchema,
-  {}
-> {
+class ZymbolProgressionMaster extends ZyMaster<ZymbolProgressionSchema, {}> {
   zyId = ZYMBOL_PROGRESSION_ID;
 
-  newBlankChild(): Zym<
-    ZymbolProgressionSchema,
-    ZymbolProgressionPersistenceSchema
-  > {
+  newBlankChild(): Zym<ZymbolProgressionSchema> {
     return new ZymbolProgression(0, undefined);
   }
 }
 
 export const zymbolProgressionMaster = new ZymbolProgressionMaster();
 
-export class ZymbolProgression extends Zyact<
-  ZymbolProgressionSchema,
-  ZymbolProgressionPersistenceSchema
-> {
+export class ZymbolProgression extends Zyact<ZymbolProgressionSchema> {
   zyMaster = zymbolProgressionMaster;
   baseFrame: ZymbolFrame = new ZymbolFrame(0, this, {
     getTypeFilters: () => [STD_TRANSFORMER_TYPE_FILTERS.EQUATION],
@@ -69,12 +57,7 @@ export class ZymbolProgression extends Zyact<
   }
 
   async hydrateFromPartialPersist(
-    p: Partial<
-      ZyPartialPersist<
-        ZymbolProgressionSchema,
-        ZymbolProgressionPersistenceSchema
-      >
-    >
+    p: Partial<ZyPartialPersist<ZymbolProgressionSchema>>
   ): Promise<void> {
     await safeHydrate(p, {
       baseFrame: async (frame) => {

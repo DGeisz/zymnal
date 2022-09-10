@@ -7,27 +7,17 @@ import { ZyMaster } from "../../../zym_lib/zym/zy_master";
 import { ZymbolModule } from "../zymbol_infrastructure/zymbol_module/zymbol_module";
 import { enable as enableDarkMode } from "darkreader";
 import { CursorIndex } from "../../../zym_lib/zy_god/cursor/cursor";
-import { ZagePersistenceSchema, ZageSchema } from "./zage_schema";
+import { ZageSchema } from "./zage_schema";
 import { ZyPartialPersist } from "../../../zym_lib/zy_schema/zy_schema";
-import {
-  ZymbolModulePersistenceSchema,
-  ZymbolModuleSchema,
-} from "../zymbol_infrastructure/zymbol_module/zymbol_module_schema";
-import Tex from "../../../global_building_blocks/tex/tex";
-import {
-  create_tex_text,
-  CURSOR_LATEX,
-} from "../../../global_utils/latex_utils";
-import { zyMath } from "../../../global_building_blocks/tex/autoRender";
-import { treatText } from "../zymbol/zymbols/text_zymbol/text_zymbol";
+import { ZymbolModuleSchema } from "../zymbol_infrastructure/zymbol_module/zymbol_module_schema";
 
 const DARK_MODE = true;
 
 /* ==== MASTER ====  */
-class ZageMaster extends ZyMaster<ZageSchema, ZagePersistenceSchema, {}> {
+class ZageMaster extends ZyMaster<ZageSchema> {
   zyId = "zage";
 
-  newBlankChild(): Zym<ZageSchema, ZagePersistenceSchema> {
+  newBlankChild() {
     return new Zage(0);
   }
 }
@@ -37,7 +27,7 @@ export const zageMaster = new ZageMaster();
 /* ==== ZYM ====  */
 
 /* For the time being, a zage will just hold a central context */
-export class Zage extends Zyact<ZageSchema, ZagePersistenceSchema> {
+export class Zage extends Zyact<ZageSchema> {
   zyMaster = zageMaster;
   baseZymbolModule: ZymbolModule = new ZymbolModule(0, this);
   children = [this.baseZymbolModule];
@@ -78,14 +68,14 @@ export class Zage extends Zyact<ZageSchema, ZagePersistenceSchema> {
   }
 
   hydrateFromPartialPersist = async (
-    p: Partial<ZyPartialPersist<ZageSchema, ZagePersistenceSchema>>
+    p: Partial<ZyPartialPersist<ZageSchema>>
   ): Promise<void> => {
     await safeHydrate(p, {
       module: async (ctx) => {
-        this.baseZymbolModule = (await hydrateChild<
-          ZymbolModuleSchema,
-          ZymbolModulePersistenceSchema
-        >(this, ctx)) as ZymbolModule;
+        this.baseZymbolModule = (await hydrateChild<ZymbolModuleSchema>(
+          this,
+          ctx
+        )) as ZymbolModule;
       },
     });
     this.children = [this.baseZymbolModule];

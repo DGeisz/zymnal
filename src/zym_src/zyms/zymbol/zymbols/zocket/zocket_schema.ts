@@ -1,7 +1,6 @@
 import {
-  CreatePersistenceSchema,
   CreateZySchema,
-  IdentifiedSchema,
+  IdentifiedBaseSchema,
   ZymPersist,
 } from "../../../../../zym_lib/zy_schema/zy_schema";
 import { Zymbol } from "../../zymbol";
@@ -10,14 +9,12 @@ import { Zocket } from "./zocket";
 
 export const ZOCKET_MASTER_ID = "zocket";
 
-export type ZocketSchema = CreateZySchema<{
-  children: IdentifiedSchema<any>[];
-  modifiers: ZymbolModifier[];
-  inline: boolean;
-}>;
-
-export type ZocketPersistenceSchema = CreatePersistenceSchema<
-  ZocketSchema,
+export type ZocketSchema = CreateZySchema<
+  {
+    children: IdentifiedBaseSchema<any>[];
+    modifiers: ZymbolModifier[];
+    inline: boolean;
+  },
   {
     modifiers: "m";
     children: {

@@ -32,11 +32,7 @@ import {
 } from "../../delete_behavior";
 import { Zymbol, ZymbolHtmlIdTrait, ZymbolRenderArgs } from "../../zymbol";
 import { extendZymbol } from "../../zymbol_cmd";
-import {
-  TextZymbolPersistenceSchema,
-  TextZymbolSchema,
-  TEXT_ZYMBOL_NAME,
-} from "./text_zymbol_schema";
+import { TextZymbolSchema, TEXT_ZYMBOL_NAME } from "./text_zymbol_schema";
 import { ZyPartialPersist } from "../../../../../zym_lib/zy_schema/zy_schema";
 import { ZYMBOL_FRAME_MASTER_ID } from "../../../zymbol_infrastructure/zymbol_frame/zymbol_frame_schema";
 import {
@@ -44,10 +40,7 @@ import {
   zySpan,
 } from "../../../../../global_building_blocks/tex/autoRender";
 
-class TextZymbolMaster extends ZyMaster<
-  TextZymbolSchema,
-  TextZymbolPersistenceSchema
-> {
+class TextZymbolMaster extends ZyMaster<TextZymbolSchema> {
   zyId: string = TEXT_ZYMBOL_NAME;
 
   newBlankChild(): Zym<any, any, any> {
@@ -64,10 +57,7 @@ export const textZymbolMaster = new TextZymbolMaster();
 /* Extensions */
 extendZymbol(textZymbolMaster);
 
-export class TextZymbol extends Zymbol<
-  TextZymbolSchema,
-  TextZymbolPersistenceSchema
-> {
+export class TextZymbol extends Zymbol<TextZymbolSchema> {
   private characters: string[] = [];
 
   children: Zymbol[] = [];
@@ -177,7 +167,7 @@ export class TextZymbol extends Zymbol<
     beforeChars: string[],
     afterChars: string[]
   ) => {
-    addZymChangeLink<TextZymbolSchema, TextZymbolPersistenceSchema>(ctx, {
+    addZymChangeLink<TextZymbolSchema>(ctx, {
       zymLocation: this.getFullCursorPointer(),
       beforeChange: {
         renderOpts: { cursor: [] },
@@ -362,7 +352,7 @@ export class TextZymbol extends Zymbol<
   }
 
   async hydrateFromPartialPersist(
-    p: Partial<ZyPartialPersist<TextZymbolSchema, TextZymbolPersistenceSchema>>
+    p: Partial<ZyPartialPersist<TextZymbolSchema>>
   ): Promise<void> {
     await safeHydrate(p, {
       characters: (c) => {

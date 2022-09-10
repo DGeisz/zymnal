@@ -40,7 +40,6 @@ import {
   ModuleLine,
   ModuleLineType,
   ZymbolModuleMethodSchema,
-  ZymbolModulePersistenceSchema,
   ZymbolModuleSchema,
   ZYMBOL_MODULE_ID,
 } from "./zymbol_module_schema";
@@ -49,7 +48,6 @@ const LF_UNICODE = "\u000A";
 
 class ZymbolModuleMaster extends ZyMaster<
   ZymbolModuleSchema,
-  ZymbolModulePersistenceSchema,
   ZymbolModuleMethodSchema
 > {
   zyId = ZYMBOL_MODULE_ID;
@@ -355,17 +353,14 @@ class ZymbolModuleMaster extends ZyMaster<
     });
   }
 
-  newBlankChild(): Zym<ZymbolModuleSchema, ZymbolModulePersistenceSchema> {
+  newBlankChild() {
     return new ZymbolModule(0, undefined);
   }
 }
 
 export const zymbolModuleMaster = new ZymbolModuleMaster();
 
-export class ZymbolModule extends Zyact<
-  ZymbolModuleSchema,
-  ZymbolModulePersistenceSchema
-> {
+export class ZymbolModule extends Zyact<ZymbolModuleSchema> {
   zyMaster = zymbolModuleMaster;
   children: ModuleLine[];
 
@@ -507,9 +502,7 @@ export class ZymbolModule extends Zyact<
   }
 
   async hydrateFromPartialPersist(
-    p: Partial<
-      ZyPartialPersist<ZymbolModuleSchema, ZymbolModulePersistenceSchema>
-    >
+    p: Partial<ZyPartialPersist<ZymbolModuleSchema>>
   ): Promise<void> {
     await safeHydrate(p, {
       children: async (children) => {

@@ -3,6 +3,7 @@ import { createZyTrait, CreateZyTraitSchema } from "../../zy_trait/zy_trait";
 import { Cursor } from "../cursor/cursor";
 import { BasicContext } from "../../utils/basic_context";
 import {
+  ZyBaseSchema,
   ZyPartialPersist,
   ZyPersistenceSchema,
   ZySchema,
@@ -11,23 +12,25 @@ import {
 export const ZYM_CHANGES = "zym_changes";
 
 export interface ZymDiffState<
-  Schema extends ZySchema,
-  PersistenceSchema extends ZyPersistenceSchema<Schema>
+  Schema extends ZySchema<BSchema, PSchema>,
+  BSchema extends ZyBaseSchema = Schema["base"],
+  PSchema extends ZyPersistenceSchema<BSchema> = Schema["persistence"]
 > {
   /* This should be a partially persisted Zym */
-  zymState: Partial<ZyPartialPersist<Schema, PersistenceSchema>>;
+  zymState: Partial<ZyPartialPersist<Schema>>;
   /* Render opts */
   renderOpts?: any;
 }
 
 /* This allows us to move forward and backward through the undo stack */
 export interface ZymChangeLink<
-  Schema extends ZySchema,
-  PersistenceSchema extends ZyPersistenceSchema<Schema>
+  Schema extends ZySchema<BSchema, PSchema>,
+  BSchema extends ZyBaseSchema = Schema["base"],
+  PSchema extends ZyPersistenceSchema<BSchema> = Schema["persistence"]
 > {
   zymLocation: Cursor;
-  beforeChange: ZymDiffState<Schema, PersistenceSchema>;
-  afterChange: ZymDiffState<Schema, PersistenceSchema>;
+  beforeChange: ZymDiffState<Schema>;
+  afterChange: ZymDiffState<Schema>;
 }
 
 export type ZymChangeFrame = {
@@ -43,9 +46,10 @@ export function getZymChangeLinks(
 }
 
 export function addZymChangeLink<
-  Schema extends ZySchema,
-  PersistenceSchema extends ZyPersistenceSchema<Schema>
->(ctx: BasicContext, change: ZymChangeLink<Schema, PersistenceSchema>) {
+  Schema extends ZySchema<BSchema, PSchema>,
+  BSchema extends ZyBaseSchema = Schema["base"],
+  PSchema extends ZyPersistenceSchema<BSchema> = Schema["persistence"]
+>(ctx: BasicContext, change: ZymChangeLink<Schema>) {
   let changes = getZymChangeLinks(ctx);
 
   if (!changes) {

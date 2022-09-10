@@ -11,6 +11,7 @@ import {
   ZyTraitSchema,
 } from "../zy_trait/zy_trait";
 import {
+  ZyBaseSchema,
   ZyFullPersist,
   ZyPersistenceSchema,
   ZySchema,
@@ -18,9 +19,10 @@ import {
 import { Zym } from "./zym";
 
 export abstract class ZyMaster<
-  Schema extends ZySchema = any,
-  PersistenceSchema extends ZyPersistenceSchema<Schema> = any,
-  MethodSchema extends ZentinelMethodSchema = {}
+  Schema extends ZySchema<BSchema, PSchema> = any,
+  MethodSchema extends ZentinelMethodSchema = {},
+  BSchema extends ZyBaseSchema = Schema["base"],
+  PSchema extends ZyPersistenceSchema<BSchema> = Schema["persistence"]
 > extends Zentinel<MethodSchema> {
   private traitMethodRegistry: Map<
     ZyTraitPointer<any, any>,
@@ -54,11 +56,11 @@ export abstract class ZyMaster<
     }
   };
 
-  abstract newBlankChild(): Zym<Schema, PersistenceSchema>;
+  abstract newBlankChild(): Zym<Schema>;
 
   async hydrate(
-    persistData: Partial<ZyFullPersist<Schema, PersistenceSchema>>
-  ): Promise<Zym<Schema, PersistenceSchema>> {
+    persistData: Partial<ZyFullPersist<Schema>>
+  ): Promise<Zym<Schema>> {
     const newZym = this.newBlankChild();
     await newZym.hydrate(persistData);
 

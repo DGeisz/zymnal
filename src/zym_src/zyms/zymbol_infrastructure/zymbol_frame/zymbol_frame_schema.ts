@@ -2,19 +2,15 @@ import {
   createZentinelMethodList,
   CreateZentinelMethodSchema,
 } from "../../../../zym_lib/hermes/hermes";
-import { Zym } from "../../../../zym_lib/zym/zym";
 import { Cursor } from "../../../../zym_lib/zy_god/cursor/cursor";
 import { ZymKeyPress } from "../../../../zym_lib/zy_god/event_handler/key_press";
 import {
-  CreatePersistenceSchema,
   CreateZySchema,
-  IdentifiedSchema,
+  IdentifiedBaseSchema,
+  zyIdentifierFactory,
   ZymPersist,
 } from "../../../../zym_lib/zy_schema/zy_schema";
-import {
-  ZocketPersistenceSchema,
-  ZocketSchema,
-} from "../../zymbol/zymbols/zocket/zocket_schema";
+import { ZocketSchema } from "../../zymbol/zymbols/zocket/zocket_schema";
 import {
   SourcedTransformer,
   TransformerFactory,
@@ -62,20 +58,18 @@ export interface ZymbolFrameOpts {
   inlineTex: boolean;
 }
 
-export type ZymbolFrameSchema = CreateZySchema<{
-  baseZocket: IdentifiedSchema<ZocketSchema>;
-}>;
-
-export type ZymbolFramePersistedSchema = CreatePersistenceSchema<
-  ZymbolFrameSchema,
+export type ZymbolFrameSchema = CreateZySchema<
+  {
+    baseZocket: IdentifiedBaseSchema<ZocketSchema>;
+  },
   {
     baseZocket: {
       persistenceSymbol: "b";
-      persistenceType: ZymPersist<ZocketSchema, ZocketPersistenceSchema>;
+      persistenceType: ZymPersist<ZocketSchema>;
     };
   }
 >;
 
-export function isZymbolFrame(zym: Zym): zym is ZymbolFrame {
-  return zym.getMasterId() === ZYMBOL_FRAME_MASTER_ID;
-}
+export const isZymbolFrame = zyIdentifierFactory<ZymbolFrame>(
+  ZYMBOL_FRAME_MASTER_ID
+);

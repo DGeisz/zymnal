@@ -30,6 +30,7 @@ import {
 import { defaultTraitImplementation } from "../../../zym_lib/zy_trait/default_trait_zentinel/default_trait_zentinel_schema";
 import { zyGod } from "../../../zym_lib/zy_god/zy_god";
 import {
+  ZyBaseSchema,
   ZyPersistenceSchema,
   ZySchema,
 } from "../../../zym_lib/zy_schema/zy_schema";
@@ -76,9 +77,10 @@ export interface SpliceDeleteResponse {
 }
 
 export abstract class Zymbol<
-  Schema extends ZySchema = any,
-  PersistenceSchema extends ZyPersistenceSchema<Schema> = any
-> extends Zym<Schema, PersistenceSchema, TeX> {
+  Schema extends ZySchema<BSchema, PSchema> = any,
+  BSchema extends ZyBaseSchema = Schema["base"],
+  PSchema extends ZyPersistenceSchema<BSchema> = Schema["persistence"]
+> extends Zym<Schema, TeX> {
   parentFrame: ZymbolFrame;
   abstract children: Zymbol<any, any>[];
 

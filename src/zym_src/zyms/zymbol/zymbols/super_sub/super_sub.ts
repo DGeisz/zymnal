@@ -30,7 +30,6 @@ import { Zocket } from "../zocket/zocket";
 import { deflectMethodToChild } from "../zymbol_utils";
 import {
   SuperSubBothIndex,
-  SuperSubPersistedSchema,
   SuperSubPosition,
   SuperSubSchema,
   SuperSubStatus,
@@ -38,10 +37,10 @@ import {
 } from "./super_sub_schema";
 import { ZyPartialPersist } from "../../../../../zym_lib/zy_schema/zy_schema";
 
-class SuperSubMaster extends ZyMaster<SuperSubSchema, SuperSubPersistedSchema> {
+class SuperSubMaster extends ZyMaster<SuperSubSchema> {
   zyId: string = SUPER_SUB_ID;
 
-  newBlankChild(): Zym<SuperSubSchema, SuperSubPersistedSchema, any> {
+  newBlankChild() {
     return new SuperSubZymbol(DUMMY_FRAME, 0, undefined);
   }
 }
@@ -50,10 +49,7 @@ export const superSubMaster = new SuperSubMaster();
 
 extendZymbol(superSubMaster);
 
-export class SuperSubZymbol extends Zymbol<
-  SuperSubSchema,
-  SuperSubPersistedSchema
-> {
+export class SuperSubZymbol extends Zymbol<SuperSubSchema> {
   /* Super goes after sub */
   children: Zymbol[] = [];
   zyMaster = superSubMaster;
@@ -521,7 +517,7 @@ export class SuperSubZymbol extends Zymbol<
   }
 
   async hydrateFromPartialPersist(
-    p: Partial<ZyPartialPersist<SuperSubSchema, SuperSubPersistedSchema>>
+    p: Partial<ZyPartialPersist<SuperSubSchema>>
   ): Promise<void> {
     await safeHydrate(p, {
       children: async (children) => {

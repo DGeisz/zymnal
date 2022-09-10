@@ -32,7 +32,6 @@ import { deflectMethodToChild } from "../zymbol_utils";
 import {
   FunctionBracketIndicator,
   FunctionZymbolMethodSchema,
-  FunctionZymbolPersistenceSchema,
   FunctionZymbolSchema,
   FUNCTION_ZYMBOL_ID,
 } from "./function_zymbol_schema";
@@ -45,7 +44,6 @@ import { NONE } from "../../../../../zym_lib/utils/zy_option";
 
 class FunctionZymbolMaster extends ZyMaster<
   FunctionZymbolSchema,
-  FunctionZymbolPersistenceSchema,
   FunctionZymbolMethodSchema
 > {
   zyId: string = FUNCTION_ZYMBOL_ID;
@@ -71,10 +69,7 @@ class FunctionZymbolMaster extends ZyMaster<
 
 export const functionZymbolMaster = new FunctionZymbolMaster();
 
-export class FunctionZymbol extends Zymbol<
-  FunctionZymbolSchema,
-  FunctionZymbolPersistenceSchema
-> {
+export class FunctionZymbol extends Zymbol<FunctionZymbolSchema> {
   children: Zymbol[];
   zyMaster = functionZymbolMaster;
   numZockets: number;
@@ -312,9 +307,7 @@ export class FunctionZymbol extends Zymbol<
   };
 
   async hydrateFromPartialPersist(
-    p: Partial<
-      ZyPartialPersist<FunctionZymbolSchema, FunctionZymbolPersistenceSchema>
-    >
+    p: Partial<ZyPartialPersist<FunctionZymbolSchema>>
   ): Promise<void> {
     await safeHydrate(p, {
       baseTex: (tex) => {

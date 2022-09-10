@@ -27,19 +27,12 @@ import { Zymbol, ZymbolHtmlIdTrait, ZymbolRenderArgs } from "../../zymbol";
 import { extendZymbol } from "../../zymbol_cmd";
 import { TeX } from "../../zymbol_types";
 import { ZymbolModifier } from "../zocket/zocket_schema";
-import {
-  SymbolZymbolPersistenceSchema,
-  SymbolZymbolSchema,
-  SYMBOL_ZYMBOL_ID,
-} from "./symbol_zymbol_schema";
+import { SymbolZymbolSchema, SYMBOL_ZYMBOL_ID } from "./symbol_zymbol_schema";
 import { ZyPartialPersist } from "../../../../../zym_lib/zy_schema/zy_schema";
 
 const htmlIdBlacklist = operatorList;
 
-class SymbolZymbolMaster extends ZyMaster<
-  SymbolZymbolSchema,
-  SymbolZymbolPersistenceSchema
-> {
+class SymbolZymbolMaster extends ZyMaster<SymbolZymbolSchema> {
   zyId: string = SYMBOL_ZYMBOL_ID;
 
   newBlankChild(): Zym<any, any, any> {
@@ -51,10 +44,7 @@ export const symbolZymbolMaster = new SymbolZymbolMaster();
 
 extendZymbol(symbolZymbolMaster);
 
-export class SymbolZymbol extends Zymbol<
-  SymbolZymbolSchema,
-  SymbolZymbolPersistenceSchema
-> {
+export class SymbolZymbol extends Zymbol<SymbolZymbolSchema> {
   texSymbol: TeX;
   children: Zymbol[] = [];
   modifiers: ZymbolModifier[] = [];
@@ -156,9 +146,7 @@ export class SymbolZymbol extends Zymbol<
   }
 
   async hydrateFromPartialPersist(
-    p: Partial<
-      ZyPartialPersist<SymbolZymbolSchema, SymbolZymbolPersistenceSchema>
-    >
+    p: Partial<ZyPartialPersist<SymbolZymbolSchema>>
   ): Promise<void> {
     await safeHydrate(p, {
       modifiers: (mod) => {

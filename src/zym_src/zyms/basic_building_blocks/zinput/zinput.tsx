@@ -1,4 +1,3 @@
-import { FC, useEffect, useRef } from "react";
 import Tex from "../../../../global_building_blocks/tex/tex";
 import { text_with_cursor } from "../../../../global_utils/latex_utils";
 import { stringSplice } from "../../../../global_utils/string_utils";
@@ -17,13 +16,9 @@ import {
   KeyPressTrait,
 } from "../../../../zym_lib/zy_god/event_handler/key_press";
 import { ZyPartialPersist } from "../../../../zym_lib/zy_schema/zy_schema";
-import {
-  ZinputPersistenceSchema,
-  ZinputSchema,
-  ZINPUT_ID,
-} from "./zinput_schema";
+import { ZinputSchema, ZINPUT_ID } from "./zinput_schema";
 
-class ZinputMaster extends ZyMaster<ZinputSchema, ZinputPersistenceSchema, {}> {
+class ZinputMaster extends ZyMaster<ZinputSchema> {
   zyId: string = ZINPUT_ID;
 
   newBlankChild() {
@@ -38,11 +33,7 @@ interface ZinputProps {
   cursor: number;
 }
 
-export class Zinput extends Zyact<
-  ZinputSchema,
-  ZinputPersistenceSchema,
-  ZinputProps
-> {
+export class Zinput extends Zyact<ZinputSchema, ZinputProps> {
   zyMaster: ZyMaster = zinputMaster;
   children: Zym<any, any, any, any>[] = [];
 
@@ -75,7 +66,7 @@ export class Zinput extends Zyact<
     cursor: this.cursor,
   });
 
-  component: FC<ZinputProps> = ({ text, cursor }) => {
+  component: React.FC<ZinputProps> = ({ text, cursor }) => {
     return (
       <div className="flex self-start">
         <Tex tex={text_with_cursor(text, cursor)} inlineTex />
@@ -90,7 +81,7 @@ export class Zinput extends Zyact<
   }
 
   async hydrateFromPartialPersist(
-    p: Partial<ZyPartialPersist<ZinputSchema, ZinputPersistenceSchema>>
+    p: Partial<ZyPartialPersist<ZinputSchema>>
   ): Promise<void> {
     await safeHydrate(p, {
       text: (t) => {

@@ -1,18 +1,17 @@
 import { ZyGodMethod } from "../../zy_god/zy_god_schema";
 import { Zym } from "../zym";
 import {
+  ZyBaseSchema,
   ZymPersist,
   ZyPersistenceSchema,
   ZySchema,
 } from "../../zy_schema/zy_schema";
 
 export async function hydrateChild<
-  Schema extends ZySchema,
-  PersistenceSchema extends ZyPersistenceSchema<Schema>
->(
-  zym: Zym<any, any>,
-  childPersist: ZymPersist<Schema, PersistenceSchema>
-): Promise<Zym<Schema, PersistenceSchema>> {
+  Schema extends ZySchema<BSchema, PSchema>,
+  BSchema extends ZyBaseSchema = Schema["base"],
+  PSchema extends ZyPersistenceSchema<BSchema> = Schema["persistence"]
+>(zym: Zym<any, any>, childPersist: ZymPersist<Schema>): Promise<Zym<Schema>> {
   return zym.callZentinelMethod(ZyGodMethod.hydratePersistedZym, childPersist);
 }
 

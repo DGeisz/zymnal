@@ -1,27 +1,18 @@
 import {
-  CreatePersistenceSchema,
   CreateZySchema,
-  IdentifiedSchema,
+  IdentifiedBaseSchema,
   ZymPersist,
 } from "../../../zym_lib/zy_schema/zy_schema";
-import {
-  ZymbolModulePersistenceSchema,
-  ZymbolModuleSchema,
-} from "../zymbol_infrastructure/zymbol_module/zymbol_module_schema";
+import { ZymbolModuleSchema } from "../zymbol_infrastructure/zymbol_module/zymbol_module_schema";
 
-export type ZageSchema = CreateZySchema<{
-  module: IdentifiedSchema<ZymbolModuleSchema>;
-}>;
-
-export type ZagePersistenceSchema = CreatePersistenceSchema<
-  ZageSchema,
+export type ZageSchema = CreateZySchema<
+  {
+    module: IdentifiedBaseSchema<ZymbolModuleSchema>;
+  },
   {
     module: {
       persistenceSymbol: "c";
-      persistenceType: ZymPersist<
-        ZymbolModuleSchema,
-        ZymbolModulePersistenceSchema
-      >;
+      persistenceType: ZymPersist<ZymbolModuleSchema>;
     };
   }
 >;

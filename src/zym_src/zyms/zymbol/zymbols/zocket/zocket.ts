@@ -55,7 +55,6 @@ import { TextZymbol } from "../text_zymbol/text_zymbol";
 import { CursorCommandTrait } from "../../../../../zym_lib/zy_god/cursor/cursor_commands";
 import { unwrapTraitResponse } from "../../../../../zym_lib/zy_trait/zy_trait";
 import {
-  ZocketPersistenceSchema,
   ZocketSchema,
   ZOCKET_MASTER_ID,
   ZymbolModifier,
@@ -84,7 +83,7 @@ const GROUP_COLOR = palette.beneathTheWaves;
 
 /* === Helper Types === */
 
-class ZocketMaster extends ZyMaster<ZocketSchema, ZocketPersistenceSchema, {}> {
+class ZocketMaster extends ZyMaster<ZocketSchema> {
   zyId = ZOCKET_MASTER_ID;
 
   newBlankChild(): Zym<any, any, any> {
@@ -97,7 +96,7 @@ export const zocketMaster = new ZocketMaster();
 /* Extensions */
 extendZymbol(zocketMaster);
 
-export class Zocket extends Zymbol<ZocketSchema, ZocketPersistenceSchema> {
+export class Zocket extends Zymbol<ZocketSchema> {
   zyMaster = zocketMaster;
   children: Zymbol<any, any>[] = [];
   modifiers: ZymbolModifier[] = [];
@@ -359,7 +358,7 @@ export class Zocket extends Zymbol<ZocketSchema, ZocketPersistenceSchema> {
     beforeChildren: ZymPersist<any, any>[],
     afterChildren: ZymPersist<any, any>[]
   ) => {
-    addZymChangeLink<ZocketSchema, ZocketPersistenceSchema>(ctx, {
+    addZymChangeLink<ZocketSchema>(ctx, {
       zymLocation: this.getFullCursorPointer(),
       beforeChange: {
         renderOpts: { cursor: [] },
@@ -950,7 +949,7 @@ export class Zocket extends Zymbol<ZocketSchema, ZocketPersistenceSchema> {
   };
 
   async hydrateFromPartialPersist(
-    p: Partial<ZyPartialPersist<ZocketSchema, ZocketPersistenceSchema>>
+    p: Partial<ZyPartialPersist<ZocketSchema>>
   ): Promise<void> {
     await safeHydrate(p, {
       children: async (children) => {

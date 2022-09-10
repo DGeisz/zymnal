@@ -29,7 +29,6 @@ import { extendZymbol } from "../../zymbol_cmd";
 import { Zocket } from "../zocket/zocket";
 import { deflectMethodToChild } from "../zymbol_utils";
 import {
-  ParenthesisZymbolPersistenceSchema,
   ParenthesisZymbolSchema,
   PARENTHESIS_ZYMBOL_ID,
 } from "./parenthesis_zymbol_schema";
@@ -37,17 +36,10 @@ import { ZyPartialPersist } from "../../../../../zym_lib/zy_schema/zy_schema";
 import { DotModifiersTrait } from "../../../zymbol_infrastructure/zymbol_frame/transformer/std_transformers/equation_transformers/dot_modifiers/dot_modifiers_schema";
 import { ZymbolModifier } from "../zocket/zocket_schema";
 
-class ParenthesisZymbolMaster extends ZyMaster<
-  ParenthesisZymbolSchema,
-  ParenthesisZymbolPersistenceSchema
-> {
+class ParenthesisZymbolMaster extends ZyMaster<ParenthesisZymbolSchema> {
   zyId: string = PARENTHESIS_ZYMBOL_ID;
 
-  newBlankChild(): Zym<
-    ParenthesisZymbolSchema,
-    ParenthesisZymbolPersistenceSchema,
-    any
-  > {
+  newBlankChild(): Zym<ParenthesisZymbolSchema, any> {
     return new ParenthesisZymbol("(", ")", false, DUMMY_FRAME, 0, undefined);
   }
 }
@@ -60,10 +52,7 @@ function checkParenthesisType(t: string) {
   return checkLatex(`\\l${t} a \\r${t}`);
 }
 
-export class ParenthesisZymbol extends Zymbol<
-  ParenthesisZymbolSchema,
-  ParenthesisZymbolPersistenceSchema
-> {
+export class ParenthesisZymbol extends Zymbol<ParenthesisZymbolSchema> {
   baseZocket: Zocket;
   children: Zymbol<any>[] = [];
   zyMaster = parenthesisZymbolMaster;
@@ -236,12 +225,7 @@ export class ParenthesisZymbol extends Zymbol<
   }
 
   async hydrateFromPartialPersist(
-    p: Partial<
-      ZyPartialPersist<
-        ParenthesisZymbolSchema,
-        ParenthesisZymbolPersistenceSchema
-      >
-    >
+    p: Partial<ZyPartialPersist<ParenthesisZymbolSchema>>
   ): Promise<void> {
     await safeHydrate(p, {
       baseZocket: async (b) => {

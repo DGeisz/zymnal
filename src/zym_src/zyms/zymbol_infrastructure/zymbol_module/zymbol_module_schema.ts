@@ -4,25 +4,15 @@ import {
 } from "../../../../zym_lib/hermes/hermes";
 import { Cursor } from "../../../../zym_lib/zy_god/cursor/cursor";
 import {
-  CreatePersistenceSchema,
   CreateZySchema,
-  IdentifiedSchema,
+  IdentifiedBaseSchema,
   ZymPersist,
 } from "../../../../zym_lib/zy_schema/zy_schema";
-import {
-  DerivationPersistenceSchema,
-  DerivationSchema,
-} from "./module_lines/derivation/derivation_schema";
+import { DerivationSchema } from "./module_lines/derivation/derivation_schema";
 import { DisplayEquation } from "./module_lines/display_equation/display_equation";
-import {
-  DisplayEquationPersistenceSchema,
-  DisplayEquationSchema,
-} from "./module_lines/display_equation/display_equation_schema";
+import { DisplayEquationSchema } from "./module_lines/display_equation/display_equation_schema";
 import { InlineInput } from "./module_lines/inline_input/inline_input";
-import {
-  InlineInputPersistenceSchema,
-  InlineInputSchema,
-} from "./module_lines/inline_input/inline_input_schema";
+import { InlineInputSchema } from "./module_lines/inline_input/inline_input_schema";
 
 export const ZYMBOL_MODULE_ID = "zymbol-module";
 
@@ -75,19 +65,17 @@ export type ModuleLineSchema =
   | DisplayEquationSchema
   | DerivationSchema;
 
-export type ZymbolModuleSchema = CreateZySchema<{
-  children: IdentifiedSchema<ModuleLineSchema>;
-}>;
-
-export type ZymbolModulePersistenceSchema = CreatePersistenceSchema<
-  ZymbolModuleSchema,
+export type ZymbolModuleSchema = CreateZySchema<
+  {
+    children: IdentifiedBaseSchema<ModuleLineSchema>;
+  },
   {
     children: {
       persistenceSymbol: "c";
       persistenceType: (
-        | ZymPersist<DisplayEquationSchema, DisplayEquationPersistenceSchema>
-        | ZymPersist<InlineInputSchema, InlineInputPersistenceSchema>
-        | ZymPersist<DerivationSchema, DerivationPersistenceSchema>
+        | ZymPersist<DisplayEquationSchema>
+        | ZymPersist<InlineInputSchema>
+        | ZymPersist<DerivationSchema>
       )[];
     };
   }
