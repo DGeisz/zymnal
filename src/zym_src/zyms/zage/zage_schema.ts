@@ -3,16 +3,22 @@ import {
   IdentifiedBaseSchema,
   ZymPersist,
 } from "../../../zym_lib/zy_schema/zy_schema";
-import { ZymbolModuleSchema } from "../zymbol_infrastructure/zymbol_module/zymbol_module_schema";
+import { PaneManagerSchema } from "../../editor_infrastructure/pane_manager/pane_manager_schema";
+import { SidebarSchema } from "../../editor_infrastructure/sidebar/sidebar_schema";
 
 export type ZageSchema = CreateZySchema<
   {
-    module: IdentifiedBaseSchema<ZymbolModuleSchema>;
+    sideBar: IdentifiedBaseSchema<SidebarSchema>;
+    rootPaneManager: IdentifiedBaseSchema<PaneManagerSchema>;
   },
   {
-    module: {
-      persistenceSymbol: "c";
-      persistenceType: ZymPersist<ZymbolModuleSchema>;
+    sideBar: {
+      persistenceSymbol: "s";
+      persistenceType: ZymPersist<SidebarSchema>;
+    };
+    rootPaneManager: {
+      persistenceSymbol: "p";
+      persistenceType: ZymPersist<PaneManagerSchema>;
     };
   }
 >;

@@ -14,6 +14,7 @@ import {
   buildingBlockMasters,
   buildingBlockZentinels,
 } from "./zyms/basic_building_blocks/basic_building_blocks";
+import { editorInfrastructureMasters } from "./editor_infrastructure/editor_infrastructure";
 
 const root = new Zage(0, undefined);
 
@@ -26,6 +27,7 @@ export const zyMasterList: ZyMaster[] = [
   ...buildingBlockMasters,
   ...zymbolInfrastructureMasters,
   ...zymbolMasterList,
+  ...editorInfrastructureMasters,
 ];
 
 export const zentinelList: Zentinel[] = [

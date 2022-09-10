@@ -3,6 +3,7 @@ import {
   IdentifiedBaseSchema,
   ZymPersist,
 } from "../../../zym_lib/zy_schema/zy_schema";
+import { EditorPaneSchema } from "../editor_pane/editor_pane_schema";
 
 export const PANE_MANAGER_ID = "pane-manager";
 
@@ -11,8 +12,7 @@ export enum PaneManagerOrientation {
   Horizontal = 1,
 }
 
-// TODO: Add special indication for type of children
-export type PaneManagerChildSchema = PaneManagerSchema | any;
+export type PaneManagerChildSchema = PaneManagerSchema | EditorPaneSchema;
 
 export type PaneManagerSchema = CreateZySchema<
   {
