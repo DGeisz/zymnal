@@ -4,7 +4,6 @@ import "./index.css";
 import reportWebVitals from "./reportWebVitals";
 import { ZyBridge } from "./zym_lib/zy_god/divine_api/zy_bridge_hook";
 import { getZymTreeRoot, zentinelList, zyMasterList } from "./zym_src/root";
-import { Allotment } from "allotment";
 import "allotment/dist/style.css";
 
 const root = ReactDOM.createRoot(

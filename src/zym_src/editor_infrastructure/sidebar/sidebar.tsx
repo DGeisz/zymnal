@@ -18,7 +18,14 @@ export class EditorSidebar extends Zyact<SidebarSchema> {
   zyMaster = sidebarMaster;
   children: Zym<any, any, any, any, any>[] = [];
 
-  component: FC<{}> = () => <div>I'm a sidebar</div>;
+  component: FC<{}> = () => {
+    return (
+      <div className="h-full w-auto flex flex-row bg-red-200">
+        <div className="bg-slate-500">icon bar</div>
+        <div>Main page</div>
+      </div>
+    );
+  };
 
   persistData(): ZyPartialPersist<SidebarSchema, {}, {}> {
     throw new Error("Method not implemented.");

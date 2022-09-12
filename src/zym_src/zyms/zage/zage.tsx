@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { hydrateChild, safeHydrate } from "../../../zym_lib/zym/utils/hydrate";
 import { Zym } from "../../../zym_lib/zym/zym";
 import { useZymponent } from "../../../zym_lib/zym/zymplementations/zyact/hooks";
@@ -12,6 +12,9 @@ import { EditorSidebar } from "../../editor_infrastructure/sidebar/sidebar";
 import { PaneManager } from "../../editor_infrastructure/pane_manager/pane_manager";
 import { SidebarSchema } from "../../editor_infrastructure/sidebar/sidebar_schema";
 import { Allotment } from "allotment";
+import DarkModeSwitch from "./building_blocks/dark_mode/dark_mode_switch";
+import { DarkModeReactive } from "./building_blocks/dark_mode/dark_mode_var";
+import { useReactiveVariable } from "../../../zym_lib/utils/reactive_variables";
 
 const DARK_MODE = true;
 
@@ -48,24 +51,33 @@ export class Zage extends Zyact<ZageSchema> {
   component = () => {
     const Sidebar = useZymponent(this.sideBar);
     const RootPaneManager = useZymponent(this.rootPaneManager);
+    const [darkMode, setDarkMode] = useReactiveVariable(DarkModeReactive);
 
-    useEffect(() => {
-      DARK_MODE &&
-        enableDarkMode({
-          brightness: 100,
-          contrast: 100,
-          sepia: 10,
-        });
-    }, []);
+    const [a, setA] = useState(true);
+
+    console.log("dark mode", a);
+
+    // useEffect(() => {
+    //   DARK_MODE &&
+    //     enableDarkMode({
+    //       brightness: 100,
+    //       contrast: 100,
+    //       sepia: 10,
+    //     });
+    // }, []);
 
     return (
       <div className="w-full h-full">
-        <Allotment>
-          <Allotment.Pane preferredSize={350} minSize={80}>
-            <Sidebar />
-          </Allotment.Pane>
-          <RootPaneManager />
-        </Allotment>
+        <DarkModeSwitch />
+        <div onClick={() => setA(!a)}>{JSON.stringify(darkMode)}</div>
+        <div className="w-full h-full">
+          <Allotment>
+            <Allotment.Pane preferredSize={350} minSize={80}>
+              <Sidebar />
+            </Allotment.Pane>
+            <RootPaneManager />
+          </Allotment>
+        </div>
       </div>
     );
   };

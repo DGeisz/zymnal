@@ -1,8 +1,13 @@
+import { useEffect, useMemo, useState } from "react";
+import { usePlainRerender, useRerender } from "../../global_utils/useRerender";
 import { Zym } from "../zym/zym";
 
 export class ReactiveVariable<T> {
   private value: T;
-  private registeredInstances: ReactiveVariableInstance<T>[] = [];
+  private registeredInstances: (
+    | ReactiveVariableInstance<T>
+    | HookInstance<T>
+  )[] = [];
 
   constructor(value: T) {
     this.value = value;
@@ -30,6 +35,13 @@ export class ReactiveVariable<T> {
       (i) => i.__id !== id
     );
   };
+
+  newHook = (render: () => void): HookInstance<T> => {
+    const hook = new HookInstance<T>(this, render);
+    this.registeredInstances.push(hook);
+
+    return hook;
+  };
 }
 
 class ReactiveVariableInstance<T> {
@@ -50,10 +62,69 @@ class ReactiveVariableInstance<T> {
     if (this.readonly) {
       throw new Error("can't set a readonly variable");
     } else {
+      this.variable.set(t);
     }
   };
 
   reRender = () => {
     this.zym.render();
   };
+}
+
+class HookInstance<T> {
+  private variable: ReactiveVariable<T>;
+  reRender: () => void;
+  __id = Math.random();
+
+  constructor(variable: ReactiveVariable<T>, reRender: () => void) {
+    this.variable = variable;
+    this.reRender = reRender;
+  }
+
+  set = (t: T) => {
+    this.variable.set(t);
+  };
+
+  get = (): T => this.variable.get();
+
+  unRegister = () => {
+    this.variable.unRegisterInstance(this.__id);
+  };
+}
+
+export function useReactiveVariable<T>(
+  reactiveVariable: ReactiveVariable<T>
+): [T, (t: T | ((v: T) => T)) => void] {
+  const [a, setA] = useState(0);
+  // const rerender = usePlainRerender();
+
+  console.log("a", a);
+
+  const hookVar = useMemo(
+    () =>
+      reactiveVariable.newHook(() => {
+        // const a = Math.random();
+        // console.log("setting a", a);
+        // setA(a);
+      }),
+    []
+  );
+
+  useEffect(() => {
+    return () => {
+      hookVar.unRegister();
+    };
+  }, []);
+
+  const setter = (t: T | ((v: T) => T)) => {
+    if (typeof t === "function") {
+      const fn = t as (v: T) => T;
+
+      hookVar.set(fn(hookVar.get()));
+    } else {
+      hookVar.set(t);
+    }
+  };
+
+  return [hookVar.get(), setter];
 }
