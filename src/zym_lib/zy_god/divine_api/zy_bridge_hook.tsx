@@ -32,8 +32,6 @@ export const ZyBridge: React.FC<ZyBridgeProps> = (props) => {
 
   const RootComp = useZymponent(props.root);
 
-  console.log("root comp", RootComp);
-
   if (ready) {
     return <RootComp />;
   } else {

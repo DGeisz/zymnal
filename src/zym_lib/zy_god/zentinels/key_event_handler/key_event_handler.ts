@@ -1,11 +1,16 @@
-import { cursorBlink } from "../cursor/cursor";
+import { Zentinel } from "../../../zentinel/zentinel";
+import { cursorBlink } from "../../cursor/cursor";
 import {
   KeyPressBasicType,
   KeyPressComplexType,
   KeyPressModifier,
-  keyPressModifierToSymbol,
   ZymKeyPress,
-} from "./key_press";
+} from "../../event_handler/key_press";
+import {
+  KeyEventHandlerMethodSchema,
+  KeyPressHandler,
+  KEY_PRESS_HANDLER,
+} from "./key_event_handler_schema";
 
 enum KeyLock {
   NONE,
@@ -14,14 +19,29 @@ enum KeyLock {
 }
 
 type HandlerId = number;
-type KeyPressHandler = (keyPress: ZymKeyPress) => void;
 
-class KeyEventHandler {
+class KeyEventHandler extends Zentinel<KeyEventHandlerMethodSchema> {
+  zyId = KEY_PRESS_HANDLER;
   keyLock: KeyLock = KeyLock.NONE;
   keyEventHandlers: Map<HandlerId, KeyPressHandler> = new Map();
 
+  suppressKeyEvents = false;
+
   constructor() {
+    super();
     this.setDocEventListeners();
+
+    this.setMethodImplementation({
+      addKeyHandler: async (handler) => {
+        this.addKeyHandler(handler);
+      },
+      suppressKeyHandling: async () => {
+        this.suppressKeyEvents = true;
+      },
+      allowKeyHandling: async () => {
+        this.suppressKeyEvents = false;
+      },
+    });
   }
 
   private setDocEventListeners = () => {
@@ -73,6 +93,8 @@ class KeyEventHandler {
   };
 
   handleKeyDown = (event: KeyboardEvent) => {
+    if (this.suppressKeyEvents) return;
+
     this.acquireKeyLock(KeyLock.KEYDOWN);
 
     const key = event.key;
@@ -129,6 +151,8 @@ class KeyEventHandler {
   };
 
   handleKeyPress = (e: KeyboardEvent) => {
+    if (this.suppressKeyEvents) return;
+
     this.acquireKeyLock(KeyLock.KEYPRESS);
 
     e.preventDefault();

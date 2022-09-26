@@ -1,7 +1,7 @@
 import { Zentinel } from "../zym_lib/zentinel/zentinel";
 import { Zyact } from "../zym_lib/zym/zymplementations/zyact/zyact";
 import { ZyMaster } from "../zym_lib/zym/zy_master";
-import { Zage, zageMaster } from "./zyms/zage/zage";
+import { BASE_ZAGE, Zage, zageMaster } from "./zyms/zage/zage";
 import { zymbolMasterList } from "./zyms/zymbol/zymbols/zymbol_list";
 import {
   zymbolInfrastructureMasters,
@@ -15,8 +15,9 @@ import {
   buildingBlockZentinels,
 } from "./zyms/basic_building_blocks/basic_building_blocks";
 import { editorInfrastructureMasters } from "./editor_infrastructure/editor_infrastructure";
+import { fileServerClientZentinel } from "./zentinels/file_server_client/file_server_client";
 
-const root = new Zage(0, undefined);
+const root = BASE_ZAGE;
 
 export function getZymTreeRoot(): Zyact {
   return root;
@@ -33,6 +34,7 @@ export const zyMasterList: ZyMaster[] = [
 export const zentinelList: Zentinel[] = [
   defaultTraitZentinel,
   vimZentinel,
+  fileServerClientZentinel,
   vimiumZentinel,
   ...zymbolInfrastructureZentinels,
   ...buildingBlockZentinels,

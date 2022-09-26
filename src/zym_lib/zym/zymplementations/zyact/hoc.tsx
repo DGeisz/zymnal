@@ -24,8 +24,6 @@ export function withZyactComponent<
       zyact.setRerender(rerender);
     }, []);
 
-    console.log("comp", Component);
-
     return <Component {...props} {...opts} />;
   };
 }

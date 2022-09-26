@@ -11,7 +11,6 @@ import {
   CursorCommandTrait,
   defaultCursorImplFactory,
 } from "./cursor/cursor_commands";
-import { keyEventHandler } from "./event_handler/key_event_handler";
 import {
   defaultKeyPressImplFactory,
   KeyPressComplexType,
@@ -28,6 +27,8 @@ import {
   UndoRedoTrait,
 } from "./undo_redo/undo_redo";
 import { CustomKeyPressHandler, ZyGodSchema, ZY_GOD_ID } from "./zy_god_schema";
+import { godlyZentinels } from "./zentinels/zentinels";
+import { KeyEventHandlerMethod } from "./zentinels/key_event_handler/key_event_handler_schema";
 
 const WINDOW_BLUR = true;
 
@@ -107,7 +108,10 @@ class ZyGod extends Zentinel<ZyGodSchema> {
 
     // @ts-ignore
     window.undo = this.undoRedoStack;
-    keyEventHandler.addKeyHandler(this.handleKeyPress);
+    this.callZentinelMethod(
+      KeyEventHandlerMethod.addKeyHandler,
+      this.handleKeyPress
+    );
 
     /* Add our window blur and window focus events */
     WindowEventHandler.addEventListener("blur", this.onWindowBlur);
@@ -127,6 +131,7 @@ class ZyGod extends Zentinel<ZyGodSchema> {
     carrier of hermes and also a zentinel
     */
     this.zyGodHermes.registerZentinel(this as Zentinel<any>);
+    this.registerZentinels(godlyZentinels);
   }
 
   private handleCursorChange = (newCursor: Cursor) => {

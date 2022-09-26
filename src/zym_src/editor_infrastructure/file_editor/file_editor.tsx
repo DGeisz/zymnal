@@ -3,6 +3,7 @@ import { Zym } from "../../../zym_lib/zym/zym";
 import { Zyact } from "../../../zym_lib/zym/zymplementations/zyact/zyact";
 import { ZyMaster } from "../../../zym_lib/zym/zy_master";
 import { ZyPartialPersist } from "../../../zym_lib/zy_schema/zy_schema";
+import { ZyFile } from "../../zentinels/file_server_client/file_server_client_schema";
 import { FileEditorSchema, FILE_EDITOR_ID } from "./file_editor_schema";
 
 class FileEditorMaster extends ZyMaster<FileEditorSchema> {
@@ -15,7 +16,7 @@ class FileEditorMaster extends ZyMaster<FileEditorSchema> {
 
 export const fileEditorMaster = new FileEditorMaster();
 
-class FileEditor extends Zyact<FileEditorSchema> {
+export class FileEditor extends Zyact<FileEditorSchema> {
   zyMaster = fileEditorMaster;
   children: Zym<any, any, any, any, any>[] = [];
 
@@ -29,4 +30,10 @@ class FileEditor extends Zyact<FileEditorSchema> {
   ): Promise<void> {
     throw new Error("Method not implemented.");
   }
+
+  zyFile = (): ZyFile => {
+    return {
+      name: "",
+    };
+  };
 }

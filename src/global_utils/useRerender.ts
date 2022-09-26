@@ -17,11 +17,8 @@ export function useRerender<T>(initialOpts: T) {
 
 export function usePlainRerender() {
   const [_i, setI] = useState<number>(0);
-  console.log("nw---------------------", _i);
-
   return () => {
     setI((i) => {
-      console.log("plain rerendering ---------------------", i);
       return i + 1;
     });
   };

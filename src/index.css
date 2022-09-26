@@ -28,7 +28,7 @@ input:focus,
 input[type]:focus,
 span:focus,
 .uneditable-input:focus {
-  border-color: transparent;
+  /* border-color: transparent; */
   box-shadow: transparent;
   /* border-color: rgba(229, 103, 23, 0.8);
     box-shadow: 0 1px 1px rgba(229, 103, 23, 0.075) inset,

@@ -1,3 +1,4 @@
+import { debug } from "console";
 import { useEffect, useMemo, useState } from "react";
 import { usePlainRerender, useRerender } from "../../global_utils/useRerender";
 import { Zym } from "../zym/zym";
@@ -96,21 +97,18 @@ export function useReactiveVariable<T>(
   reactiveVariable: ReactiveVariable<T>
 ): [T, (t: T | ((v: T) => T)) => void] {
   const [a, setA] = useState(0);
-  // const rerender = usePlainRerender();
+  const [registerCount, setRegCount] = useState(0);
 
-  console.log("a", a);
-
-  const hookVar = useMemo(
-    () =>
-      reactiveVariable.newHook(() => {
-        // const a = Math.random();
-        // console.log("setting a", a);
-        // setA(a);
-      }),
-    []
-  );
+  const hookVar = useMemo(() => {
+    return reactiveVariable.newHook(() => {
+      setA((a) => {
+        return a + 1;
+      });
+    });
+  }, [registerCount]);
 
   useEffect(() => {
+    setRegCount((r) => r + 1);
     return () => {
       hookVar.unRegister();
     };

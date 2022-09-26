@@ -3,6 +3,7 @@ import { Zym } from "../../zym/zym";
 import { NONE, zySome, ZyOption } from "../../utils/zy_option";
 import { createContextVariable } from "../../utils/basic_context";
 import { ZyId } from "../../zy_schema/zy_schema";
+import { useState } from "react";
 
 export type CursorIndex = number;
 export type Cursor = CursorIndex[];
@@ -214,3 +215,12 @@ class CursorBlink {
 }
 
 export const cursorBlink = new CursorBlink();
+
+/* Hook that allows components to handle when it does or doesn't have the cursor */
+type CursorHandler = () => void | (() => void);
+
+export function useCursorFocus() {
+  const [hasCursor, setHasCursor] = useState(false);
+
+  (async () => {})();
+}
