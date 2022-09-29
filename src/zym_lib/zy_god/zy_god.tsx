@@ -62,6 +62,19 @@ class ZyGod extends Zentinel<ZyGodSchema> {
 
         return this.root!;
       },
+      getZymAtCursor: async (cursor) => {
+        let currZym = this.root;
+
+        for (const i in cursor) {
+          currZym = currZym?.children[i];
+
+          if (!currZym) {
+            return NONE;
+          }
+        }
+
+        return zySome(currZym!);
+      },
       reRender: async () => {
         await this.handleCursorChange(this.cursor);
       },

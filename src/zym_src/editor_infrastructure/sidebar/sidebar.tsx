@@ -14,7 +14,7 @@ import { ZageMethod } from "../../zyms/zage/zage_schema";
 import FileNameDisplay from "./building_blocks/file_name_display";
 import NewFileInput from "./building_blocks/new_file_input";
 import { SidebarSchema, SIDEBAR_ID } from "./sidebar_schema";
-import { BsFileEarmarkPlus, BsFileEarmarkPlusFill } from "react-icons/bs";
+import { BsFileEarmarkPlus } from "react-icons/bs";
 
 const dummyFiles: ZyFile[] = [
   { name: "hi there" },
@@ -152,7 +152,9 @@ export class EditorSidebar extends Zyact<SidebarSchema> {
             className={clsx(
               "text-sm font-bold",
               "dark:text-neutral-300",
-              "flex items-center"
+              "flex items-center",
+              "select-none",
+              "cursor-default"
             )}
           >
             {cwd.toUpperCase()}

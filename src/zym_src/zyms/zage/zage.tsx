@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { hydrateChild, safeHydrate } from "../../../zym_lib/zym/utils/hydrate";
 import { Zym } from "../../../zym_lib/zym/zym";
 import { useZymponent } from "../../../zym_lib/zym/zymplementations/zyact/hooks";
@@ -11,7 +10,6 @@ import { EditorSidebar } from "../../editor_infrastructure/sidebar/sidebar";
 import { PaneManager } from "../../editor_infrastructure/pane_manager/pane_manager";
 import { SidebarSchema } from "../../editor_infrastructure/sidebar/sidebar_schema";
 import { Allotment } from "allotment";
-import DarkModeSwitch from "./building_blocks/dark_mode/dark_mode_switch";
 import { DarkModeReactive } from "./building_blocks/dark_mode/dark_mode_var";
 import { useReactiveVariable } from "../../../zym_lib/utils/reactive_variables";
 import clsx from "clsx";
@@ -27,7 +25,12 @@ class ZageMaster extends ZyMaster<ZageSchema, ZageZentinelMethodSchema> {
     this.setMethodImplementation({
       openFile: async (file: ZyFile) => {
         /* First see if the file is already open somewhere */
-        const openCursor = BASE_ZAGE.rootPaneManager.checkForOpenFile(file);
+        const openEditorPaneCursor =
+          BASE_ZAGE.rootPaneManager.checkForOpenFile(file);
+
+        if (openEditorPaneCursor) {
+        } else {
+        }
       },
     });
   }

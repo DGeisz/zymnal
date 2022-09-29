@@ -4,13 +4,33 @@ import { Zyact } from "../../../zym_lib/zym/zymplementations/zyact/zyact";
 import { ZyMaster } from "../../../zym_lib/zym/zy_master";
 import { ZyPartialPersist } from "../../../zym_lib/zy_schema/zy_schema";
 import { ZyFile } from "../../zentinels/file_server_client/file_server_client_schema";
-import { FileEditorSchema, FILE_EDITOR_ID } from "./file_editor_schema";
+import {
+  FileEditorMethodSchema,
+  FileEditorSchema,
+  FILE_EDITOR_ID,
+} from "./file_editor_schema";
+import { FileHandler } from "./file_handler";
 
-class FileEditorMaster extends ZyMaster<FileEditorSchema> {
+const EMPTY_FILE: ZyFile = { name: "" };
+
+class FileEditorMaster extends ZyMaster<
+  FileEditorSchema,
+  FileEditorMethodSchema
+> {
   zyId = FILE_EDITOR_ID;
+  fileHandlerRegistry: Map<string, FileHandler> = new Map();
+
+  constructor() {
+    super();
+    this.setMethodImplementation({
+      registerFileHandler: async ({ extension, fileHandler }) => {
+        this.fileHandlerRegistry.set(extension, fileHandler);
+      },
+    });
+  }
 
   newBlankChild() {
-    return new FileEditor(0, undefined);
+    return new FileEditor(EMPTY_FILE, 0, undefined);
   }
 }
 
@@ -18,13 +38,20 @@ export const fileEditorMaster = new FileEditorMaster();
 
 export class FileEditor extends Zyact<FileEditorSchema> {
   zyMaster = fileEditorMaster;
-  children: Zym<any, any, any, any, any>[] = [];
+  children = [];
+  file: ZyFile;
+
+  constructor(file: ZyFile, cursorIndex: number, parent: Zym | undefined) {
+    super(cursorIndex, parent);
+    this.file = file;
+  }
 
   component: FC<{}> = () => <div>I'm a file editor!</div>;
 
   persistData(): ZyPartialPersist<FileEditorSchema> {
     throw new Error("Method not implemented.");
   }
+
   hydrateFromPartialPersist(
     p: Partial<ZyPartialPersist<FileEditorSchema>>
   ): Promise<void> {
@@ -32,8 +59,6 @@ export class FileEditor extends Zyact<FileEditorSchema> {
   }
 
   zyFile = (): ZyFile => {
-    return {
-      name: "",
-    };
+    return this.file;
   };
 }
