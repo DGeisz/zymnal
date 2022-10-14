@@ -36,10 +36,10 @@ class KeyEventHandler extends Zentinel<KeyEventHandlerMethodSchema> {
         this.addKeyHandler(handler);
       },
       suppressKeyHandling: async () => {
-        this.suppressKeyEvents = true;
+        // this.suppressKeyEvents = true;
       },
       allowKeyHandling: async () => {
-        this.suppressKeyEvents = false;
+        // this.suppressKeyEvents = false;
       },
     });
   }

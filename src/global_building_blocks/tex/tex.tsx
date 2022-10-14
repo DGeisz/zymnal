@@ -16,6 +16,8 @@ function recursivelyRemovePointerEvents(e: HTMLElement) {
   if (!e.style) return;
 
   e.style.pointerEvents = "none";
+  // // TODO: remove experiment
+  // e.contentEditable = "true";
 
   for (let i = 0; i < e.children.length; i++) {
     const child = e.children.item(i);

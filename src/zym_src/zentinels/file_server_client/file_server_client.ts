@@ -4,6 +4,7 @@ import {
   FILE_SERVER_CLIENT,
 } from "./file_server_client_schema";
 import axios from "axios";
+import { resourceLimits } from "worker_threads";
 
 const SERVER_URL = "http://localhost:4200";
 
@@ -46,6 +47,17 @@ class FileServerClient extends Zentinel<FileServerClientSchema> {
           return true;
         } else {
           return false;
+        }
+      },
+      getFile: async ({ file }) => {
+        const res = await axios.post(url(SERVER_URL, "get_file"), {
+          file,
+        });
+
+        if (res.data) {
+          return res.data;
+        } else {
+          throw new Error(`Didn't find file: ${file.name}`);
         }
       },
     });

@@ -563,6 +563,8 @@ zymbolFrameMaster.implementTrait(KeyPressTrait, {
     const { keyPressContext, keyPress } = args;
     let { cursor } = args;
 
+    console.log("handle eky press old", keyPress);
+
     if (frame.vimiumMode.handleKeyPress(keyPress)) {
       return successfulMoveResponse(cursor);
     }

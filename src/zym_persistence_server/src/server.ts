@@ -4,6 +4,7 @@ import { Server } from "socket.io";
 import cors from "cors";
 import fs from "fs";
 import path from "path";
+import { ZyFile } from "./server_types";
 
 const app = express();
 const server = http.createServer(app);
@@ -36,6 +37,19 @@ app.post("/new_file", (req, res) => {
     } else {
       res.send("Created");
     }
+  });
+});
+
+app.post("/get_file", (req, res) => {
+  const { file } = req.body;
+  const zyFile = file as ZyFile;
+
+  fs.readFile(zyFile.name, (err, buff) => {
+    if (err) {
+      console.error("Everything broke! File not found");
+    }
+
+    res.send(buff.toString());
   });
 });
 

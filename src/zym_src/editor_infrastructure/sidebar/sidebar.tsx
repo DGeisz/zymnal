@@ -10,7 +10,7 @@ import {
   FileServerClientMethod,
   ZyFile,
 } from "../../zentinels/file_server_client/file_server_client_schema";
-import { ZageMethod } from "../../zyms/zage/zage_schema";
+// import { ZageMethod } from "../../zyms/zage/zage_schema";
 import FileNameDisplay from "./building_blocks/file_name_display";
 import NewFileInput from "./building_blocks/new_file_input";
 import { SidebarSchema, SIDEBAR_ID } from "./sidebar_schema";
@@ -123,8 +123,8 @@ export class EditorSidebar extends Zyact<SidebarSchema> {
           name: fileName,
         });
 
-        /* Then tell the zage to open the file */
-        await this.callZentinelMethod(ZageMethod.openFile, { name: fileName });
+        // /* Then tell the zage to open the file */
+        // await this.callZentinelMethod(ZageMethod.openFile, { name: fileName });
 
         setNewFile(false);
       })();

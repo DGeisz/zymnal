@@ -29,6 +29,12 @@ export type FileServerClientSchema = CreateZentinelMethodSchema<{
     };
     return: boolean;
   };
+  getFile: {
+    args: {
+      file: ZyFile;
+    };
+    return: any;
+  };
 }>;
 
 export const FileServerClientMethod =
@@ -36,4 +42,5 @@ export const FileServerClientMethod =
     getDirectoryFiles: 0,
     getCurrentWorkingDirectory: 0,
     createNewFile: 0,
+    getFile: 0,
   });

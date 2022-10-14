@@ -56,9 +56,9 @@ export class PaneManager extends Zyact<PaneManagerSchema> {
     throw new Error("Method not implemented.");
   }
 
-  checkForOpenFile = (file: ZyFile): Cursor | undefined => {
+  checkForOpenFileHandler = (file: ZyFile): Cursor | undefined => {
     for (const child of this.children) {
-      const cursor = child.checkForOpenFile(file);
+      const cursor = child.checkForOpenFileHandler(file);
 
       if (cursor) return cursor;
     }
