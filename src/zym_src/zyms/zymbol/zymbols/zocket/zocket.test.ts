@@ -1,67 +1,73 @@
+import { ZymbolFrame } from "../../../zymbol_infrastructure/zymbol_frame/zymbol_frame";
+import { Zymbol } from "../../zymbol";
+import { SymbolZymbol } from "../symbol_zymbol/symbol_zymbol";
+import { TextZymbol } from "../text_zymbol/text_zymbol";
 import { Zocket } from "./zocket";
 
-// describe("Zocket", () => {
-//   it("Text merge works", () => {
-//     const zocket = new Zocket();
+describe("Zocket", () => {
+  const DUMMY_FRAME = new ZymbolFrame(0, undefined);
 
-//     /* First round, simply merge several basic text zymbols */
-//     {
-//       const zymbols = zocket.getZymbols();
+  it("Text merge works", () => {
+    const zocket = new Zocket(DUMMY_FRAME, 0, undefined);
 
-//       const charSets = ["aa", "bb", "cc"];
+    /* First round, simply merge several basic text zymbols */
+    {
+      const zymbols = zocket.getZymbols();
 
-//       for (const set of charSets) {
-//         const z = new TextZymbol(zocket);
-//         z.setCharacters(set.split(""));
+      const charSets = ["aa", "bb", "cc"];
 
-//         zymbols.push(z);
-//       }
+      for (const set of charSets) {
+        const z = new TextZymbol(DUMMY_FRAME, 0, zocket);
+        z.setCharacters(set.split(""));
 
-//       expect(zocket.getZymbols().length).toBe(3);
+        zymbols.push(z);
+      }
 
-//       const res = zocket.__mergeTextZymbols([1, 1]);
+      expect(zocket.getZymbols().length).toBe(3);
 
-//       expect(res.success).toBe(true);
-//       expect(res.newRelativeCursor).toEqual([0, 3]);
+      const res = zocket.__mergeTextZymbols([1, 1]);
 
-//       expect(zocket.getZymbols().length).toBe(1);
-//       expect(
-//         (zocket.getZymbols()[0] as TextZymbol).getCharacters().join("")
-//       ).toBe("aabbcc");
-//     }
+      expect(res.success).toBe(true);
+      expect(res.newRelativeCursor).toEqual([0, 3]);
 
-//     /* Second round, merge basic text zymbols surrounded by tex symbols */
+      expect(zocket.getZymbols().length).toBe(1);
+      expect(
+        (zocket.getZymbols()[0] as TextZymbol).getCharacters().join("")
+      ).toBe("aabbcc");
+    }
 
-//     {
-//       const zymbols: Zymbol[] = [];
+    /* Second round, merge basic text zymbols surrounded by tex symbols */
 
-//       const charSuperSets = [
-//         ["aa", "bb", "cc"],
-//         ["dd", "ee", "ff"],
-//         ["gg", "hh", "ii"],
-//       ];
+    {
+      const zymbols: Zymbol[] = [];
 
-//       for (const superSet of charSuperSets) {
-//         for (const set of superSet) {
-//           const z = new TextZymbol(zocket);
-//           z.setCharacters(set.split(""));
+      const charSuperSets = [
+        ["aa", "bb", "cc"],
+        ["dd", "ee", "ff"],
+        ["gg", "hh", "ii"],
+      ];
 
-//           zymbols.push(z);
-//         }
+      for (const superSet of charSuperSets) {
+        for (const set of superSet) {
+          const z = new TextZymbol(DUMMY_FRAME, -1, zocket);
+          z.setCharacters(set.split(""));
 
-//         zymbols.push(new SymbolZymbol(zocket, "\\alpha"));
-//       }
+          zymbols.push(z);
+        }
 
-//       zocket.setZymbols(zymbols);
+        zymbols.push(new SymbolZymbol("\\alpha", DUMMY_FRAME, 0, zocket));
+      }
 
-//       expect(zocket.getZymbols().length).toBe(12);
+      zocket.setZymbols(zymbols);
 
-//       const res = zocket.__mergeTextZymbols([5, 2]);
+      expect(zocket.getZymbols().length).toBe(12);
 
-//       expect(zocket.getZymbols().length).toBe(6);
+      const res = zocket.__mergeTextZymbols([5, 2]);
 
-//       expect(res.success).toBe(true);
-//       expect(res.newRelativeCursor).toEqual([2, 4]);
-//     }
-//   });
-// });
+      expect(zocket.getZymbols().length).toBe(6);
+
+      expect(res.success).toBe(true);
+      expect(res.newRelativeCursor).toEqual([2, 4]);
+    }
+  });
+});

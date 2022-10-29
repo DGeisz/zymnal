@@ -1,13 +1,41 @@
 import { last } from "../../../../../../global_utils/array_utils";
 import { backslash } from "../../../../../../global_utils/latex_utils";
+import { unwrapOption } from "../../../../../../zym_lib/utils/zy_option";
 import {
   Cursor,
   CursorIndex,
 } from "../../../../../../zym_lib/zy_god/cursor/cursor";
+import { ZyGod } from "../../../../../../zym_lib/zy_god/zy_god";
+import { ZyGodMethod } from "../../../../../../zym_lib/zy_god/zy_god_schema";
 import { Zymbol } from "../../../../zymbol/zymbol";
+import { FunctionZymbol } from "../../../../zymbol/zymbols/function_zymbol/function_zymbol";
+import { SymbolZymbol } from "../../../../zymbol/zymbols/symbol_zymbol/symbol_zymbol";
 import { TextZymbol } from "../../../../zymbol/zymbols/text_zymbol/text_zymbol";
 import { TEXT_ZYMBOL_NAME } from "../../../../zymbol/zymbols/text_zymbol/text_zymbol_schema";
 import { ZOCKET_MASTER_ID } from "../../../../zymbol/zymbols/zocket/zocket_schema";
+
+export async function getZymbol<Z extends Zymbol = Zymbol>(
+  cursor: Cursor,
+  zyGod: ZyGod
+): Promise<Z> {
+  return unwrapOption(
+    await zyGod.callZentinelMethod(ZyGodMethod.getZymAtCursor, cursor)
+  ) as Z;
+}
+
+export async function getFunction(
+  cursor: Cursor,
+  zyGod: ZyGod
+): Promise<FunctionZymbol> {
+  return getZymbol<FunctionZymbol>(cursor, zyGod);
+}
+
+export async function getSymbol(
+  cursor: Cursor,
+  zyGod: ZyGod
+): Promise<SymbolZymbol> {
+  return getZymbol<SymbolZymbol>(cursor, zyGod);
+}
 
 /**
  * Basically just gets us to an assumed text zymbol and the parent */

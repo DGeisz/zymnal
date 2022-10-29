@@ -550,6 +550,8 @@ zymbolModuleMaster.implementTrait(KeyPressTrait, {
           })
         );
 
+      let childMove;
+
       switch (keyPress.type) {
         case KeyPressBasicType.Enter: {
           if (
@@ -580,7 +582,7 @@ zymbolModuleMaster.implementTrait(KeyPressTrait, {
           return module.moveCursorUp(cursor, keyPressContext);
         }
         case KeyPressBasicType.ArrowRight: {
-          const childMove = await deferToChild();
+          childMove = await deferToChild();
 
           if (
             !childMove.success &&
@@ -592,7 +594,7 @@ zymbolModuleMaster.implementTrait(KeyPressTrait, {
           break;
         }
         case KeyPressBasicType.ArrowLeft: {
-          const childMove = await deferToChild();
+          childMove = await deferToChild();
 
           if (!childMove.success && nextCursorIndex > 0) {
             return successfulMoveResponse([
@@ -608,7 +610,7 @@ zymbolModuleMaster.implementTrait(KeyPressTrait, {
         }
       }
 
-      const childMove = await deferToChild();
+      if (!childMove) childMove = await deferToChild();
 
       return chainMoveResponse(childMove, (nextCursor) => {
         return successfulMoveResponse(

@@ -1,0 +1,77 @@
+{
+  "testActions": [
+    {
+      "type": "key",
+      "keyPress": {
+        "type": 1,
+        "modifiers": [
+          0
+        ]
+      }
+    },
+    {
+      "type": "key",
+      "keyPress": {
+        "type": 0,
+        "key": "k",
+        "modifiers": []
+      }
+    },
+    {
+      "type": "key",
+      "keyPress": {
+        "type": 0,
+        "key": "e",
+        "modifiers": []
+      }
+    },
+    {
+      "type": "key",
+      "keyPress": {
+        "type": 0,
+        "key": "t",
+        "modifiers": []
+      }
+    },
+    {
+      "type": "key",
+      "keyPress": {
+        "type": 3,
+        "modifiers": []
+      }
+    },
+    {
+      "type": "key",
+      "keyPress": {
+        "type": 4,
+        "modifiers": []
+      }
+    },
+    {
+      "type": "key",
+      "keyPress": {
+        "type": 0,
+        "key": "a",
+        "modifiers": []
+      }
+    },
+    {
+      "type": "key",
+      "keyPress": {
+        "type": 3,
+        "modifiers": []
+      }
+    },
+    {
+      "type": "key",
+      "keyPress": {
+        "type": 3,
+        "modifiers": []
+      }
+    }
+  ],
+  "finalFrameCursor": [
+    0,
+    0
+  ]
+}

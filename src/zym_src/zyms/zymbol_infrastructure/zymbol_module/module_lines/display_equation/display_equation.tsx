@@ -36,7 +36,7 @@ export class DisplayEquation extends Zyact<DisplayEquationSchema> {
 
     return (
       <div className="flex justify-center mt-4">
-        <Frame />
+        <Frame texClass="display-math" />
       </div>
     );
   };

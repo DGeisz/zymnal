@@ -1,5 +1,5 @@
 import { Zentinel } from "../../../../../../zym_lib/zentinel/zentinel";
-import { cashStack } from "./equation_transformers/cash_stack";
+import { cashStack } from "./equation_transformers/cash_stack/cash_stack";
 import { dotModifiers } from "./equation_transformers/dot_modifiers/dot_modifiers";
 import { fractionTransformer } from "./equation_transformers/fraction_transform";
 import { functionTransformer } from "./equation_transformers/function_transformer/function_transformer";

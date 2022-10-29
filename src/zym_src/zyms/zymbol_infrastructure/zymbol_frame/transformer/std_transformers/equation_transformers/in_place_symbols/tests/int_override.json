@@ -1,0 +1,99 @@
+{
+  "testActions": [
+    {
+      "type": "key",
+      "keyPress": {
+        "type": 1,
+        "modifiers": [
+          0
+        ]
+      }
+    },
+    {
+      "type": "key",
+      "keyPress": {
+        "type": 0,
+        "key": "i",
+        "modifiers": []
+      }
+    },
+    {
+      "type": "key",
+      "keyPress": {
+        "type": 0,
+        "key": "n",
+        "modifiers": []
+      }
+    },
+    {
+      "type": "key",
+      "keyPress": {
+        "type": 3,
+        "modifiers": []
+      }
+    },
+    {
+      "type": "checkpoint",
+      "cursor": [
+        0,
+        0
+      ]
+    },
+    {
+      "type": "key",
+      "keyPress": {
+        "type": 4,
+        "modifiers": []
+      }
+    },
+    {
+      "type": "key",
+      "keyPress": {
+        "type": 7,
+        "modifiers": []
+      }
+    },
+    {
+      "type": "key",
+      "keyPress": {
+        "type": 0,
+        "key": "i",
+        "modifiers": []
+      }
+    },
+    {
+      "type": "key",
+      "keyPress": {
+        "type": 0,
+        "key": "n",
+        "modifiers": []
+      }
+    },
+    {
+      "type": "key",
+      "keyPress": {
+        "type": 0,
+        "key": "t",
+        "modifiers": []
+      }
+    },
+    {
+      "type": "key",
+      "keyPress": {
+        "type": 3,
+        "modifiers": []
+      }
+    },
+    {
+      "type": "checkpoint",
+      "cursor": [
+        0,
+        0
+      ]
+    }
+  ],
+  "finalFrameCursor": [
+    0,
+    0
+  ]
+}

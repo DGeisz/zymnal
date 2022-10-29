@@ -70,6 +70,54 @@ export function chainMoveResponse(
   }
 }
 
+export function getCursorToFirstZymId(
+  root: Zym,
+  cursor: Cursor,
+  zyId: ZyId
+): Cursor {
+  let currZym = root;
+  cursor = [...cursor];
+  const finalCursor = [];
+
+  while (cursor.length > 0) {
+    const i = cursor.shift()!;
+    finalCursor.push(i);
+
+    const child = currZym.children[i];
+
+    if (!child) return [];
+
+    if (child.getMasterId() === zyId) return finalCursor;
+
+    currZym = child;
+  }
+
+  return [];
+}
+
+export function getRemainingCursorAfterZymId(
+  root: Zym,
+  cursor: Cursor,
+  zyId: ZyId
+): Cursor {
+  let currZym = root;
+  cursor = [...cursor];
+
+  while (cursor.length > 0) {
+    const i = cursor.shift()!;
+
+    const child = currZym.children[i];
+
+    if (!child) return [];
+
+    if (child.getMasterId() === zyId) return cursor;
+
+    currZym = child;
+  }
+
+  return [];
+}
+
 export function getLastZymInCursorWithId<Z extends Zym>(
   root: Zym,
   cursor: Cursor,

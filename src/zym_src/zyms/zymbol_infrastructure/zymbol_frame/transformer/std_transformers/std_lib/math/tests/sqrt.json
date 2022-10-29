@@ -1,0 +1,329 @@
+{
+  "testActions": [
+    {
+      "type": "key",
+      "keyPress": {
+        "type": 1,
+        "modifiers": [
+          0
+        ]
+      }
+    },
+    {
+      "type": "key",
+      "keyPress": {
+        "type": 0,
+        "key": "s",
+        "modifiers": []
+      }
+    },
+    {
+      "type": "key",
+      "keyPress": {
+        "type": 0,
+        "key": "r",
+        "modifiers": []
+      }
+    },
+    {
+      "type": "key",
+      "keyPress": {
+        "type": 0,
+        "key": "a",
+        "modifiers": []
+      }
+    },
+    {
+      "type": "key",
+      "keyPress": {
+        "type": 3,
+        "modifiers": []
+      }
+    },
+    {
+      "type": "key",
+      "keyPress": {
+        "type": 3,
+        "modifiers": []
+      }
+    },
+    {
+      "type": "key",
+      "keyPress": {
+        "type": 0,
+        "key": "a",
+        "modifiers": []
+      }
+    },
+    {
+      "type": "key",
+      "keyPress": {
+        "type": 0,
+        "key": " ",
+        "modifiers": []
+      }
+    },
+    {
+      "type": "key",
+      "keyPress": {
+        "type": 0,
+        "key": "+",
+        "modifiers": [
+          0
+        ]
+      }
+    },
+    {
+      "type": "key",
+      "keyPress": {
+        "type": 0,
+        "key": " ",
+        "modifiers": []
+      }
+    },
+    {
+      "type": "key",
+      "keyPress": {
+        "type": 7,
+        "modifiers": []
+      }
+    },
+    {
+      "type": "key",
+      "keyPress": {
+        "type": 3,
+        "modifiers": []
+      }
+    },
+    {
+      "type": "key",
+      "keyPress": {
+        "type": 4,
+        "modifiers": []
+      }
+    },
+    {
+      "type": "key",
+      "keyPress": {
+        "type": 4,
+        "modifiers": []
+      }
+    },
+    {
+      "type": "key",
+      "keyPress": {
+        "type": 3,
+        "modifiers": []
+      }
+    },
+    {
+      "type": "key",
+      "keyPress": {
+        "type": 3,
+        "modifiers": []
+      }
+    },
+    {
+      "type": "key",
+      "keyPress": {
+        "type": 4,
+        "modifiers": []
+      }
+    },
+    {
+      "type": "checkpoint",
+      "cursor": [
+        0,
+        2
+      ]
+    },
+    {
+      "type": "key",
+      "keyPress": {
+        "type": 4,
+        "modifiers": []
+      }
+    },
+    {
+      "type": "key",
+      "keyPress": {
+        "type": 4,
+        "modifiers": []
+      }
+    },
+    {
+      "type": "key",
+      "keyPress": {
+        "type": 4,
+        "modifiers": []
+      }
+    },
+    {
+      "type": "key",
+      "keyPress": {
+        "type": 0,
+        "key": ".",
+        "modifiers": []
+      }
+    },
+    {
+      "type": "key",
+      "keyPress": {
+        "type": 0,
+        "key": "^",
+        "modifiers": [
+          0
+        ]
+      }
+    },
+    {
+      "type": "key",
+      "keyPress": {
+        "type": 3,
+        "modifiers": []
+      }
+    },
+    {
+      "type": "key",
+      "keyPress": {
+        "type": 3,
+        "modifiers": []
+      }
+    },
+    {
+      "type": "key",
+      "keyPress": {
+        "type": 3,
+        "modifiers": []
+      }
+    },
+    {
+      "type": "key",
+      "keyPress": {
+        "type": 3,
+        "modifiers": []
+      }
+    },
+    {
+      "type": "key",
+      "keyPress": {
+        "type": 4,
+        "modifiers": []
+      }
+    },
+    {
+      "type": "key",
+      "keyPress": {
+        "type": 0,
+        "key": "3",
+        "modifiers": []
+      }
+    },
+    {
+      "type": "key",
+      "keyPress": {
+        "type": 3,
+        "modifiers": []
+      }
+    },
+    {
+      "type": "key",
+      "keyPress": {
+        "type": 3,
+        "modifiers": []
+      }
+    },
+    {
+      "type": "checkpoint",
+      "cursor": [
+        0,
+        2
+      ]
+    },
+    {
+      "type": "key",
+      "keyPress": {
+        "type": 4,
+        "modifiers": []
+      }
+    },
+    {
+      "type": "key",
+      "keyPress": {
+        "type": 4,
+        "modifiers": []
+      }
+    },
+    {
+      "type": "key",
+      "keyPress": {
+        "type": 4,
+        "modifiers": []
+      }
+    },
+    {
+      "type": "key",
+      "keyPress": {
+        "type": 4,
+        "modifiers": []
+      }
+    },
+    {
+      "type": "key",
+      "keyPress": {
+        "type": 4,
+        "modifiers": []
+      }
+    },
+    {
+      "type": "key",
+      "keyPress": {
+        "type": 0,
+        "key": ".",
+        "modifiers": []
+      }
+    },
+    {
+      "type": "key",
+      "keyPress": {
+        "type": 0,
+        "key": "^",
+        "modifiers": [
+          0
+        ]
+      }
+    },
+    {
+      "type": "key",
+      "keyPress": {
+        "type": 3,
+        "modifiers": []
+      }
+    },
+    {
+      "type": "key",
+      "keyPress": {
+        "type": 3,
+        "modifiers": []
+      }
+    },
+    {
+      "type": "key",
+      "keyPress": {
+        "type": 3,
+        "modifiers": []
+      }
+    },
+    {
+      "type": "checkpoint",
+      "cursor": [
+        0,
+        2
+      ]
+    }
+  ],
+  "finalFrameCursor": [
+    0,
+    2
+  ]
+}

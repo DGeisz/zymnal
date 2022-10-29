@@ -105,6 +105,7 @@ class CustomFractionTransformation extends ZymbolTreeTransformation {
   };
 
   getCurrentTransformation(): { newTreeRoot: Zocket; cursor: Cursor } {
+    console.log("curr fra", this.startIndex);
     if (!this.changedIndex && this.memo) return this.memo;
 
     const cursorCopy = [...this.initialCursor];

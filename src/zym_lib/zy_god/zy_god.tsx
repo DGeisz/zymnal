@@ -6,7 +6,11 @@ import { ZyMaster } from "../zym/zy_master";
 import { isSome, NONE, zySome } from "../utils/zy_option";
 import { unwrapTraitResponse } from "../zy_trait/zy_trait";
 import { ZyId } from "../zy_schema/zy_schema";
-import { Cursor, cursorBlink } from "./cursor/cursor";
+import {
+  Cursor,
+  cursorBlink,
+  getRemainingCursorAfterZymId,
+} from "./cursor/cursor";
 import {
   CursorCommandTrait,
   defaultCursorImplFactory,
@@ -29,13 +33,24 @@ import {
 import { CustomKeyPressHandler, ZyGodSchema, ZY_GOD_ID } from "./zy_god_schema";
 import { godlyZentinels } from "./zentinels/zentinels";
 import { KeyEventHandlerMethod } from "./zentinels/key_event_handler/key_event_handler_schema";
+import { ZYMBOL_FRAME_MASTER_ID } from "../../zym_src/zyms/zymbol_infrastructure/zymbol_frame/zymbol_frame_schema";
+import { downloadObjectAsJson } from "../../global_utils/file_utils";
+import {
+  RecordedTestSequence,
+  TestRecordedAction,
+  TestRecordedActionType,
+} from "./testing/basic_testing";
+import { DISPLAY_EQ_ID } from "../../zym_src/zyms/zymbol_infrastructure/zymbol_module/module_lines/display_equation/display_equation_schema";
+
+/* Determine whether we want to record the inputs to this page for use in tests */
+const TEST_RECORD_MODE = true;
 
 const WINDOW_BLUR = true;
 
 export const { get: getFullContextCursor, set: setFullContextCursor } =
   createContextVariable<Cursor>("full-context-cursor");
 
-class ZyGod extends Zentinel<ZyGodSchema> {
+export class ZyGod extends Zentinel<ZyGodSchema> {
   zyId: string = ZY_GOD_ID;
 
   /* ZyGod Creates and Manages Hermes */
@@ -48,6 +63,8 @@ class ZyGod extends Zentinel<ZyGodSchema> {
 
   private windowInFocus = true;
   private customKeyPressHandler: CustomKeyPressHandler | undefined;
+
+  private recordedKeystrokesForTest: TestRecordedAction[] = [];
 
   simulatedKeyPressQueue: ZymKeyPress[] = [];
   keyPressCallbackQueue: (() => Promise<void>)[] = [];
@@ -65,7 +82,7 @@ class ZyGod extends Zentinel<ZyGodSchema> {
       getZymAtCursor: async (cursor) => {
         let currZym = this.root;
 
-        for (const i in cursor) {
+        for (const i of cursor) {
           currZym = currZym?.children[i];
 
           if (!currZym) {
@@ -138,6 +155,39 @@ class ZyGod extends Zentinel<ZyGodSchema> {
         this.onWindowBlur();
       }
     }, 1000);
+
+    /* If we're in test mode, then we have two extra window commands */
+    if (TEST_RECORD_MODE) {
+      // @ts-ignore
+      window.checkPoint = () => {
+        const frameCursor = getRemainingCursorAfterZymId(
+          this.root!,
+          this.cursor,
+          ZYMBOL_FRAME_MASTER_ID
+        );
+
+        this.recordedKeystrokesForTest.push({
+          type: TestRecordedActionType.checkpoint,
+          cursor: frameCursor,
+        });
+      };
+
+      // @ts-ignore
+      window.saveTestJson = () => {
+        const currentFrameCursor = getRemainingCursorAfterZymId(
+          this.root!,
+          this.cursor,
+          ZYMBOL_FRAME_MASTER_ID
+        );
+
+        const storedObj: RecordedTestSequence = {
+          testActions: this.recordedKeystrokesForTest,
+          finalFrameCursor: currentFrameCursor,
+        };
+
+        downloadObjectAsJson(storedObj, "rename_test");
+      };
+    }
 
     /* 
     We have to add this line because the zy god is both the 
@@ -233,6 +283,13 @@ class ZyGod extends Zentinel<ZyGodSchema> {
   };
 
   handleKeyPress = async (event: ZymKeyPress) => {
+    if (TEST_RECORD_MODE) {
+      this.recordedKeystrokesForTest.push({
+        type: TestRecordedActionType.key,
+        keyPress: event,
+      });
+    }
+
     if (this.customKeyPressHandler) {
       await this.customKeyPressHandler.handleKeyPress(event);
       cursorBlink.setPreventCursorBlink(
@@ -368,6 +425,11 @@ class ZyGod extends Zentinel<ZyGodSchema> {
 
       this.cursor = cursorOpt.val;
     }
+  }
+
+  /* !!! TEST METHODS !!!  */
+  __getRoot() {
+    return this.root;
   }
 }
 

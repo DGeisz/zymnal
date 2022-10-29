@@ -18,6 +18,18 @@
         "command": "react2.helloWorld",
         "title": "Hello World"
       }
+    ],
+    "customEditors": [
+      {
+        "viewType": "zym.zymFileEditor",
+        "displayName": "Zym",
+        "selector": [
+          {
+            "filenamePattern": "*.zym"
+          }
+        ],
+        "priority": "default"
+      }
     ]
   },
   "dependencies": {

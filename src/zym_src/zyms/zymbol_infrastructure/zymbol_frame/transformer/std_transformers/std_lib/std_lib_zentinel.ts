@@ -10,7 +10,7 @@ import {
   mathDirectMap,
   mathSlashMap,
   sqrtFunctionMap,
-} from "./math";
+} from "./math/math";
 import { physicsDirect, physicsSlash } from "./physics";
 
 class StdLibZentinel extends Zentinel<{}> {

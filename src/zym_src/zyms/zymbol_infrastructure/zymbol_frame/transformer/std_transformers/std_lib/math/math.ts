@@ -1,16 +1,16 @@
 import _ from "underscore";
-import { backslash } from "../../../../../../../global_utils/latex_utils";
-import { NONE, zySome } from "../../../../../../../zym_lib/utils/zy_option";
-import { Zentinel } from "../../../../../../../zym_lib/zentinel/zentinel";
-import { FunctionZymbol } from "../../../../../zymbol/zymbols/function_zymbol/function_zymbol";
-import { FunctionZymbolMethod } from "../../../../../zymbol/zymbols/function_zymbol/function_zymbol_schema";
-import { Zocket } from "../../../../../zymbol/zymbols/zocket/zocket";
-import { FunctionTransformerMap } from "../equation_transformers/function_transformer/function_transformer_schema";
+import { backslash } from "../../../../../../../../global_utils/latex_utils";
+import { NONE, zySome } from "../../../../../../../../zym_lib/utils/zy_option";
+import { Zentinel } from "../../../../../../../../zym_lib/zentinel/zentinel";
+import { FunctionZymbol } from "../../../../../../zymbol/zymbols/function_zymbol/function_zymbol";
+import { FunctionZymbolMethod } from "../../../../../../zymbol/zymbols/function_zymbol/function_zymbol_schema";
+import { Zocket } from "../../../../../../zymbol/zymbols/zocket/zocket";
+import { FunctionTransformerMap } from "../../equation_transformers/function_transformer/function_transformer_schema";
 import {
   DirectMap,
   InPlaceSymbolMap,
   SlashMap,
-} from "../equation_transformers/in_place_symbols/in_place_symbols";
+} from "../../equation_transformers/in_place_symbols/in_place_symbols";
 
 /* +++ Basic binary operations +++ */
 const basicBinaryOperations: DirectMap = {

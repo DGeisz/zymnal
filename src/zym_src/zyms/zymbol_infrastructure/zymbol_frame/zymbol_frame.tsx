@@ -67,6 +67,7 @@ import {
 } from "./transformer/transformer";
 import { ZyPartialPersist } from "../../../../zym_lib/zy_schema/zy_schema";
 import { zyMath } from "../../../../global_building_blocks/tex/autoRender";
+import clsx from "clsx";
 
 const VIMIUM_HINT_PERIOD = 2;
 class ZymbolFrameMaster extends ZyMaster<
@@ -170,6 +171,7 @@ class ZymbolFrameMaster extends ZyMaster<
 export const zymbolFrameMaster = new ZymbolFrameMaster();
 
 interface FrameRenderProps {
+  texClass?: string;
   cursor?: ZyOption<Cursor>;
 }
 
@@ -177,7 +179,7 @@ interface FrameRenderProps {
 const Styles = {
   // FrameContainer: "items-start bg-blue-500",
   FrameContainer: "",
-  MainFrameContainer: "mt-3sdfasd",
+  MainFrameContainer: "mt-3",
   SelectedTransContainer: "bg-gray-200 rounded-md",
 };
 
@@ -229,7 +231,7 @@ export class ZymbolFrame extends Zyact<ZymbolFrameSchema, FrameRenderProps> {
     this.children = [this.baseZocket];
   };
 
-  component: React.FC<FrameRenderProps> = () => {
+  component: React.FC<FrameRenderProps> = ({ texClass }) => {
     let zocketCursor: Cursor = [];
 
     const fullCursorResult = useHermesValue(
@@ -424,10 +426,11 @@ export class ZymbolFrame extends Zyact<ZymbolFrameSchema, FrameRenderProps> {
               tex={selectedTex}
               showSelector
               inlineTex={this.inlineTex}
+              className={texClass ?? undefined}
             />
           </div>
-          {/* <div className="shadow-lg shadow-gray-400 py-4 px-2 rounded-lg bg-gray-100">
-            {allTex.map((t, i) => (
+          {/* <div className="shadow-lg shadow-gray-400 py-4 px-2 rounded-lg bg-gray-100"> */}
+          {/* {allTex.map((t, i) => (
               <div
                 className={clsx(
                   "p-2",
@@ -451,15 +454,19 @@ export class ZymbolFrame extends Zyact<ZymbolFrameSchema, FrameRenderProps> {
                   inlineTex={this.inlineTex}
                 />
               </div>
-            ))}
-          </div> */}
+            ))} */}
+          {/* </div> */}
         </div>
       );
     } else {
       return (
         <div className={Styles.FrameContainer}>
           <div className={Styles.MainFrameContainer}>
-            <TexTransform tex={frameTex} inlineTex={this.inlineTex} />
+            <TexTransform
+              tex={frameTex}
+              inlineTex={this.inlineTex}
+              className={texClass ?? undefined}
+            />
           </div>
         </div>
       );
@@ -562,8 +569,6 @@ zymbolFrameMaster.implementTrait(KeyPressTrait, {
 
     const { keyPressContext, keyPress } = args;
     let { cursor } = args;
-
-    console.log("handle eky press old", keyPress);
 
     if (frame.vimiumMode.handleKeyPress(keyPress)) {
       return successfulMoveResponse(cursor);

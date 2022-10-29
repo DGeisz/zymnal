@@ -2,7 +2,7 @@ import React, { useMemo } from "react";
 import _ from "underscore";
 import { Zyact } from "./zyact";
 
-export function useZymponent(zym: Zyact): React.FC {
+export function useZymponent(zym: Zyact): React.FC<any> {
   return useMemo(zym.getRenderContent, [zym.iid]);
 }
 

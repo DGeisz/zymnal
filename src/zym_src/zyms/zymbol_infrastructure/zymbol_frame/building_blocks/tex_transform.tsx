@@ -12,6 +12,7 @@ interface TexTransformProps {
   inlineTex: boolean;
   showSelector?: boolean;
   selector?: ZymKeyPress;
+  className?: string;
 }
 
 // const Styles = {
@@ -45,7 +46,6 @@ export const TexTransform: React.FC<TexTransformProps> = (props) => {
       }
     }
   }
-
   return <Tex {...props} />;
 
   // return (

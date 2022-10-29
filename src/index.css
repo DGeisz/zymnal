@@ -107,3 +107,7 @@ span:focus,
 .katex-display > .katex {
   text-align: left !important;
 }
+
+.display-math {
+  font-size: 16px;
+}

@@ -32,6 +32,7 @@ import { isSymbolZymbol } from "../../../../../../zymbol/zymbols/symbol_zymbol/s
 import { isSuperSub } from "../../../../../../zymbol/zymbols/super_sub/super_sub_schema";
 import { STD_TRANSFORMER_TYPE_FILTERS } from "../../std_transformer_type_filters";
 import { isParenthesisZymbol } from "../../../../../../zymbol/zymbols/parenthesis_zymbol/parenthesis_zymbol_schema";
+import { createBasicModifier } from "./dot_mod_utils";
 
 const DOT = ".";
 
@@ -148,14 +149,7 @@ class DotModifiers extends Zentinel<DotModifiersMethodSchema> {
                   if (modWord.length > 2) {
                     rank = ZymbolTransformRank.Suggest;
                   }
-                  const mod = {
-                    id: {
-                      group: "basic",
-                      item: modWord,
-                    },
-                    pre: `\\${modWord}{`,
-                    post: "}",
-                  };
+                  const mod = createBasicModifier(modWord);
 
                   parent.children.splice(zymbolIndex, 1);
 
