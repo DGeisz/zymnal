@@ -79,7 +79,7 @@ import {
   ZymbolModuleMethod,
 } from "../../../zymbol_infrastructure/zymbol_module/zymbol_module_schema";
 
-const GROUP_COLOR = palette.beneathTheWaves;
+const GROUP_COLOR = palette.oceanFroth;
 
 /* === Helper Types === */
 
