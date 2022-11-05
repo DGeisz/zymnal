@@ -68,7 +68,7 @@ const calcDirectMap: DirectMap = {
 const basicMathDirectMap: DirectMap = {
   nft: "infty",
   ift: "infty",
-  dff: "text{d}",
+  dd: "text{d}",
 };
 
 export const mathDirectMap: InPlaceSymbolMap = {

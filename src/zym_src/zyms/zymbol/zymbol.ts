@@ -39,6 +39,8 @@ import {
 export interface ZymbolRenderArgs {
   cursor: Cursor;
   inlineTex: boolean;
+  /* Whether we only want to use Latex to create the cursor */
+  onlyUseLatexCaret?: boolean;
   excludeHtmlIds?: boolean;
   copyTex?: boolean;
 }
@@ -240,6 +242,19 @@ export abstract class Zymbol<
   setParentFrame = (frame: ZymbolFrame) => {
     this.parentFrame = frame;
     this.children.forEach((c) => (c as Zymbol<any, any>).setParentFrame(frame));
+  };
+
+  /**
+   * Check whether we need to use the dom cursor */
+  checkForDomCursor = (cursor: Cursor): boolean => {
+    const { childRelativeCursor, nextCursorIndex } = extractCursorInfo(cursor);
+
+    if (nextCursorIndex < 0) return false;
+    if (!this.children[nextCursorIndex]) return false;
+
+    return this.children[nextCursorIndex].checkForDomCursor(
+      childRelativeCursor
+    );
   };
 }
 

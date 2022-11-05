@@ -40,6 +40,7 @@ export const LATEX_NAME = "\\LaTeX";
 
 export const CURSOR_NAME = "cursor";
 export const CURSOR_LATEX: string = ` \\htmlClass{${CURSOR_NAME}}{\\color{none} \\boldsymbol{|}} `;
+// export const CURSOR_LATEX: string = ` \\htmlClass{${CURSOR_NAME}}{${LATEX_SPACE}} `;
 export const INLINE_CURSOR_LATEX: string = zyMath(CURSOR_LATEX);
 
 export const FULL_COVER_CURSOR_CLASS_NAME = "full-cover-cursor";
@@ -134,6 +135,10 @@ export function checkLatex(tex: TeX): boolean {
 
 export function cursorToString(cursor: Cursor): string {
   return cursor.map((c) => c.toString()).join(":");
+}
+
+export function parseCursorString(cString: string): Cursor {
+  return cString.split(":").map((i) => parseInt(i));
 }
 
 export const TeXBinaryOperators = [

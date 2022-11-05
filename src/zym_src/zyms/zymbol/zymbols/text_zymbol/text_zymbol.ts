@@ -11,6 +11,7 @@ import { Zym } from "../../../../../zym_lib/zym/zym";
 import { ZyMaster } from "../../../../../zym_lib/zym/zy_master";
 import {
   Cursor,
+  cursorBlink,
   CursorIndex,
   CursorMoveResponse,
   extractCursorInfo,
@@ -80,12 +81,14 @@ export class TextZymbol extends Zymbol<TextZymbolSchema> {
 
   /* Zymbol Methods  */
 
+  private getLeftThreshold = () => (this.getInline() ? 0 : 1);
+
   moveCursorLeft = (cursor: Cursor): CursorMoveResponse => {
     const { parentOfCursorElement, nextCursorIndex } =
       extractCursorInfo(cursor);
 
     if (parentOfCursorElement) {
-      if (nextCursorIndex > 1) {
+      if (nextCursorIndex > this.getLeftThreshold()) {
         return {
           success: true,
           newRelativeCursor: [nextCursorIndex - 1],
@@ -104,12 +107,15 @@ export class TextZymbol extends Zymbol<TextZymbolSchema> {
     }
   };
 
+  private getRightThreshold = () =>
+    this.getInline() ? this.characters.length : this.characters.length - 1;
+
   moveCursorRight = (cursor: Cursor): CursorMoveResponse => {
     const { parentOfCursorElement, nextCursorIndex } =
       extractCursorInfo(cursor);
 
     if (parentOfCursorElement) {
-      if (nextCursorIndex < this.characters.length - 1) {
+      if (nextCursorIndex < this.getRightThreshold()) {
         return {
           success: true,
           newRelativeCursor: [nextCursorIndex + 1],
@@ -129,16 +135,19 @@ export class TextZymbol extends Zymbol<TextZymbolSchema> {
   };
 
   takeCursorFromLeft = (): CursorMoveResponse => {
-    if (this.characters.length > 1) {
-      return successfulMoveResponse(1);
+    const thresh = this.getLeftThreshold();
+
+    if (this.characters.length > thresh) {
+      return successfulMoveResponse(thresh);
     } else {
       return FAILED_CURSOR_MOVE_RESPONSE;
     }
   };
 
   takeCursorFromRight = (): CursorMoveResponse => {
-    if (this.characters.length > 1) {
-      return successfulMoveResponse(this.characters.length - 1);
+    // Hacky way to determine when we can take the cursor
+    if (this.characters.length > this.getLeftThreshold()) {
+      return successfulMoveResponse(this.getRightThreshold());
     } else {
       return FAILED_CURSOR_MOVE_RESPONSE;
     }
@@ -162,6 +171,14 @@ export class TextZymbol extends Zymbol<TextZymbolSchema> {
   ): CursorMoveResponse {
     return FAILED_CURSOR_MOVE_RESPONSE;
   }
+
+  checkForDomCursor = (cursor: Cursor) => {
+    const { parentOfCursorElement } = extractCursorInfo(cursor);
+
+    if (parentOfCursorElement) return this.getInline();
+
+    return false;
+  };
 
   private _addZymChangeLink = (
     ctx: BasicContext,
@@ -294,18 +311,17 @@ export class TextZymbol extends Zymbol<TextZymbolSchema> {
           const fullCursor = this.getFullCursorPointer();
 
           if (inline) {
-            return `${createMathText(
-              charSlice(0, nextCursorIndex),
-              cursorToString([...fullCursor, -1])
-            )}${zyMath(CURSOR_LATEX)}${createMathText(
-              charSlice(nextCursorIndex),
-              cursorToString([...fullCursor, -2])
-            )}`;
-            // return `${zySpan(charSlice(0, nextCursorIndex), {
-            //   id: cursorToString([...fullCursor, -1]),
-            // })}${zyMath(CURSOR_LATEX)}${zySpan(charSlice(nextCursorIndex), {
-            //   id: cursorToString([...fullCursor, -2]),
-            // })}`;
+            if (opts.onlyUseLatexCaret) {
+              return `${createMathText(
+                charSlice(0, nextCursorIndex),
+                cursorToString([...fullCursor, -1])
+              )}${zyMath(CURSOR_LATEX)}${createMathText(
+                charSlice(nextCursorIndex),
+                cursorToString([...fullCursor, -2])
+              )}`;
+            } else {
+              return createMathText(treatedChars, cursorToString(fullCursor));
+            }
           } else {
             return `${wrapHtmlId(
               create_tex_text(charSlice(0, nextCursorIndex)),
@@ -327,10 +343,6 @@ export class TextZymbol extends Zymbol<TextZymbolSchema> {
               treatedChars,
               cursorToString(this.getFullCursorPointer())
             );
-
-            // return zySpan(treatedChars, {
-            //   id: cursorToString(this.getFullCursorPointer()),
-            // });
           }
         } else {
           const baseTex = create_tex_text(treatedChars);

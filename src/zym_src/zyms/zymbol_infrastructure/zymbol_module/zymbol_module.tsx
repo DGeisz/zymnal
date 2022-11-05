@@ -379,11 +379,15 @@ export class ZymbolModule extends Zyact<ZymbolModuleSchema> {
     const ChildrenComponents = useZymponents(this.children);
 
     return (
-      <>
+      <div
+        contentEditable
+        suppressContentEditableWarning
+        className="outline-none"
+      >
         {ChildrenComponents.map((C, i) => (
           <C key={i} />
         ))}
-      </>
+      </div>
     );
   };
 
@@ -416,13 +420,11 @@ export class ZymbolModule extends Zyact<ZymbolModuleSchema> {
     if (nextCursorIndex >= 0) {
       const child: Zym<any, any> = this.children[nextCursorIndex];
 
-      const childMove = unwrapTraitResponse(
-        await child.callTraitMethod(KeyPressTrait.handleKeyPress, {
-          cursor: childRelativeCursor,
-          keyPressContext: ctx,
-          keyPress: basicKeyPress(KeyPressBasicType.ArrowUp),
-        })
-      );
+      const childMove = await child.call(KeyPressTrait.handleKeyPress, {
+        cursor: childRelativeCursor,
+        keyPressContext: ctx,
+        keyPress: basicKeyPress(KeyPressBasicType.ArrowUp),
+      });
 
       if (childMove.success) {
         return chainMoveResponse(childMove, (nextCursor) => {
@@ -435,12 +437,7 @@ export class ZymbolModule extends Zyact<ZymbolModuleSchema> {
           const upChild = this.children[nextCursorIndex - 1];
 
           const childCursor = unwrapOption(
-            unwrapTraitResponse(
-              await upChild.callTraitMethod(
-                CursorCommandTrait.getInitialCursor,
-                undefined
-              )
-            )
+            await upChild.call(CursorCommandTrait.getEndCursor, undefined)
           );
 
           return successfulMoveResponse([nextCursorIndex - 1, ...childCursor]);
@@ -476,15 +473,10 @@ export class ZymbolModule extends Zyact<ZymbolModuleSchema> {
         });
       } else {
         if (nextCursorIndex < this.children.length - 1) {
-          const upChild = this.children[nextCursorIndex + 1];
+          const downChild = this.children[nextCursorIndex + 1];
 
           const childCursor = unwrapOption(
-            unwrapTraitResponse(
-              await upChild.callTraitMethod(
-                CursorCommandTrait.getInitialCursor,
-                undefined
-              )
-            )
+            await downChild.call(CursorCommandTrait.getInitialCursor, undefined)
           );
 
           return successfulMoveResponse([nextCursorIndex + 1, ...childCursor]);
@@ -588,7 +580,14 @@ zymbolModuleMaster.implementTrait(KeyPressTrait, {
             !childMove.success &&
             nextCursorIndex < module.children.length - 1
           ) {
-            return successfulMoveResponse([nextCursorIndex + 1, 0, 0, 0]);
+            const newCursor = unwrapOption(
+              await zym.children[nextCursorIndex + 1].call(
+                CursorCommandTrait.getInitialCursor,
+                undefined
+              )
+            );
+
+            return successfulMoveResponse([nextCursorIndex + 1, ...newCursor]);
           }
 
           break;
@@ -597,13 +596,14 @@ zymbolModuleMaster.implementTrait(KeyPressTrait, {
           childMove = await deferToChild();
 
           if (!childMove.success && nextCursorIndex > 0) {
-            return successfulMoveResponse([
-              nextCursorIndex - 1,
-              0,
-              0,
-              module.children[nextCursorIndex - 1].children[0].children[0]
-                .children.length,
-            ]);
+            const newCursor = unwrapOption(
+              await zym.children[nextCursorIndex - 1].call(
+                CursorCommandTrait.getEndCursor,
+                undefined
+              )
+            );
+
+            return successfulMoveResponse([nextCursorIndex - 1, ...newCursor]);
           }
 
           break;

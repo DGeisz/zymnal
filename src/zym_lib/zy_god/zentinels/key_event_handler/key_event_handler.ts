@@ -1,5 +1,8 @@
+import { join } from "path";
+import { CURSOR_NAME } from "../../../../global_utils/latex_utils";
 import { Zentinel } from "../../../zentinel/zentinel";
 import { cursorBlink } from "../../cursor/cursor";
+import { VerticalNavigationHandleType } from "../../cursor/cursor_commands";
 import {
   KeyPressBasicType,
   KeyPressComplexType,
@@ -10,6 +13,8 @@ import {
   KeyEventHandlerMethodSchema,
   KeyPressHandler,
   KEY_PRESS_HANDLER,
+  NavHandler,
+  NavOracle,
 } from "./key_event_handler_schema";
 
 enum KeyLock {
@@ -24,8 +29,11 @@ class KeyEventHandler extends Zentinel<KeyEventHandlerMethodSchema> {
   zyId = KEY_PRESS_HANDLER;
   keyLock: KeyLock = KeyLock.NONE;
   keyEventHandlers: Map<HandlerId, KeyPressHandler> = new Map();
+  navHandlers: Map<HandlerId, NavHandler> = new Map();
 
   suppressKeyEvents = false;
+
+  verticalNavigationOracles: NavOracle[] = [];
 
   constructor() {
     super();
@@ -41,6 +49,12 @@ class KeyEventHandler extends Zentinel<KeyEventHandlerMethodSchema> {
       allowKeyHandling: async () => {
         // this.suppressKeyEvents = false;
       },
+      addVerticalNavigationHandler: async (handler) => {
+        this.addNavHandler(handler);
+      },
+      registerVerticalNavigationOracle: async (oracle) => {
+        this.verticalNavigationOracles.push(oracle);
+      },
     });
   }
 
@@ -49,10 +63,21 @@ class KeyEventHandler extends Zentinel<KeyEventHandlerMethodSchema> {
     document.addEventListener("keypress", this.handleKeyPress);
   };
 
+  private handleVerticalNavigation = () =>
+    !this.verticalNavigationOracles
+      .map((o) => o())
+      .some((v) => v === VerticalNavigationHandleType.ZyManaged);
+
   addKeyHandler = (handler: KeyPressHandler) => {
     const id: HandlerId = Math.random();
 
     this.keyEventHandlers.set(id, handler);
+  };
+
+  addNavHandler = (handler: NavHandler) => {
+    const id: HandlerId = Math.random();
+
+    this.navHandlers.set(id, handler);
   };
 
   removeKeyHandler = (handlerId: HandlerId) => {
@@ -92,6 +117,12 @@ class KeyEventHandler extends Zentinel<KeyEventHandlerMethodSchema> {
     return mods;
   };
 
+  callNavHandlers = () => {
+    for (const h of this.navHandlers.values()) {
+      h();
+    }
+  };
+
   handleKeyDown = (event: KeyboardEvent) => {
     if (this.suppressKeyEvents) return;
 
@@ -104,23 +135,29 @@ class KeyEventHandler extends Zentinel<KeyEventHandlerMethodSchema> {
 
     switch (key) {
       case "ArrowUp": {
+        if (this.handleVerticalNavigation()) {
+          this.callNavHandlers();
+          return;
+        }
+
         keyPressType = KeyPressBasicType.ArrowUp;
-        return;
         break;
       }
       case "ArrowDown": {
+        if (this.handleVerticalNavigation()) {
+          this.callNavHandlers();
+          return;
+        }
+
         keyPressType = KeyPressBasicType.ArrowDown;
-        return;
         break;
       }
       case "ArrowLeft": {
         keyPressType = KeyPressBasicType.ArrowLeft;
-        return;
         break;
       }
       case "ArrowRight": {
         keyPressType = KeyPressBasicType.ArrowRight;
-        return;
         break;
       }
       case "Backspace": {

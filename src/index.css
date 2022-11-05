@@ -53,7 +53,7 @@ span:focus,
 .cursor {
   display: inline-block;
   width: 0 !important;
-  transform: translateX(-2px) translateY(-1px) scaleY(1.1);
+  transform: translateX(-2px) translateY(-1px) scaleY(1.1) scaleX(0.8);
 }
 
 @keyframes blink-animation {
@@ -109,5 +109,5 @@ span:focus,
 }
 
 .display-math {
-  font-size: 16px;
+  font-size: 17px;
 }

@@ -13,6 +13,7 @@ import {
 import { ZyMaster } from "./zy_master";
 import {
   TraitMethodResponse,
+  unwrapTraitResponse,
   ZyTraitPointer,
   ZyTraitSchema,
 } from "../zy_trait/zy_trait";
@@ -217,6 +218,13 @@ export abstract class Zym<
         args,
       }
     );
+  };
+
+  call = async <Schema extends ZyTraitSchema, Method extends keyof Schema>(
+    pointer: ZyTraitPointer<Schema, Method>,
+    args: Schema[Method]["args"]
+  ): Promise<Schema[Method]["return"]> => {
+    return unwrapTraitResponse(await this.callTraitMethod(pointer, args));
   };
 
   callZentinelMethod = async <

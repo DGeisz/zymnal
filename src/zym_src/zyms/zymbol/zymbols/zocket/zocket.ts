@@ -52,7 +52,10 @@ import {
 } from "../../zymbol";
 import { extendZymbol } from "../../zymbol_cmd";
 import { TextZymbol } from "../text_zymbol/text_zymbol";
-import { CursorCommandTrait } from "../../../../../zym_lib/zy_god/cursor/cursor_commands";
+import {
+  CursorCommandTrait,
+  VerticalNavigationHandleType,
+} from "../../../../../zym_lib/zy_god/cursor/cursor_commands";
 import { unwrapTraitResponse } from "../../../../../zym_lib/zy_trait/zy_trait";
 import {
   ZocketSchema,
@@ -78,6 +81,8 @@ import {
   ModuleLineType,
   ZymbolModuleMethod,
 } from "../../../zymbol_infrastructure/zymbol_module/zymbol_module_schema";
+import { last } from "../../../../../global_utils/array_utils";
+import { HighlightSpanKind, IndexKind } from "typescript";
 
 const GROUP_COLOR = palette.oceanFroth;
 
@@ -181,12 +186,38 @@ export class Zocket extends Zymbol<ZocketSchema> {
       if (success) {
         return successfulMoveResponse([nextCursorIndex, ...newRelativeCursor]);
       } else {
+        // Handle special interaction for inline text
+        if (this.inline) {
+          if (this.children[nextCursorIndex - 1]) {
+            const { success, newRelativeCursor } =
+              this.children[nextCursorIndex - 1].takeCursorFromRight(ctx);
+
+            if (success) {
+              return successfulMoveResponse([
+                nextCursorIndex - 1,
+                ...newRelativeCursor,
+              ]);
+            }
+          } else if (isTextZymbol(this.children[nextCursorIndex])) {
+            return FAILED_CURSOR_MOVE_RESPONSE;
+          }
+        }
+
         return successfulMoveResponse([nextCursorIndex]);
       }
     }
   };
 
   takeCursorFromLeft = (_ctx: BasicContext) => {
+    if (this.inline && this.children[0] && isTextZymbol(this.children[0])) {
+      const { success, newRelativeCursor } =
+        this.children[0].takeCursorFromLeft();
+
+      if (success) {
+        return successfulMoveResponse([0, ...newRelativeCursor]);
+      }
+    }
+
     return {
       success: true,
       newRelativeCursor: [0],
@@ -229,6 +260,21 @@ export class Zocket extends Zymbol<ZocketSchema> {
         newRelativeCursor: [nextCursorIndex, ...newRelativeCursor],
       };
     } else {
+      if (this.inline) {
+        if (this.children[nextCursorIndex + 1]) {
+          const { success, newRelativeCursor } =
+            this.children[nextCursorIndex + 1].takeCursorFromLeft(ctx);
+
+          if (success) {
+            return successfulMoveResponse([
+              nextCursorIndex + 1,
+              ...newRelativeCursor,
+            ]);
+          }
+        } else if (isTextZymbol(this.children[nextCursorIndex])) {
+          return FAILED_CURSOR_MOVE_RESPONSE;
+        }
+      }
       return {
         success: true,
         newRelativeCursor: [nextCursorIndex + 1],
@@ -236,7 +282,24 @@ export class Zocket extends Zymbol<ZocketSchema> {
     }
   };
 
-  takeCursorFromRight = (_ctx: BasicContext) => {
+  takeCursorFromRight = (ctx: BasicContext) => {
+    if (
+      this.inline &&
+      this.children.length > 0 &&
+      isTextZymbol(last(this.children))
+    ) {
+      const { success, newRelativeCursor } = last(
+        this.children
+      ).takeCursorFromLeft(ctx);
+
+      if (success) {
+        return successfulMoveResponse([
+          this.children.length - 1,
+          ...newRelativeCursor,
+        ]);
+      }
+    }
+
     return {
       success: true,
       newRelativeCursor: [this.children.length],
@@ -282,6 +345,35 @@ export class Zocket extends Zymbol<ZocketSchema> {
         );
       }
     } else {
+      if (this.inline) {
+        const { success, newRelativeCursor } = this.children[
+          nextCursorIndex
+        ]?.moveCursorUp(childRelativeCursor, ctx);
+
+        if (success) {
+          return successfulMoveResponse([
+            nextCursorIndex,
+            ...newRelativeCursor,
+          ]);
+        } else {
+          const prevChild = this.children[nextCursorIndex - 1];
+
+          if (prevChild && isTextZymbol(prevChild)) {
+            const { success, newRelativeCursor } =
+              prevChild.takeCursorFromRight();
+
+            if (success) {
+              return successfulMoveResponse([
+                nextCursorIndex - 1,
+                ...newRelativeCursor,
+              ]);
+            }
+          }
+
+          return FAILED_CURSOR_MOVE_RESPONSE;
+        }
+      }
+
       return wrapChildCursorResponse(
         this.children[nextCursorIndex]?.moveCursorUp(childRelativeCursor, ctx),
         nextCursorIndex
@@ -335,6 +427,35 @@ export class Zocket extends Zymbol<ZocketSchema> {
         );
       }
     } else {
+      if (this.inline) {
+        const { success, newRelativeCursor } = this.children[
+          nextCursorIndex
+        ]?.moveCursorDown(childRelativeCursor, ctx);
+
+        if (success) {
+          return successfulMoveResponse([
+            nextCursorIndex,
+            ...newRelativeCursor,
+          ]);
+        } else {
+          const nextChild = this.children[nextCursorIndex + 1];
+
+          if (nextChild && isTextZymbol(nextChild)) {
+            const { success, newRelativeCursor } =
+              nextChild.takeCursorFromLeft();
+
+            if (success) {
+              return successfulMoveResponse([
+                nextCursorIndex + 1,
+                ...newRelativeCursor,
+              ]);
+            }
+          }
+
+          return FAILED_CURSOR_MOVE_RESPONSE;
+        }
+      }
+
       return wrapChildCursorResponse(
         this.children[nextCursorIndex]?.moveCursorDown(
           childRelativeCursor,
@@ -400,6 +521,24 @@ export class Zocket extends Zymbol<ZocketSchema> {
         beforeChildren,
         this.children.map((c) => c.persist())
       );
+
+      // Handle inline edge case (put the cursor on the text zymbol)
+      if (this.inline && mergedRes.success) {
+        const { newRelativeCursor } = mergedRes;
+
+        if (newRelativeCursor.length === 1 && newRelativeCursor[0] > 0) {
+          const index = newRelativeCursor[0] - 1;
+
+          if (isTextZymbol(this.children[index])) {
+            const { success, newRelativeCursor } =
+              this.children[index].takeCursorFromRight(ctx);
+
+            if (success) {
+              return successfulMoveResponse([index, ...newRelativeCursor]);
+            }
+          }
+        }
+      }
 
       return mergedRes;
     } else {
@@ -970,8 +1109,56 @@ export class Zocket extends Zymbol<ZocketSchema> {
 }
 
 zocketMaster.implementTrait(CursorCommandTrait, {
-  async getInitialCursor() {
+  getInitialCursor: async (zym) => {
+    const zocket = zym as Zocket;
+
+    if (
+      zocket.inline &&
+      zocket.children.length > 0 &&
+      isTextZymbol(zocket.children[0])
+    ) {
+      return zySome([0, 0]);
+    }
+
     return zySome([0]);
+  },
+  getEndCursor: async (zym) => {
+    const zocket = zym as Zocket;
+
+    if (
+      zocket.inline &&
+      zocket.children.length > 0 &&
+      isTextZymbol(last(zocket.children))
+    ) {
+      return zySome([
+        zocket.children.length - 1,
+        (last(zocket.children) as TextZymbol).getCharacters().length,
+      ]);
+    }
+
+    return zySome([zocket.children.length]);
+  },
+  checkVerticalNavigationType: async (zym, cursor) => {
+    const zocket = zym as Zocket;
+
+    if (!zocket.inline) return VerticalNavigationHandleType.ZyManaged;
+
+    const { nextCursorIndex, childRelativeCursor, parentOfCursorElement } =
+      extractCursorInfo(cursor);
+    const child = zym.children[nextCursorIndex];
+
+    if (parentOfCursorElement) return VerticalNavigationHandleType.ZyManaged;
+
+    if (child) {
+      return unwrapTraitResponse(
+        await child.callTraitMethod(
+          CursorCommandTrait.checkVerticalNavigationType,
+          childRelativeCursor
+        )
+      );
+    }
+
+    return VerticalNavigationHandleType.DomManaged;
   },
 });
 

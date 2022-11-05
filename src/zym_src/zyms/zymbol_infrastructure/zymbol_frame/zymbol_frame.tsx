@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom/client";
 import { useHermesValue } from "../../../../zym_lib/hermes/hermes";
 import {
@@ -45,7 +45,10 @@ import { BasicContext } from "../../../../zym_lib/utils/basic_context";
 import { vimiumHintKeys } from "../../../../global_utils/string_utils";
 import { ZyGodMethod } from "../../../../zym_lib/zy_god/zy_god_schema";
 import { unwrapTraitResponse } from "../../../../zym_lib/zy_trait/zy_trait";
-import { CursorCommandTrait } from "../../../../zym_lib/zy_god/cursor/cursor_commands";
+import {
+  CursorCommandTrait,
+  VerticalNavigationHandleType,
+} from "../../../../zym_lib/zy_god/cursor/cursor_commands";
 import {
   ZymbolFrameMethod,
   ZymbolFrameMethodSchema,
@@ -68,6 +71,11 @@ import {
 import { ZyPartialPersist } from "../../../../zym_lib/zy_schema/zy_schema";
 import { zyMath } from "../../../../global_building_blocks/tex/autoRender";
 import clsx from "clsx";
+import {
+  clearDomCursor,
+  placeDomCursor,
+  placeDomCursorInLatex,
+} from "./cursor_helper";
 
 const VIMIUM_HINT_PERIOD = 2;
 class ZymbolFrameMaster extends ZyMaster<
@@ -234,17 +242,14 @@ export class ZymbolFrame extends Zyact<ZymbolFrameSchema, FrameRenderProps> {
   component: React.FC<FrameRenderProps> = ({ texClass }) => {
     let zocketCursor: Cursor = [];
 
-    const fullCursorResult = useHermesValue(
+    const fullCursor = useHermesValue(
       this,
       ZyGodMethod.getFullCursor,
       undefined
     );
 
-    if (fullCursorResult) {
-      const opt = getRelativeCursor(
-        this.getFullCursorPointer(),
-        fullCursorResult
-      );
+    if (fullCursor) {
+      const opt = getRelativeCursor(this.getFullCursorPointer(), fullCursor);
 
       if (isSome(opt)) {
         const { childRelativeCursor, nextCursorIndex } = extractCursorInfo(
@@ -257,7 +262,24 @@ export class ZymbolFrame extends Zyact<ZymbolFrameSchema, FrameRenderProps> {
       }
     }
 
-    const frameTex = this.baseZocket.renderTex({
+    const relativeString = cursorToString(zocketCursor);
+
+    /* Whenever we change the cursor change the location of the dom caret */
+    useEffect(() => {
+      if (zocketCursor.length > 0) {
+        if (this.transformations.length === 0) {
+          if (this.baseZocket.checkForDomCursor(zocketCursor) && fullCursor) {
+            placeDomCursor(fullCursor);
+          } else {
+            clearDomCursor();
+          }
+        } else {
+          clearDomCursor();
+        }
+      }
+    }, [relativeString]);
+
+    let frameTex = this.baseZocket.renderTex({
       cursor: zocketCursor,
       inlineTex: this.inlineTex,
     });
@@ -294,8 +316,6 @@ export class ZymbolFrame extends Zyact<ZymbolFrameSchema, FrameRenderProps> {
             undefined
           )
         );
-
-        console.log("subTreePoitners", subTreePointers);
 
         let vimiumHints: string[] = [];
 
@@ -346,7 +366,7 @@ export class ZymbolFrame extends Zyact<ZymbolFrameSchema, FrameRenderProps> {
             element.style.cursor = "text";
 
             if (pointer.isSelectableText) {
-              element.contentEditable = "true";
+              // element.contentEditable = "true";
             }
 
             element.onselectionchange = (e) => {
@@ -385,6 +405,12 @@ export class ZymbolFrame extends Zyact<ZymbolFrameSchema, FrameRenderProps> {
 
     if (this.transformations.length > 0) {
       let selectedTex: string;
+
+      frameTex = this.baseZocket.renderTex({
+        cursor: zocketCursor,
+        inlineTex: this.inlineTex,
+        onlyUseLatexCaret: true,
+      });
 
       if (
         this.transformIndex > -1 &&
@@ -728,6 +754,26 @@ zymbolFrameMaster.implementTrait(KeyPressTrait, {
 zymbolFrameMaster.implementTrait(CursorCommandTrait, {
   /* The frame handles rendering all the TeX */
   canHandleCursorBranchRender: async () => true,
+
+  checkVerticalNavigationType: async (zym, cursor) => {
+    const frame = zym as ZymbolFrame;
+
+    if (!frame.inlineTex) return VerticalNavigationHandleType.ZyManaged;
+
+    const { nextCursorIndex, childRelativeCursor } = extractCursorInfo(cursor);
+    const child = zym.children[nextCursorIndex];
+
+    if (child) {
+      return unwrapTraitResponse(
+        await child.callTraitMethod(
+          CursorCommandTrait.checkVerticalNavigationType,
+          childRelativeCursor
+        )
+      );
+    }
+
+    return VerticalNavigationHandleType.DomManaged;
+  },
 });
 
 zymbolFrameMaster.implementTrait(UndoRedoTrait, {

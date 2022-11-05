@@ -263,12 +263,3 @@ class CursorBlink {
 }
 
 export const cursorBlink = new CursorBlink();
-
-/* Hook that allows components to handle when it does or doesn't have the cursor */
-type CursorHandler = () => void | (() => void);
-
-export function useCursorFocus() {
-  const [hasCursor, setHasCursor] = useState(false);
-
-  (async () => {})();
-}

@@ -23,9 +23,18 @@ export interface ModifyNodeAndReRenderArgs {
   renderOpts: any;
 }
 
+export enum VerticalNavigationHandleType {
+  DomManaged,
+  ZyManaged,
+}
+
 export type CursorCommandSchema = CreateZyTraitSchema<{
   /* Allows to get where the cursor should start */
   getInitialCursor: {
+    args: undefined;
+    return: ZyOption<Cursor>;
+  };
+  getEndCursor: {
     args: undefined;
     return: ZyOption<Cursor>;
   };
@@ -44,21 +53,64 @@ export type CursorCommandSchema = CreateZyTraitSchema<{
     args: undefined;
     return: boolean;
   };
+  checkVerticalNavigationType: {
+    args: Cursor;
+    return: VerticalNavigationHandleType;
+  };
 }>;
 
 export const CursorCommandTrait = createZyTrait<CursorCommandSchema>(
   CURSOR_COMMANDS_ID,
   {
     getInitialCursor: "gic",
+    getEndCursor: "gec",
     canHandleCursorBranchRender: "bcr",
     cursorRender: "cr",
     modifyNodeAndReRender: "mnr",
+    checkVerticalNavigationType: "cvt",
   }
 );
 
 export const defaultCursorImplFactory = defaultTraitImplementationFactory(
   CursorCommandTrait,
   {
+    checkVerticalNavigationType: async (zym, cursor) => {
+      const { nextCursorIndex, parentOfCursorElement, childRelativeCursor } =
+        extractCursorInfo(cursor);
+
+      if (parentOfCursorElement) return VerticalNavigationHandleType.DomManaged;
+
+      const child = zym.children[nextCursorIndex];
+
+      if (child) {
+        return unwrapTraitResponse(
+          await child.callTraitMethod(
+            CursorCommandTrait.checkVerticalNavigationType,
+            childRelativeCursor
+          )
+        );
+      }
+
+      return VerticalNavigationHandleType.DomManaged;
+    },
+    getEndCursor: async (zym) => {
+      for (let i = 0; i < zym.children.length; i++) {
+        const index = zym.children.length - i - 1;
+
+        const option = unwrapTraitResponse(
+          await zym.children[index].callTraitMethod(
+            CursorCommandTrait.getEndCursor,
+            undefined
+          )
+        );
+
+        if (isSome(option)) {
+          return zySome(extendChildCursor(index, option.val));
+        }
+      }
+
+      return NONE;
+    },
     getInitialCursor: async (zym) => {
       for (let i = 0; i < zym.children.length; i++) {
         const option = unwrapTraitResponse(

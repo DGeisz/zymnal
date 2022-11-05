@@ -2,9 +2,7 @@ import React, { useEffect, useRef } from "react";
 import katex from "katex";
 import { INVALID_TEX } from "../../global_utils/latex_utils";
 import { ParsedMathType, parseInlineMathText } from "./autoRender";
-import { convertToObject } from "typescript";
 import { memoCompareFactory } from "../../global_utils/object_utils";
-import { join } from "path";
 
 const DEV = false;
 
@@ -63,22 +61,27 @@ const MathString: React.FC<MathStringProps> = (props) => {
 
   return (
     <span
-      className="zytex-wrapper"
+      className="zytex-wrapper caret"
       contentEditable
       suppressContentEditableWarning
     >
-      {parsedMath.map((i) => {
+      {parsedMath.map((i, z) => {
         switch (i.type) {
           case ParsedMathType.Math: {
             return (
-              <span className="zytex" key={i.math}>
+              <span className="zytex" key={i.math} contentEditable={false}>
                 <MathTex tex={i.math} displayMode={false} />
               </span>
             );
           }
           case ParsedMathType.Text: {
             return (
-              <span id={i.id} contentEditable suppressContentEditableWarning>
+              <span
+                id={i.id}
+                key={z}
+                contentEditable
+                suppressContentEditableWarning
+              >
                 {i.text}
               </span>
             );
@@ -97,8 +100,6 @@ interface MathTexProps {
 }
 
 const MathTexInner: React.FC<MathTexProps> = (props) => {
-  console.log("rendered math");
-
   const finalOpts = {
     ...katexOpts,
     ...props.opts,

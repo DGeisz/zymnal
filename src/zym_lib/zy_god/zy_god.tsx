@@ -14,6 +14,7 @@ import {
 import {
   CursorCommandTrait,
   defaultCursorImplFactory,
+  VerticalNavigationHandleType,
 } from "./cursor/cursor_commands";
 import {
   defaultKeyPressImplFactory,
@@ -41,6 +42,10 @@ import {
   TestRecordedActionType,
 } from "./testing/basic_testing";
 import { DISPLAY_EQ_ID } from "../../zym_src/zyms/zymbol_infrastructure/zymbol_module/module_lines/display_equation/display_equation_schema";
+import {
+  cursorToString,
+  parseCursorString,
+} from "../../global_utils/latex_utils";
 
 /* Determine whether we want to record the inputs to this page for use in tests */
 const TEST_RECORD_MODE: boolean = false;
@@ -60,6 +65,9 @@ export class ZyGod extends Zentinel<ZyGodSchema> {
   private cursor: Cursor = [];
   private root?: Zym<any, any>;
   private rootAwaiter = new ControlledAwaiter();
+
+  private verticalNavigationType: VerticalNavigationHandleType =
+    VerticalNavigationHandleType.DomManaged;
 
   private windowInFocus = true;
   private customKeyPressHandler: CustomKeyPressHandler | undefined;
@@ -138,9 +146,35 @@ export class ZyGod extends Zentinel<ZyGodSchema> {
 
     // @ts-ignore
     window.undo = this.undoRedoStack;
+
     this.callZentinelMethod(
       KeyEventHandlerMethod.addKeyHandler,
       this.handleKeyPress
+    );
+
+    this.callZentinelMethod(
+      KeyEventHandlerMethod.addVerticalNavigationHandler,
+      () => {
+        setTimeout(() => {
+          const sel = window.getSelection();
+
+          if (sel) {
+            const id = sel.anchorNode?.parentElement?.id;
+
+            if (id) {
+              const cursorBase = parseCursorString(id);
+
+              const newCursor = [...cursorBase, sel.anchorOffset];
+              this.setCursor(newCursor);
+            }
+          }
+        });
+      }
+    );
+
+    this.callZentinelMethod(
+      KeyEventHandlerMethod.registerVerticalNavigationOracle,
+      () => this.verticalNavigationType
     );
 
     /* Add our window blur and window focus events */
@@ -151,7 +185,7 @@ export class ZyGod extends Zentinel<ZyGodSchema> {
       const sel = document.getSelection();
       // @ts-ignore
       window.sel = sel;
-      console.log("e", document.getSelection());
+      // console.log("e", document.getSelection());
     });
 
     /* There are moments when we don't properly catch window events so just poll to be sure */
@@ -210,7 +244,21 @@ export class ZyGod extends Zentinel<ZyGodSchema> {
       newCursor: zySome(newCursor),
     });
 
+    this.setCursor(newCursor);
+  };
+
+  setCursor = (newCursor: Cursor) => {
     this.cursor = newCursor;
+    this.setVerticalNavigation();
+  };
+
+  setVerticalNavigation = async () => {
+    if (this.root) {
+      this.verticalNavigationType = await this.root.call(
+        CursorCommandTrait.checkVerticalNavigationType,
+        this.cursor
+      );
+    }
   };
 
   onWindowBlur = () => {
@@ -430,7 +478,7 @@ export class ZyGod extends Zentinel<ZyGodSchema> {
         ],
       });
 
-      this.cursor = cursorOpt.val;
+      this.setCursor(cursorOpt.val);
     }
   }
 
@@ -441,6 +489,9 @@ export class ZyGod extends Zentinel<ZyGodSchema> {
 }
 
 export const zyGod = new ZyGod();
+
+// @ts-ignore
+window.zyGod = zyGod;
 
 defaultKeyPressImplFactory(zyGod);
 defaultCursorImplFactory(zyGod);
