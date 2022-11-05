@@ -36,6 +36,7 @@ import { TextZymbolSchema, TEXT_ZYMBOL_NAME } from "./text_zymbol_schema";
 import { ZyPartialPersist } from "../../../../../zym_lib/zy_schema/zy_schema";
 import { ZYMBOL_FRAME_MASTER_ID } from "../../../zymbol_infrastructure/zymbol_frame/zymbol_frame_schema";
 import {
+  createMathText,
   zyMath,
   zySpan,
 } from "../../../../../global_building_blocks/tex/autoRender";
@@ -293,11 +294,18 @@ export class TextZymbol extends Zymbol<TextZymbolSchema> {
           const fullCursor = this.getFullCursorPointer();
 
           if (inline) {
-            return `${zySpan(charSlice(0, nextCursorIndex), {
-              id: cursorToString([...fullCursor, -1]),
-            })}${zyMath(CURSOR_LATEX)}${zySpan(charSlice(nextCursorIndex), {
-              id: cursorToString([...fullCursor, -2]),
-            })}`;
+            return `${createMathText(
+              charSlice(0, nextCursorIndex),
+              cursorToString([...fullCursor, -1])
+            )}${zyMath(CURSOR_LATEX)}${createMathText(
+              charSlice(nextCursorIndex),
+              cursorToString([...fullCursor, -2])
+            )}`;
+            // return `${zySpan(charSlice(0, nextCursorIndex), {
+            //   id: cursorToString([...fullCursor, -1]),
+            // })}${zyMath(CURSOR_LATEX)}${zySpan(charSlice(nextCursorIndex), {
+            //   id: cursorToString([...fullCursor, -2]),
+            // })}`;
           } else {
             return `${wrapHtmlId(
               create_tex_text(charSlice(0, nextCursorIndex)),
@@ -315,9 +323,14 @@ export class TextZymbol extends Zymbol<TextZymbolSchema> {
           if (excludeHtmlIds) {
             return treatedChars;
           } else {
-            return zySpan(treatedChars, {
-              id: cursorToString(this.getFullCursorPointer()),
-            });
+            return createMathText(
+              treatedChars,
+              cursorToString(this.getFullCursorPointer())
+            );
+
+            // return zySpan(treatedChars, {
+            //   id: cursorToString(this.getFullCursorPointer()),
+            // });
           }
         } else {
           const baseTex = create_tex_text(treatedChars);

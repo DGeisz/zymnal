@@ -295,6 +295,8 @@ export class ZymbolFrame extends Zyact<ZymbolFrameSchema, FrameRenderProps> {
           )
         );
 
+        console.log("subTreePoitners", subTreePointers);
+
         let vimiumHints: string[] = [];
 
         if (vimiumActive) {
@@ -347,13 +349,17 @@ export class ZymbolFrame extends Zyact<ZymbolFrameSchema, FrameRenderProps> {
               element.contentEditable = "true";
             }
 
+            element.onselectionchange = (e) => {
+              console.log("ele", e);
+            };
+
             element.onclick = () => {
               usingTransformation && this.takeSelectedTransformation();
 
               if (pointer.isSelectableText) {
                 const textPointer = window.getSelection()?.anchorOffset;
 
-                element.blur();
+                // element.blur();
                 if (textPointer !== undefined && textPointer > 0) {
                   this.callZentinelMethod(ZyGodMethod.takeCursor, [
                     ...pointer.clickCursor,

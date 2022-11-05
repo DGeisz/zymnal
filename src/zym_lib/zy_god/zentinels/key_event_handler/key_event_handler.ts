@@ -105,18 +105,22 @@ class KeyEventHandler extends Zentinel<KeyEventHandlerMethodSchema> {
     switch (key) {
       case "ArrowUp": {
         keyPressType = KeyPressBasicType.ArrowUp;
+        return;
         break;
       }
       case "ArrowDown": {
         keyPressType = KeyPressBasicType.ArrowDown;
+        return;
         break;
       }
       case "ArrowLeft": {
         keyPressType = KeyPressBasicType.ArrowLeft;
+        return;
         break;
       }
       case "ArrowRight": {
         keyPressType = KeyPressBasicType.ArrowRight;
+        return;
         break;
       }
       case "Backspace": {

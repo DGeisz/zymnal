@@ -43,7 +43,7 @@ import {
 import { DISPLAY_EQ_ID } from "../../zym_src/zyms/zymbol_infrastructure/zymbol_module/module_lines/display_equation/display_equation_schema";
 
 /* Determine whether we want to record the inputs to this page for use in tests */
-const TEST_RECORD_MODE = true;
+const TEST_RECORD_MODE: boolean = false;
 
 const WINDOW_BLUR = true;
 
@@ -146,6 +146,13 @@ export class ZyGod extends Zentinel<ZyGodSchema> {
     /* Add our window blur and window focus events */
     WindowEventHandler.addEventListener("blur", this.onWindowBlur);
     WindowEventHandler.addEventListener("focus", this.onWindowFocus);
+
+    document.addEventListener("selectionchange", (e) => {
+      const sel = document.getSelection();
+      // @ts-ignore
+      window.sel = sel;
+      console.log("e", document.getSelection());
+    });
 
     /* There are moments when we don't properly catch window events so just poll to be sure */
     setInterval(() => {

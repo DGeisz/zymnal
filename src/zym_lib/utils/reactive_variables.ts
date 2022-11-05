@@ -1,6 +1,4 @@
-import { debug } from "console";
 import { useEffect, useMemo, useState } from "react";
-import { usePlainRerender, useRerender } from "../../global_utils/useRerender";
 import { Zym } from "../zym/zym";
 
 export class ReactiveVariable<T> {
