@@ -76,6 +76,10 @@ import {
   placeDomCursor,
   placeDomCursorInLatex,
 } from "./cursor_helper";
+import { debug } from "console";
+import { isTextZymbol } from "../../zymbol/zymbols/text_zymbol/text_zymbol_schema";
+import { STD_TRANSFORMER_TYPE_FILTERS } from "./transformer/std_transformers/std_transformer_type_filters";
+import { displayEquationTypeFilters } from "../zymbol_module/module_lines/display_equation/display_equation_schema";
 
 const VIMIUM_HINT_PERIOD = 2;
 class ZymbolFrameMaster extends ZyMaster<
@@ -129,11 +133,9 @@ class ZymbolFrameMaster extends ZyMaster<
     keyPress: ZymKeyPress,
     typeFilters: TransformerTypeFilter[]
   ) => {
+    console.log("type filters", typeFilters);
     /* Get the zym root */
-    const root = await this.callZentinelMethod(
-      ZyGodMethod.getZymRoot,
-      undefined
-    );
+    const root = await this.callZ(ZyGodMethod.getZymRoot, undefined);
 
     const transformers = await _.flatten(
       await Promise.all(
@@ -205,7 +207,8 @@ export class ZymbolFrame extends Zyact<ZymbolFrameSchema, FrameRenderProps> {
   vimiumMode = new VimiumMode();
 
   getTypeFilters: (cursor: Cursor) => TransformerTypeFilter[];
-  readonly inlineTex: boolean;
+  usingDefaultTypeFilters = false;
+  inlineTex: boolean;
 
   constructor(
     cursorIndex: CursorIndex,
@@ -214,8 +217,18 @@ export class ZymbolFrame extends Zyact<ZymbolFrameSchema, FrameRenderProps> {
   ) {
     super(cursorIndex, parent);
 
+    if (!opts?.getTypeFilters) {
+      this.usingDefaultTypeFilters = true;
+    }
+
     const { getTypeFilters, inlineTex } = _.defaults(opts, {
-      getTypeFilters: (cursor: Cursor) => [],
+      getTypeFilters: (cursor: Cursor) => {
+        if (this.inlineTex) {
+          return this.inlineTypeFilters(cursor);
+        } else {
+          return displayEquationTypeFilters();
+        }
+      },
       inlineTex: false,
     });
 
@@ -227,8 +240,22 @@ export class ZymbolFrame extends Zyact<ZymbolFrameSchema, FrameRenderProps> {
     this.getTypeFilters = getTypeFilters;
     this.setPersistenceSchemaSymbols({
       baseZocket: "b",
+      inlineTex: "i",
     });
   }
+
+  inlineTypeFilters = (cursor: Cursor) => {
+    const potentialText = this.baseZocket.children[cursor[1]];
+
+    if (
+      cursor.length <= 2 ||
+      (!!potentialText && isTextZymbol(potentialText))
+    ) {
+      return [STD_TRANSFORMER_TYPE_FILTERS.INPUT];
+    } else {
+      return [STD_TRANSFORMER_TYPE_FILTERS.EQUATION];
+    }
+  };
 
   setBaseZocket = (baseZocket: Zocket) => {
     this.baseZocket = baseZocket;
@@ -310,11 +337,9 @@ export class ZymbolFrame extends Zyact<ZymbolFrameSchema, FrameRenderProps> {
         }
 
         /* First get all the ids in the sub tree */
-        const subTreePointers = unwrapTraitResponse(
-          await baseZocket.callTraitMethod(
-            ZymbolHtmlIdTrait.getAllDescendentHTMLIds,
-            undefined
-          )
+        const subTreePointers = await baseZocket.call(
+          ZymbolHtmlIdTrait.getAllDescendentHTMLIds,
+          undefined
         );
 
         let vimiumHints: string[] = [];
@@ -366,12 +391,8 @@ export class ZymbolFrame extends Zyact<ZymbolFrameSchema, FrameRenderProps> {
             element.style.cursor = "text";
 
             if (pointer.isSelectableText) {
-              // element.contentEditable = "true";
+              element.contentEditable = "true";
             }
-
-            element.onselectionchange = (e) => {
-              console.log("ele", e);
-            };
 
             element.onclick = () => {
               usingTransformation && this.takeSelectedTransformation();
@@ -379,7 +400,9 @@ export class ZymbolFrame extends Zyact<ZymbolFrameSchema, FrameRenderProps> {
               if (pointer.isSelectableText) {
                 const textPointer = window.getSelection()?.anchorOffset;
 
-                // element.blur();
+                console.log("text p", textPointer, pointer.clickCursor);
+
+                element.blur();
                 if (textPointer !== undefined && textPointer > 0) {
                   this.callZentinelMethod(ZyGodMethod.takeCursor, [
                     ...pointer.clickCursor,
@@ -508,6 +531,7 @@ export class ZymbolFrame extends Zyact<ZymbolFrameSchema, FrameRenderProps> {
   persistData() {
     return {
       baseZocket: this.baseZocket.persist(),
+      inlineTex: this.inlineTex,
     };
   }
 
@@ -518,12 +542,23 @@ export class ZymbolFrame extends Zyact<ZymbolFrameSchema, FrameRenderProps> {
       baseZocket: async (bz) => {
         this.baseZocket = (await hydrateChild(this, bz)) as Zocket;
       },
+      inlineTex: (i) => {
+        this.inlineTex = i;
+      },
     });
-    this.children = [this.baseZocket];
-
     this.baseZocket.setParentFrame(this);
 
-    this.reConnectParentChildren();
+    if (this.usingDefaultTypeFilters) {
+      if (this.inlineTex) {
+        this.getTypeFilters = this.inlineTypeFilters;
+      } else {
+        this.getTypeFilters = displayEquationTypeFilters;
+      }
+    }
+  }
+
+  getRefreshedChildrenPointer(): Zym[] {
+    return [this.baseZocket];
   }
 
   takeSelectedTransformation = (keyPressContext?: BasicContext): Cursor => {
@@ -721,7 +756,7 @@ zymbolFrameMaster.implementTrait(KeyPressTrait, {
 
         /* Handle potential transformation */
         /* 1. Ask Hermes for the Transformer */
-        const transformer = await frame.callZentinelMethod(
+        const transformer = await frame.callZ(
           ZymbolFrameMethod.getTransformer,
           {
             cursor: frame.getFullCursorPointer(),
@@ -729,6 +764,7 @@ zymbolFrameMaster.implementTrait(KeyPressTrait, {
             typeFilters: frame.getTypeFilters(labelCursor),
           }
         );
+
         /* 2. Apply the transformer to get a list of potential transformations */
         const transformations = await transformer(
           frame.baseZocket,

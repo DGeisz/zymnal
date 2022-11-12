@@ -6,8 +6,6 @@ import {
 import { Cursor } from "../../../../zym_lib/zy_god/cursor/cursor";
 
 export function placeDomCursor(cursor: Cursor) {
-  console.log("cursor", cursor);
-
   cursor = [...cursor];
 
   if (cursor.length > 1) {
@@ -41,8 +39,6 @@ export function clearDomCursor() {
 
 export function placeDomCursorInLatex() {
   const cursors = document.getElementsByClassName(CURSOR_NAME);
-
-  console.log("cee", cursors.length);
 
   const sel = window.getSelection();
   if (cursors.length > 0) {

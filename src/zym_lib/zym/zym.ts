@@ -19,6 +19,7 @@ import {
 } from "../zy_trait/zy_trait";
 import { defaultTraitZentinelMethodList } from "../zy_trait/default_trait_zentinel/default_trait_zentinel_schema";
 import { ZyGodMethod } from "../zy_god/zy_god_schema";
+import { UndoRedoStack } from "../zy_god/undo_redo/undo_redo";
 
 /**
  * A zym is a basic object that is stored in the zym hierarchy.  This is essentially
@@ -151,7 +152,7 @@ export abstract class Zym<
 
   abstract persistData(): ZyPartialPersist<Schema>;
 
-  hydrate(p: Partial<ZyFullPersist<Schema>>): Promise<void> {
+  async hydrate(p: Partial<ZyFullPersist<Schema>>): Promise<void> {
     const partialPersist: any = {};
 
     if (!this.invertedSchemaSymbols) {
@@ -159,15 +160,29 @@ export abstract class Zym<
     }
 
     for (const [key, value] of Object.entries(p)) {
+      if (this.invertedSchemaSymbols[key] === undefined) {
+        throw new Error(`Corrupted persistence! ${this.getMasterId()} ${key}`);
+      }
+
       partialPersist[this.invertedSchemaSymbols![key]] = value;
     }
 
-    return this.hydrateFromPartialPersist(partialPersist);
+    await this.safeHydrateFromPartialPersist(partialPersist);
+  }
+
+  async safeHydrateFromPartialPersist(
+    p: Partial<ZyPartialPersist<Schema>>
+  ): Promise<void> {
+    await this.hydrateFromPartialPersist(p);
+    this.children = this.getRefreshedChildrenPointer();
+    this.reConnectParentChildren();
   }
 
   abstract hydrateFromPartialPersist(
     p: Partial<ZyPartialPersist<Schema>>
   ): Promise<void>;
+
+  abstract getRefreshedChildrenPointer(): Zym[];
 
   /* ===== TREE METHODS ===== */
   // prettier-ignore
@@ -181,7 +196,7 @@ export abstract class Zym<
 
 
     for (let i = 0; i < copies; i++) {
-      all.push(this.callZentinelMethod(ZyGodMethod.hydratePersistedZym, p));
+      all.push(this.callZ(ZyGodMethod.hydratePersistedZym, p));
     }
 
     const finalCopies = await Promise.all(all);
@@ -236,4 +251,6 @@ export abstract class Zym<
   ): Promise<OtherSchema[Method]["return"]> => {
     return this.zyMaster.callZentinelMethod(pointer, args);
   };
+
+  callZ = this.callZentinelMethod;
 }

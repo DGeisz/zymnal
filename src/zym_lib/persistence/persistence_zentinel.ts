@@ -10,8 +10,22 @@ class PersistenceZentinel extends Zentinel<PersistenceZentinelSchema> {
   zyId: string = PERSISTENCE_ZENTINEL_ID;
   subs: ZySub<PersistedDoc>[] = [];
 
+  lastChange: null | string = "";
+
   constructor() {
     super();
+
+    let vscode: any;
+
+    try {
+      // @ts-ignore
+      vscode = acquireVsCodeApi();
+    } catch (e) {
+      console.error(
+        "Not running as a vscode extension! This sandbox will not have persistence!"
+      );
+    }
+
     this.setMethodImplementation({
       addDocChangeSubscriber: async (sub) => {
         const newId = Math.random();
@@ -21,6 +35,10 @@ class PersistenceZentinel extends Zentinel<PersistenceZentinelSchema> {
           sub,
         });
 
+        if (this.lastChange !== null) {
+          sub(this.lastChange);
+        }
+
         return newId;
       },
       removeSubscriber: async (subId) => {
@@ -28,8 +46,17 @@ class PersistenceZentinel extends Zentinel<PersistenceZentinelSchema> {
       },
       persistDoc: async (doc) => {
         /* Figure out how to actually grab the doc */
+
+        if (vscode) {
+          vscode.postMessage({
+            type: "save",
+            document: doc,
+          });
+        }
       },
     });
+
+    this.addFileEditorMessageHandler();
   }
 
   addFileEditorMessageHandler = () => {
@@ -39,8 +66,13 @@ class PersistenceZentinel extends Zentinel<PersistenceZentinelSchema> {
       switch (message.type) {
         case "update": {
           const text = message.text;
+          const doc = JSON.parse(text);
+
+          this.subs.forEach((sub) => sub.sub(doc));
         }
       }
     });
   };
 }
+
+export const persistenceZentinel = new PersistenceZentinel();

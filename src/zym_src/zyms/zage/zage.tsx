@@ -116,13 +116,6 @@ export class Zage extends Zyact<ZageSchema> {
 
     return (
       <div className="w-full flex justify-center">
-        {/* <span>
-          <span contentEditable>Hey there fam</span>
-          <div>
-            <span contentEditable>Hey there fam</span>
-          </div>
-          <span contentEditable>Hey there fam</span>
-        </span> */}
         <div className="w-full max-w-3xl mt-16">
           <Module />
         </div>
@@ -134,6 +127,10 @@ export class Zage extends Zyact<ZageSchema> {
     return {
       module: this.module.persist(),
     };
+  }
+
+  getRefreshedChildrenPointer(): Zym[] {
+    return [this.module];
   }
 
   hydrateFromPartialPersist = async (

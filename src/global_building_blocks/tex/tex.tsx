@@ -119,6 +119,7 @@ const MathTexInner: React.FC<MathTexProps> = (props) => {
   return (
     <span
       ref={cRef}
+      contentEditable={false}
       className={props.className}
       dangerouslySetInnerHTML={{
         __html: htmlTex,

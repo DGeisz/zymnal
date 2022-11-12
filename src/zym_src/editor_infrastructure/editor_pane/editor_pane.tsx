@@ -1,5 +1,6 @@
 import { FC } from "react";
 import { unwrapOption, ZyOption } from "../../../zym_lib/utils/zy_option";
+import { Zym } from "../../../zym_lib/zym/zym";
 import { Zyact } from "../../../zym_lib/zym/zymplementations/zyact/zyact";
 import { ZyMaster } from "../../../zym_lib/zym/zy_master";
 import { Cursor } from "../../../zym_lib/zy_god/cursor/cursor";
@@ -49,6 +50,10 @@ class EditorPaneMaster extends ZyMaster<
 export const editorPaneMaster = new EditorPaneMaster();
 
 export class EditorPane extends Zyact<EditorPaneSchema> {
+  getRefreshedChildrenPointer(): Zym[] {
+    return [];
+  }
+
   children: FileHandler[] = [];
   zyMaster: ZyMaster<EditorPaneSchema, {}, {}, {}> = editorPaneMaster;
 

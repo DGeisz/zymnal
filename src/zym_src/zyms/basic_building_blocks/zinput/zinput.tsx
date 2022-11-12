@@ -66,6 +66,10 @@ export class Zinput extends Zyact<ZinputSchema, ZinputProps> {
     cursor: this.cursor,
   });
 
+  getRefreshedChildrenPointer(): Zym[] {
+    return [];
+  }
+
   component: React.FC<ZinputProps> = ({ text, cursor }) => {
     return (
       <div className="flex self-start">

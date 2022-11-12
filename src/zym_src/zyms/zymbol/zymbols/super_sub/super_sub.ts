@@ -532,7 +532,9 @@ export class SuperSubZymbol extends Zymbol<SuperSubSchema> {
         this.standalone = s;
       },
     });
+  }
 
-    this.reConnectParentChildren();
+  getRefreshedChildrenPointer(): Zym[] {
+    return this.children;
   }
 }

@@ -8,8 +8,6 @@ import { Zyact } from "../../../../../../zym_lib/zym/zymplementations/zyact/zyac
 import { ZyMaster } from "../../../../../../zym_lib/zym/zy_master";
 import { CursorIndex } from "../../../../../../zym_lib/zy_god/cursor/cursor";
 import { ZyPartialPersist } from "../../../../../../zym_lib/zy_schema/zy_schema";
-import { isTextZymbol } from "../../../../zymbol/zymbols/text_zymbol/text_zymbol_schema";
-import { STD_TRANSFORMER_TYPE_FILTERS } from "../../../zymbol_frame/transformer/std_transformers/std_transformer_type_filters";
 import { ZymbolFrame } from "../../../zymbol_frame/zymbol_frame";
 import { InlineInputSchema, INLINE_INPUT_ID } from "./inline_input_schema";
 
@@ -28,16 +26,7 @@ export class InlineInput extends Zyact<InlineInputSchema> {
   inputFrame: ZymbolFrame = new ZymbolFrame(0, this, {
     inlineFrame: true,
     getTypeFilters: (cursor) => {
-      const potentialText = this.inputFrame.baseZocket.children[cursor[1]];
-
-      if (
-        cursor.length <= 2 ||
-        (!!potentialText && isTextZymbol(potentialText))
-      ) {
-        return [STD_TRANSFORMER_TYPE_FILTERS.INPUT];
-      } else {
-        return [STD_TRANSFORMER_TYPE_FILTERS.EQUATION];
-      }
+      return this.inputFrame.inlineTypeFilters(cursor);
     },
     inlineTex: true,
   });
@@ -71,6 +60,10 @@ export class InlineInput extends Zyact<InlineInputSchema> {
         this.inputFrame = (await hydrateChild(this, frame)) as ZymbolFrame;
       },
     });
+  }
+
+  getRefreshedChildrenPointer(): Zym[] {
+    return [this.inputFrame];
   }
 
   getCopyTex = () => {

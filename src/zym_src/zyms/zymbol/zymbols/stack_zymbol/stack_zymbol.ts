@@ -384,6 +384,10 @@ export class StackZymbol extends Zymbol<StackZymbolSchema> {
       },
     });
   }
+
+  getRefreshedChildrenPointer(): Zym[] {
+    return this.children;
+  }
 }
 
 const dotModMap: { [key: string]: string } = {

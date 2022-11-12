@@ -1,3 +1,4 @@
+import { BsHandThumbsUpFill } from "react-icons/bs";
 import { last } from "../../../../global_utils/array_utils";
 import { BasicContext } from "../../../../zym_lib/utils/basic_context";
 import { isSome, unwrapOption } from "../../../../zym_lib/utils/zy_option";
@@ -503,8 +504,10 @@ export class ZymbolModule extends Zyact<ZymbolModuleSchema> {
         )) as ModuleLine[];
       },
     });
+  }
 
-    this.reConnectParentChildren();
+  getRefreshedChildrenPointer(): Zym[] {
+    return this.children;
   }
 }
 

@@ -78,6 +78,17 @@ export interface ComplexKeyPress extends ModifiedKeyPress {
   key: string;
 }
 
+export function letterKeyPress(
+  letter: string,
+  modifiers?: KeyPressModifier[]
+): ComplexKeyPress {
+  return {
+    type: KeyPressComplexType.Key,
+    key: letter,
+    modifiers,
+  };
+}
+
 export function isKeyPressKey(
   keyPress: ZymKeyPress,
   key: string | string[]

@@ -157,6 +157,10 @@ export class SymbolZymbol extends Zymbol<SymbolZymbolSchema> {
       },
     });
   }
+
+  getRefreshedChildrenPointer(): Zym[] {
+    return this.children;
+  }
 }
 
 symbolZymbolMaster.implementTrait(ZymbolHtmlIdTrait, {

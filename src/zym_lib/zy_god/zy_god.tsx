@@ -3,9 +3,9 @@ import { Hermes } from "../hermes/hermes";
 import { Zentinel } from "../zentinel/zentinel";
 import { Zym } from "../zym/zym";
 import { ZyMaster } from "../zym/zy_master";
-import { isSome, NONE, zySome } from "../utils/zy_option";
+import { isSome, NONE, unwrapOption, zySome } from "../utils/zy_option";
 import { unwrapTraitResponse } from "../zy_trait/zy_trait";
-import { ZyId } from "../zy_schema/zy_schema";
+import { ZyId, ZymPersist } from "../zy_schema/zy_schema";
 import {
   Cursor,
   cursorBlink,
@@ -19,8 +19,10 @@ import {
 import {
   defaultKeyPressImplFactory,
   KeyPressComplexType,
+  keyPressEqual,
   KeyPressModifier,
   KeyPressTrait,
+  letterKeyPress,
   ZymKeyPress,
 } from "./event_handler/key_press";
 import { WindowEventHandler } from "./event_handler/window_event_handler";
@@ -41,11 +43,13 @@ import {
   TestRecordedAction,
   TestRecordedActionType,
 } from "./testing/basic_testing";
-import { DISPLAY_EQ_ID } from "../../zym_src/zyms/zymbol_infrastructure/zymbol_module/module_lines/display_equation/display_equation_schema";
-import {
-  cursorToString,
-  parseCursorString,
-} from "../../global_utils/latex_utils";
+import { parseCursorString } from "../../global_utils/latex_utils";
+import { persistenceZentinel } from "../persistence/persistence_zentinel";
+import { PersistenceMethod } from "../persistence/persistence_zentinel_schema";
+import { ZageSchema } from "../../zym_src/zyms/zage/zage_schema";
+import { BsHandThumbsUpFill } from "react-icons/bs";
+import { debug } from "console";
+import { DebugConfigurationProviderTriggerKind } from "vscode";
 
 /* Determine whether we want to record the inputs to this page for use in tests */
 const TEST_RECORD_MODE: boolean = false;
@@ -73,6 +77,8 @@ export class ZyGod extends Zentinel<ZyGodSchema> {
   private customKeyPressHandler: CustomKeyPressHandler | undefined;
 
   private recordedKeystrokesForTest: TestRecordedAction[] = [];
+
+  private toHydrate: null | any = null;
 
   simulatedKeyPressQueue: ZymKeyPress[] = [];
   keyPressCallbackQueue: (() => Promise<void>)[] = [];
@@ -103,21 +109,7 @@ export class ZyGod extends Zentinel<ZyGodSchema> {
       reRender: async () => {
         await this.handleCursorChange(this.cursor);
       },
-      hydratePersistedZym: async (persisted) => {
-        const { m: masterId, d: zymData } = persisted;
-
-        const master = this.masterRegistry.get(masterId);
-
-        if (master) {
-          const zym = await master.hydrate(zymData);
-
-          return zym;
-        } else {
-          throw new Error(
-            `Master with id: ${masterId} hasn't been registered!`
-          );
-        }
-      },
+      hydratePersistedZym: this.hydratePersistedZym,
       queueSimulatedKeyPress: async (keyPress) => {
         this.simulatedKeyPressQueue.push(keyPress);
       },
@@ -144,35 +136,41 @@ export class ZyGod extends Zentinel<ZyGodSchema> {
       },
     });
 
+    this.callZ(PersistenceMethod.addDocChangeSubscriber, (doc) => {
+      (async () => {
+        if (doc) {
+          if (this.root) {
+            await this.hydrateRoot(doc);
+          } else {
+            this.toHydrate = doc;
+          }
+        }
+      })();
+    });
+
     // @ts-ignore
     window.undo = this.undoRedoStack;
 
-    this.callZentinelMethod(
-      KeyEventHandlerMethod.addKeyHandler,
-      this.handleKeyPress
-    );
+    this.callZ(KeyEventHandlerMethod.addKeyHandler, this.handleKeyPress);
 
-    this.callZentinelMethod(
-      KeyEventHandlerMethod.addVerticalNavigationHandler,
-      () => {
-        setTimeout(() => {
-          const sel = window.getSelection();
+    this.callZ(KeyEventHandlerMethod.addVerticalNavigationHandler, () => {
+      setTimeout(() => {
+        const sel = window.getSelection();
 
-          if (sel) {
-            const id = sel.anchorNode?.parentElement?.id;
+        if (sel) {
+          const id = sel.anchorNode?.parentElement?.id;
 
-            if (id) {
-              const cursorBase = parseCursorString(id);
+          if (id) {
+            const cursorBase = parseCursorString(id);
 
-              const newCursor = [...cursorBase, sel.anchorOffset];
-              this.setCursor(newCursor);
-            }
+            const newCursor = [...cursorBase, sel.anchorOffset];
+            this.setCursor(newCursor);
           }
-        });
-      }
-    );
+        }
+      });
+    });
 
-    this.callZentinelMethod(
+    this.callZ(
       KeyEventHandlerMethod.registerVerticalNavigationOracle,
       () => this.verticalNavigationType
     );
@@ -180,13 +178,6 @@ export class ZyGod extends Zentinel<ZyGodSchema> {
     /* Add our window blur and window focus events */
     WindowEventHandler.addEventListener("blur", this.onWindowBlur);
     WindowEventHandler.addEventListener("focus", this.onWindowFocus);
-
-    document.addEventListener("selectionchange", (e) => {
-      const sel = document.getSelection();
-      // @ts-ignore
-      window.sel = sel;
-      // console.log("e", document.getSelection());
-    });
 
     /* There are moments when we don't properly catch window events so just poll to be sure */
     setInterval(() => {
@@ -238,8 +229,41 @@ export class ZyGod extends Zentinel<ZyGodSchema> {
     this.registerZentinels(godlyZentinels);
   }
 
+  private hydratePersistedZym = async (persisted: ZymPersist<any>) => {
+    const { m: masterId, d: zymData } = persisted;
+
+    const master = this.masterRegistry.get(masterId);
+
+    if (master) {
+      const zym = await master.hydrate(zymData);
+
+      return zym;
+    } else {
+      throw new Error(`Master with id: ${masterId} hasn't been registered!`);
+    }
+  };
+
+  private hydrateRoot = async (persisted: ZymPersist<any>) => {
+    const { d: zageData } = persisted;
+
+    if (this.root) {
+      await this.root?.hydrate(zageData);
+
+      const initCursor = unwrapOption(
+        await this.root.call(CursorCommandTrait.getInitialCursor, undefined)
+      );
+
+      this.setCursor(initCursor);
+
+      this.root.callTraitMethod(CursorCommandTrait.cursorRender, {
+        newCursor: zySome(this.cursor),
+        oldCursor: NONE,
+      });
+    }
+  };
+
   private handleCursorChange = (newCursor: Cursor) => {
-    this.root?.callTraitMethod(CursorCommandTrait.cursorRender, {
+    this.root?.call(CursorCommandTrait.cursorRender, {
       oldCursor: zySome(this.cursor),
       newCursor: zySome(newCursor),
     });
@@ -311,7 +335,7 @@ export class ZyGod extends Zentinel<ZyGodSchema> {
   };
 
   handleRedo = async () => {
-    await this.root?.callTraitMethod(UndoRedoTrait.prepUndoRedo, undefined);
+    await this.root?.call(UndoRedoTrait.prepUndoRedo, undefined);
 
     const frame = this.undoRedoStack.redo();
 
@@ -323,35 +347,38 @@ export class ZyGod extends Zentinel<ZyGodSchema> {
           zymLocation,
         } = link;
 
-        await this.root?.callTraitMethod(
-          CursorCommandTrait.modifyNodeAndReRender,
-          {
-            cursor: zymLocation,
-            updates: zymState,
-            renderOpts,
-          }
-        );
+        await this.root?.call(CursorCommandTrait.modifyNodeAndReRender, {
+          cursor: zymLocation,
+          updates: zymState,
+          renderOpts,
+        });
       }
 
       await this.handleCursorChange(afterCursor);
     }
   };
 
-  handleKeyPress = async (event: ZymKeyPress) => {
+  handleKeyPress = async (keyPress: ZymKeyPress) => {
     if (TEST_RECORD_MODE) {
       this.recordedKeystrokesForTest.push({
         type: TestRecordedActionType.key,
-        keyPress: event,
+        keyPress,
       });
     }
 
+    /* Add saving logic */
+    if (keyPressEqual(keyPress, letterKeyPress("s", [KeyPressModifier.Cmd]))) {
+      const persistedDoc = await this.root!.persist();
+      this.callZ(PersistenceMethod.persistDoc, persistedDoc);
+    }
+
     if (this.customKeyPressHandler) {
-      await this.customKeyPressHandler.handleKeyPress(event);
+      await this.customKeyPressHandler.handleKeyPress(keyPress);
       cursorBlink.setPreventCursorBlink(
         this.customKeyPressHandler.shouldPreventCursorBlink()
       );
     } else {
-      await this.basicHandleKeyPress(event);
+      await this.basicHandleKeyPress(keyPress);
     }
   };
 
@@ -394,13 +421,11 @@ export class ZyGod extends Zentinel<ZyGodSchema> {
         this.customKeyPressHandler.beforeKeyPress(ctx, event);
       }
 
-      const moveResponse = unwrapTraitResponse(
-        await this.root.callTraitMethod(KeyPressTrait.handleKeyPress, {
-          cursor: this.cursor,
-          keyPress: event,
-          keyPressContext: ctx,
-        })
-      );
+      const moveResponse = await this.root.call(KeyPressTrait.handleKeyPress, {
+        cursor: this.cursor,
+        keyPress: event,
+        keyPressContext: ctx,
+      });
 
       if (this.customKeyPressHandler) {
         this.customKeyPressHandler.afterKeyPress(ctx);
@@ -451,14 +476,20 @@ export class ZyGod extends Zentinel<ZyGodSchema> {
   }
 
   async setRoot(root: Zym<any, any, any>) {
+    if (this.root) {
+      return;
+    }
+
     this.root = root;
     this.rootAwaiter.trigger();
 
-    const cursorOpt = unwrapTraitResponse(
-      await this.root.callTraitMethod(
-        CursorCommandTrait.getInitialCursor,
-        undefined
-      )
+    if (this.toHydrate) {
+      await this.root.hydrate(this.toHydrate);
+    }
+
+    const cursorOpt = await this.root.call(
+      CursorCommandTrait.getInitialCursor,
+      undefined
     );
 
     if (isSome(cursorOpt)) {

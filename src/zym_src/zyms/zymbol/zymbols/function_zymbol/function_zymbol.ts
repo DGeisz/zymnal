@@ -325,8 +325,10 @@ export class FunctionZymbol extends Zymbol<FunctionZymbolSchema> {
         this.bracketZockets = b;
       },
     });
+  }
 
-    this.reConnectParentChildren();
+  getRefreshedChildrenPointer(): Zym[] {
+    return this.children;
   }
 }
 

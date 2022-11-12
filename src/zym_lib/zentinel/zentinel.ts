@@ -54,6 +54,9 @@ export abstract class Zentinel<Schema extends ZentinelMethodSchema = any> {
     return this.hermes!.handleZentinelMethod(pointer, args);
   };
 
+  // alias for callZentinelMethod
+  callZ = this.callZentinelMethod;
+
   /* ==== EVENT LISTENERS ====  */
   onRegistration = async () => {};
 }

@@ -87,4 +87,8 @@ export class FileHandler extends Zyact<FileHandlerSchema> {
   getZyFile = (): ZyFile => {
     return this.zyFile;
   };
+
+  getRefreshedChildrenPointer(): Zym[] {
+    return [];
+  }
 }

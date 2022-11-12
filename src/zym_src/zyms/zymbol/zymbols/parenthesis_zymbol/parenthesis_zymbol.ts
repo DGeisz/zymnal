@@ -230,7 +230,6 @@ export class ParenthesisZymbol extends Zymbol<ParenthesisZymbolSchema> {
     await safeHydrate(p, {
       baseZocket: async (b) => {
         this.baseZocket = (await hydrateChild(this, b)) as Zocket;
-        this.children = [this.baseZocket];
       },
       bigParenthesis: (p) => {
         this.bigParenthesis = p;
@@ -245,6 +244,10 @@ export class ParenthesisZymbol extends Zymbol<ParenthesisZymbolSchema> {
         this.modifiers = m;
       },
     });
+  }
+
+  getRefreshedChildrenPointer(): Zym[] {
+    return [this.baseZocket];
   }
 }
 

@@ -386,6 +386,10 @@ export class TextZymbol extends Zymbol<TextZymbolSchema> {
     });
   }
 
+  getRefreshedChildrenPointer(): Zym[] {
+    return this.children;
+  }
+
   /* Custom methods */
   getCharacters = () => this.characters;
   setCharacters = (characters: string[]) => {

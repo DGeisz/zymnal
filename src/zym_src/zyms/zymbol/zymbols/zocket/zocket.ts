@@ -84,7 +84,7 @@ import {
 import { last } from "../../../../../global_utils/array_utils";
 import { HighlightSpanKind, IndexKind } from "typescript";
 
-const GROUP_COLOR = palette.oceanFroth;
+const GROUP_COLOR = palette.beneathTheWaves;
 
 /* === Helper Types === */
 
@@ -1103,8 +1103,10 @@ export class Zocket extends Zymbol<ZocketSchema> {
         this.inline = i;
       },
     });
+  }
 
-    this.reConnectParentChildren();
+  getRefreshedChildrenPointer(): Zym[] {
+    return this.children;
   }
 }
 

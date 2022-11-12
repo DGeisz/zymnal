@@ -223,4 +223,8 @@ export class EditorSidebar extends Zyact<SidebarSchema> {
   ): Promise<void> {
     throw new Error("Method not implemented.");
   }
+
+  getRefreshedChildrenPointer(): Zym[] {
+    return [];
+  }
 }

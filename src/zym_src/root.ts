@@ -16,6 +16,7 @@ import {
 } from "./zyms/basic_building_blocks/basic_building_blocks";
 import { editorInfrastructureMasters } from "./editor_infrastructure/editor_infrastructure";
 import { fileServerClientZentinel } from "./zentinels/file_server_client/file_server_client";
+import { persistenceZentinel } from "../zym_lib/persistence/persistence_zentinel";
 
 const root = BASE_ZAGE;
 
@@ -36,6 +37,7 @@ export const zentinelList: Zentinel[] = [
   vimZentinel,
   fileServerClientZentinel,
   vimiumZentinel,
+  persistenceZentinel,
   ...zymbolInfrastructureZentinels,
   ...buildingBlockZentinels,
 ];

@@ -48,7 +48,29 @@ export class ZymFileEditor implements vscode.CustomTextEditorProvider {
       /* Handle messages from the front */
     });
 
+    webviewPanel.webview.onDidReceiveMessage((e) => {
+      switch (e.type) {
+        case "save": {
+          this.updateTextDocument(document, e.document);
+        }
+      }
+    });
+
     updateWebView();
+  }
+
+  private updateTextDocument(document: vscode.TextDocument, json: any) {
+    const edit = new vscode.WorkspaceEdit();
+
+    // Just replace the entire document every time for this example extension.
+    // A more complete extension should compute minimal edits instead.
+    edit.replace(
+      document.uri,
+      new vscode.Range(0, 0, document.lineCount, 0),
+      JSON.stringify(json)
+    );
+
+    return vscode.workspace.applyEdit(edit);
   }
 
   private getHtmlForWebview = (_webview: vscode.Webview): string => {

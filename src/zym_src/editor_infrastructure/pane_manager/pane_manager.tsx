@@ -63,4 +63,8 @@ export class PaneManager extends Zyact<PaneManagerSchema> {
       if (cursor) return cursor;
     }
   };
+
+  getRefreshedChildrenPointer(): Zym[] {
+    return [];
+  }
 }

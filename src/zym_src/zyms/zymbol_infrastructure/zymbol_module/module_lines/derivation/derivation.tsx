@@ -23,10 +23,14 @@ export class Derivation extends Zyact<DerivationSchema> {
     return null;
   };
 
-  children: Zym<any, any, any, any>[] = [];
+  children: Zym[] = [];
 
   persistData(): ZyPartialPersist<DerivationSchema> {
     return {};
+  }
+
+  getRefreshedChildrenPointer(): Zym[] {
+    return [];
   }
 
   async hydrateFromPartialPersist(

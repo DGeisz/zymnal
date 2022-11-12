@@ -63,7 +63,21 @@ class ZymFileEditor {
         webviewPanel.webview.onDidReceiveMessage((e) => {
             /* Handle messages from the front */
         });
+        webviewPanel.webview.onDidReceiveMessage((e) => {
+            switch (e.type) {
+                case "save": {
+                    this.updateTextDocument(document, e.document);
+                }
+            }
+        });
         updateWebView();
+    }
+    updateTextDocument(document, json) {
+        const edit = new vscode.WorkspaceEdit();
+        // Just replace the entire document every time for this example extension.
+        // A more complete extension should compute minimal edits instead.
+        edit.replace(document.uri, new vscode.Range(0, 0, document.lineCount, 0), JSON.stringify(json));
+        return vscode.workspace.applyEdit(edit);
     }
 }
 exports.ZymFileEditor = ZymFileEditor;

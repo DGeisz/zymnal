@@ -61,4 +61,8 @@ export class FileEditor extends Zyact<FileEditorSchema> {
   zyFile = (): ZyFile => {
     return this.file;
   };
+
+  getRefreshedChildrenPointer(): Zym[] {
+    return [];
+  }
 }

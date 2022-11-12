@@ -64,9 +64,10 @@ export class ZymbolProgression extends Zyact<ZymbolProgressionSchema> {
         this.baseFrame = (await hydrateChild(this, frame)) as ZymbolFrame;
       },
     });
-    this.children = [this.baseFrame];
+  }
 
-    this.reConnectParentChildren();
+  getRefreshedChildrenPointer(): Zym[] {
+    return [this.baseFrame];
   }
 
   getCopyTex = () => {

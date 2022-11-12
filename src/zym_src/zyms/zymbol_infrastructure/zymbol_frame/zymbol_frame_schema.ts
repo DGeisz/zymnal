@@ -61,12 +61,14 @@ export interface ZymbolFrameOpts {
 export type ZymbolFrameSchema = CreateZySchema<
   {
     baseZocket: IdentifiedBaseSchema<ZocketSchema>;
+    inlineTex: boolean;
   },
   {
     baseZocket: {
       persistenceSymbol: "b";
       persistenceType: ZymPersist<ZocketSchema>;
     };
+    inlineTex: "i";
   }
 >;
 
