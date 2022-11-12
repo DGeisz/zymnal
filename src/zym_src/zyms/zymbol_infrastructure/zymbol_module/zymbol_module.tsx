@@ -1,3 +1,4 @@
+import React from "react";
 import { BsHandThumbsUpFill } from "react-icons/bs";
 import { last } from "../../../../global_utils/array_utils";
 import { BasicContext } from "../../../../zym_lib/utils/basic_context";
@@ -35,6 +36,7 @@ import { unwrapTraitResponse } from "../../../../zym_lib/zy_trait/zy_trait";
 import { TextZymbol } from "../../zymbol/zymbols/text_zymbol/text_zymbol";
 import { isTextZymbol } from "../../zymbol/zymbols/text_zymbol/text_zymbol_schema";
 import { DisplayEquation } from "./module_lines/display_equation/display_equation";
+import { DISPLAY_EQ_ID } from "./module_lines/display_equation/display_equation_schema";
 import { InlineInput } from "./module_lines/inline_input/inline_input";
 import { isInlineInput } from "./module_lines/inline_input/inline_input_schema";
 import {
@@ -361,6 +363,66 @@ class ZymbolModuleMaster extends ZyMaster<
 
 export const zymbolModuleMaster = new ZymbolModuleMaster();
 
+type LineCluster =
+  | { type: "display"; cluster: ModuleLine[] }
+  | { type: "inline"; cluster: ModuleLine[] };
+
+function clusterLines(lines: ModuleLine[]): LineCluster[] {
+  const clusters: LineCluster[] = [];
+
+  let last = "";
+
+  let dC = [];
+  let iC = [];
+
+  for (const line of lines) {
+    if (line.getMasterId() == last) {
+      if (line.getMasterId() == DISPLAY_EQ_ID) {
+        dC.push(line);
+      } else {
+        iC.push(line);
+      }
+    } else {
+      if (line.getMasterId() === DISPLAY_EQ_ID) {
+        dC = [line];
+        clusters.push({
+          type: "display",
+          cluster: dC,
+        });
+      } else {
+        iC = [line];
+        clusters.push({
+          type: "inline",
+          cluster: iC,
+        });
+      }
+    }
+  }
+
+  return clusters;
+}
+
+const ClusterHelper: React.FC<{
+  cluster: LineCluster;
+}> = ({ cluster }) => {
+  const lines = cluster.cluster;
+
+  const Comps = useZymponents(lines);
+
+  console.log("lin", lines);
+
+  return (
+    <div
+      contentEditable={cluster.type === "inline"}
+      suppressContentEditableWarning
+    >
+      {Comps.map((C, i) => {
+        return <C key={i} />;
+      })}
+    </div>
+  );
+};
+
 export class ZymbolModule extends Zyact<ZymbolModuleSchema> {
   zyMaster = zymbolModuleMaster;
   children: ModuleLine[];
@@ -377,7 +439,7 @@ export class ZymbolModule extends Zyact<ZymbolModuleSchema> {
   }
 
   component: React.FC = () => {
-    const ChildrenComponents = useZymponents(this.children);
+    const Comps = useZymponents(this.children);
 
     return (
       <div
@@ -385,8 +447,24 @@ export class ZymbolModule extends Zyact<ZymbolModuleSchema> {
         suppressContentEditableWarning
         className="outline-none"
       >
-        {ChildrenComponents.map((C, i) => (
+        {Comps.map((C, i) => (
           <C key={i} />
+        ))}
+      </div>
+    );
+
+    const lineClusters = clusterLines(this.children);
+
+    console.log("l", lineClusters);
+
+    return (
+      <div
+        contentEditable
+        suppressContentEditableWarning
+        className="outline-none"
+      >
+        {lineClusters.map((c, i) => (
+          <ClusterHelper cluster={c} key={i} />
         ))}
       </div>
     );

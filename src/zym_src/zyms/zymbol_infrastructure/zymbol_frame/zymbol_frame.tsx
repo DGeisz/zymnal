@@ -133,7 +133,6 @@ class ZymbolFrameMaster extends ZyMaster<
     keyPress: ZymKeyPress,
     typeFilters: TransformerTypeFilter[]
   ) => {
-    console.log("type filters", typeFilters);
     /* Get the zym root */
     const root = await this.callZ(ZyGodMethod.getZymRoot, undefined);
 
@@ -399,8 +398,6 @@ export class ZymbolFrame extends Zyact<ZymbolFrameSchema, FrameRenderProps> {
 
               if (pointer.isSelectableText) {
                 const textPointer = window.getSelection()?.anchorOffset;
-
-                console.log("text p", textPointer, pointer.clickCursor);
 
                 element.blur();
                 if (textPointer !== undefined && textPointer > 0) {

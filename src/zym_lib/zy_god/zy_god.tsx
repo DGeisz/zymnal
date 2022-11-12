@@ -45,7 +45,10 @@ import {
 } from "./testing/basic_testing";
 import { parseCursorString } from "../../global_utils/latex_utils";
 import { persistenceZentinel } from "../persistence/persistence_zentinel";
-import { PersistenceMethod } from "../persistence/persistence_zentinel_schema";
+import {
+  PersistedPage,
+  PersistenceMethod,
+} from "../persistence/persistence_zentinel_schema";
 import { ZageSchema } from "../../zym_src/zyms/zage/zage_schema";
 import { BsHandThumbsUpFill } from "react-icons/bs";
 import { debug } from "console";
@@ -69,6 +72,10 @@ export class ZyGod extends Zentinel<ZyGodSchema> {
   private cursor: Cursor = [];
   private root?: Zym<any, any>;
   private rootAwaiter = new ControlledAwaiter();
+  private hydrationAwaiter = new ControlledAwaiter();
+
+  private receivedHydration = false;
+  private toHydrate?: PersistedPage;
 
   private verticalNavigationType: VerticalNavigationHandleType =
     VerticalNavigationHandleType.DomManaged;
@@ -77,8 +84,6 @@ export class ZyGod extends Zentinel<ZyGodSchema> {
   private customKeyPressHandler: CustomKeyPressHandler | undefined;
 
   private recordedKeystrokesForTest: TestRecordedAction[] = [];
-
-  private toHydrate: null | any = null;
 
   simulatedKeyPressQueue: ZymKeyPress[] = [];
   keyPressCallbackQueue: (() => Promise<void>)[] = [];
@@ -136,17 +141,22 @@ export class ZyGod extends Zentinel<ZyGodSchema> {
       },
     });
 
-    this.callZ(PersistenceMethod.addDocChangeSubscriber, (doc) => {
-      (async () => {
-        if (doc) {
-          if (this.root) {
-            await this.hydrateRoot(doc);
-          } else {
-            this.toHydrate = doc;
-          }
+    this.callZ(
+      PersistenceMethod.addDocChangeSubscriber,
+      (doc: PersistedPage) => {
+        console.log("got the doc", doc);
+        if (!this.receivedHydration) {
+          (async () => {
+            if (doc) {
+              this.toHydrate = doc;
+            }
+
+            this.hydrationAwaiter.trigger();
+            this.receivedHydration = true;
+          })();
         }
-      })();
-    });
+      }
+    );
 
     // @ts-ignore
     window.undo = this.undoRedoStack;
@@ -243,17 +253,13 @@ export class ZyGod extends Zentinel<ZyGodSchema> {
     }
   };
 
-  private hydrateRoot = async (persisted: ZymPersist<any>) => {
-    const { d: zageData } = persisted;
+  private hydrateRoot = async (persistedPage: PersistedPage) => {
+    const { d: zageData } = persistedPage.zage;
 
     if (this.root) {
       await this.root?.hydrate(zageData);
 
-      const initCursor = unwrapOption(
-        await this.root.call(CursorCommandTrait.getInitialCursor, undefined)
-      );
-
-      this.setCursor(initCursor);
+      this.setCursor(persistedPage.cursor);
 
       this.root.callTraitMethod(CursorCommandTrait.cursorRender, {
         newCursor: zySome(this.cursor),
@@ -368,8 +374,14 @@ export class ZyGod extends Zentinel<ZyGodSchema> {
 
     /* Add saving logic */
     if (keyPressEqual(keyPress, letterKeyPress("s", [KeyPressModifier.Cmd]))) {
-      const persistedDoc = await this.root!.persist();
-      this.callZ(PersistenceMethod.persistDoc, persistedDoc);
+      const persistedPage: PersistedPage = {
+        zage: await this.root!.persist(),
+        cursor: [...this.cursor],
+      };
+
+      this.callZ(PersistenceMethod.persistDoc, persistedPage);
+
+      return;
     }
 
     if (this.customKeyPressHandler) {
@@ -480,22 +492,29 @@ export class ZyGod extends Zentinel<ZyGodSchema> {
       return;
     }
 
+    await this.hydrationAwaiter.awaitTrigger();
+
     this.root = root;
     this.rootAwaiter.trigger();
 
+    let newCursor;
+
     if (this.toHydrate) {
-      await this.root.hydrate(this.toHydrate);
+      await this.hydrateRoot(this.toHydrate);
+      this.toHydrate = undefined;
+      newCursor = zySome(this.cursor);
+    } else {
+      const cursorOpt = await this.root.call(
+        CursorCommandTrait.getInitialCursor,
+        undefined
+      );
+      newCursor = cursorOpt;
     }
 
-    const cursorOpt = await this.root.call(
-      CursorCommandTrait.getInitialCursor,
-      undefined
-    );
-
-    if (isSome(cursorOpt)) {
+    if (isSome(newCursor)) {
       this.undoRedoStack.setFirstFrame({
         beforeCursor: [],
-        afterCursor: cursorOpt.val,
+        afterCursor: newCursor.val,
         links: [
           {
             zymLocation: [],
@@ -509,7 +528,7 @@ export class ZyGod extends Zentinel<ZyGodSchema> {
         ],
       });
 
-      this.setCursor(cursorOpt.val);
+      this.setCursor(newCursor.val);
     }
   }
 

@@ -10,7 +10,7 @@ class PersistenceZentinel extends Zentinel<PersistenceZentinelSchema> {
   zyId: string = PERSISTENCE_ZENTINEL_ID;
   subs: ZySub<PersistedDoc>[] = [];
 
-  lastChange: null | string = "";
+  lastChange: null | any = null;
 
   constructor() {
     super();
@@ -66,9 +66,13 @@ class PersistenceZentinel extends Zentinel<PersistenceZentinelSchema> {
       switch (message.type) {
         case "update": {
           const text = message.text;
-          const doc = JSON.parse(text);
+          try {
+            const doc = JSON.parse(text);
 
-          this.subs.forEach((sub) => sub.sub(doc));
+            this.subs.forEach((sub) => sub.sub(doc));
+          } catch (e) {
+            this.subs.forEach((sub) => sub.sub(null));
+          }
         }
       }
     });
