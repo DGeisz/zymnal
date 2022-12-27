@@ -3,8 +3,7 @@ import { Hermes } from "../hermes/hermes";
 import { Zentinel } from "../zentinel/zentinel";
 import { Zym } from "../zym/zym";
 import { ZyMaster } from "../zym/zy_master";
-import { isSome, NONE, unwrapOption, zySome } from "../utils/zy_option";
-import { unwrapTraitResponse } from "../zy_trait/zy_trait";
+import { isSome, NONE, zySome } from "../utils/zy_option";
 import { ZyId, ZymPersist } from "../zy_schema/zy_schema";
 import {
   Cursor,
@@ -44,15 +43,11 @@ import {
   TestRecordedActionType,
 } from "./testing/basic_testing";
 import { parseCursorString } from "../../global_utils/latex_utils";
-import { persistenceZentinel } from "../persistence/persistence_zentinel";
 import {
   PersistedPage,
   PersistenceMethod,
 } from "../persistence/persistence_zentinel_schema";
-import { ZageSchema } from "../../zym_src/zyms/zage/zage_schema";
-import { BsHandThumbsUpFill } from "react-icons/bs";
-import { debug } from "console";
-import { DebugConfigurationProviderTriggerKind } from "vscode";
+import { USING_VSCODE } from "../../global_utils/vs_code_utils";
 
 /* Determine whether we want to record the inputs to this page for use in tests */
 const TEST_RECORD_MODE: boolean = false;
@@ -140,6 +135,11 @@ export class ZyGod extends Zentinel<ZyGodSchema> {
         );
       },
     });
+
+    /* Handle when we're not in vscode */
+    if (!USING_VSCODE) {
+      this.hydrationAwaiter.trigger();
+    }
 
     this.callZ(
       PersistenceMethod.addDocChangeSubscriber,

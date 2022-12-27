@@ -69,13 +69,17 @@ class PersistenceZentinel extends Zentinel<PersistenceZentinelSchema> {
           try {
             const doc = JSON.parse(text);
 
-            this.subs.forEach((sub) => sub.sub(doc));
+            this.sendDoc(doc);
           } catch (e) {
-            this.subs.forEach((sub) => sub.sub(null));
+            this.sendDoc(null);
           }
         }
       }
     });
+  };
+
+  sendDoc = (doc: any) => {
+    this.subs.forEach((sub) => sub.sub(doc));
   };
 }
 

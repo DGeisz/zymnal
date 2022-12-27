@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import ReactDOM from "react-dom/client";
 import { useHermesValue } from "../../../../zym_lib/hermes/hermes";
 import {
@@ -55,6 +55,9 @@ import {
   ZymbolFrameOpts,
   ZymbolFrameSchema,
   ZYMBOL_FRAME_MASTER_ID,
+  ActionFactory,
+  FrameAction,
+  FrameActionRank,
 } from "./zymbol_frame_schema";
 import { TexTransform } from "./building_blocks/tex_transform";
 import {
@@ -65,18 +68,12 @@ import {
   SourcedTransformer,
   TransformerFactory,
   TransformerTypeFilter,
-  ZymbolTransformRank,
   ZymbolTreeTransformation,
 } from "./transformer/transformer";
 import { ZyPartialPersist } from "../../../../zym_lib/zy_schema/zy_schema";
 import { zyMath } from "../../../../global_building_blocks/tex/autoRender";
 import clsx from "clsx";
-import {
-  clearDomCursor,
-  placeDomCursor,
-  placeDomCursorInLatex,
-} from "./cursor_helper";
-import { debug } from "console";
+import { clearDomCursor, placeDomCursor } from "./cursor_helper";
 import { isTextZymbol } from "../../zymbol/zymbols/text_zymbol/text_zymbol_schema";
 import { STD_TRANSFORMER_TYPE_FILTERS } from "./transformer/std_transformers/std_transformer_type_filters";
 import { displayEquationTypeFilters } from "../zymbol_module/module_lines/display_equation/display_equation_schema";
@@ -91,10 +88,17 @@ class ZymbolFrameMaster extends ZyMaster<
   transformerFactories: TransformerFactory[] = [];
   transformers: SourcedTransformer[] = [];
 
+  actionFactories: ActionFactory[] = [];
+
   constructor() {
     super();
 
     this.setMethodImplementation({
+      registerActionFactory: async (actionFactory) => {
+        this.registerActionFactory(actionFactory);
+      },
+      getFrameActions: async ({ rootZymbol, cursor, keyPress, typeFilters }) =>
+        this.getFrameActions(rootZymbol, cursor, keyPress, typeFilters),
       registerTransformer: async (sourcedTransformer) => {
         this.registerSourcedTransformer(sourcedTransformer);
       },
@@ -126,6 +130,23 @@ class ZymbolFrameMaster extends ZyMaster<
     );
 
     this.transformerFactories.push(factory);
+  };
+
+  registerActionFactory = (factory: ActionFactory) => {
+    this.actionFactories = this.actionFactories.filter(
+      (f) => !(f.name === factory.name && f.source === factory.source)
+    );
+
+    this.actionFactories.push(factory);
+  };
+
+  getFrameActions = (
+    rootZymbol: Zymbol,
+    cursor: Cursor,
+    keyPress: ZymKeyPress,
+    typeFilters: TransformerTypeFilter[]
+  ): FrameAction[] => {
+    return [];
   };
 
   getZymbolTransformer = async (
@@ -200,8 +221,8 @@ export class ZymbolFrame extends Zyact<ZymbolFrameSchema, FrameRenderProps> {
   baseZocket: Zocket;
   children: Zym<any, any>[];
 
-  transformations: ZymbolTreeTransformation[] = [];
-  transformIndex = -1;
+  actions: FrameAction[] = [];
+  actionIndex = -1;
 
   vimiumMode = new VimiumMode();
 
@@ -293,7 +314,7 @@ export class ZymbolFrame extends Zyact<ZymbolFrameSchema, FrameRenderProps> {
     /* Whenever we change the cursor change the location of the dom caret */
     useEffect(() => {
       if (zocketCursor.length > 0) {
-        if (this.transformations.length === 0) {
+        if (this.actions.length === 0) {
           if (this.baseZocket.checkForDomCursor(zocketCursor) && fullCursor) {
             placeDomCursor(fullCursor);
           } else {
@@ -319,18 +340,18 @@ export class ZymbolFrame extends Zyact<ZymbolFrameSchema, FrameRenderProps> {
         let usingTransformation = false;
 
         if (
-          this.transformations.length > 0 &&
-          this.transformIndex > -1 &&
-          this.transformIndex < this.transformations.length
+          this.actions.length > 0 &&
+          this.actionIndex > -1 &&
+          this.actionIndex < this.actions.length
         ) {
-          const selectedTrans =
-            this.transformations[
-              this.transformIndex
-            ].getCurrentTransformation();
+          const framePreview = this.actions[this.actionIndex].getFramePreview();
 
-          baseZocket = selectedTrans.newTreeRoot;
-
-          usingTransformation = true;
+          if (framePreview) {
+            baseZocket = framePreview.newTreeRoot;
+            usingTransformation = true;
+          } else {
+            baseZocket = this.baseZocket;
+          }
         } else {
           baseZocket = this.baseZocket;
         }
@@ -368,7 +389,7 @@ export class ZymbolFrame extends Zyact<ZymbolFrameSchema, FrameRenderProps> {
 
               if (hint === vimiumChars) {
                 this.vimiumMode.handleTermSelected();
-                usingTransformation && this.takeSelectedTransformation();
+                usingTransformation && this.runSelectedAction();
 
                 this.callZentinelMethod(
                   ZyGodMethod.takeCursor,
@@ -394,7 +415,7 @@ export class ZymbolFrame extends Zyact<ZymbolFrameSchema, FrameRenderProps> {
             }
 
             element.onclick = () => {
-              usingTransformation && this.takeSelectedTransformation();
+              usingTransformation && this.runSelectedAction();
 
               if (pointer.isSelectableText) {
                 const textPointer = window.getSelection()?.anchorOffset;
@@ -423,7 +444,7 @@ export class ZymbolFrame extends Zyact<ZymbolFrameSchema, FrameRenderProps> {
       })();
     }, [frameTex, vimiumActive, vimiumChars]);
 
-    if (this.transformations.length > 0) {
+    if (this.actions.length > 0) {
       let selectedTex: string;
 
       frameTex = this.baseZocket.renderTex({
@@ -432,44 +453,24 @@ export class ZymbolFrame extends Zyact<ZymbolFrameSchema, FrameRenderProps> {
         onlyUseLatexCaret: true,
       });
 
-      if (
-        this.transformIndex > -1 &&
-        this.transformIndex < this.transformations.length
-      ) {
-        const selectedTrans =
-          this.transformations[this.transformIndex].getCurrentTransformation();
-        const newRoot = selectedTrans.newTreeRoot;
-        newRoot.setParentFrame(this);
-        newRoot.parent = this;
+      if (this.actionIndex > -1 && this.actionIndex < this.actions.length) {
+        const actionPreview = this.actions[this.actionIndex].getFramePreview();
 
-        selectedTex = newRoot.renderTex({
-          cursor: selectedTrans.cursor,
-          inlineTex: this.inlineTex,
-        });
+        if (actionPreview) {
+          const newRoot = actionPreview.newTreeRoot;
+          newRoot.setParentFrame(this);
+          newRoot.parent = this;
+
+          selectedTex = newRoot.renderTex({
+            cursor: actionPreview.cursor,
+            inlineTex: this.inlineTex,
+          });
+        } else {
+          selectedTex = frameTex;
+        }
       } else {
         selectedTex = frameTex;
       }
-
-      const allTex = this.transformations.map((t) => {
-        const tr = t.getCurrentTransformation();
-        const newRoot = tr.newTreeRoot;
-        newRoot.setParentFrame(this);
-        newRoot.parent = this;
-
-        return newRoot.renderTex({
-          cursor: tr.cursor,
-          inlineTex: this.inlineTex,
-          excludeHtmlIds: true,
-        });
-      });
-
-      allTex.unshift(
-        this.baseZocket.renderTex({
-          cursor: zocketCursor,
-          inlineTex: this.inlineTex,
-          excludeHtmlIds: true,
-        })
-      );
 
       return (
         <div className={Styles.FrameContainer}>
@@ -481,36 +482,48 @@ export class ZymbolFrame extends Zyact<ZymbolFrameSchema, FrameRenderProps> {
               className={texClass ?? undefined}
             />
           </div>
-          {/* <div className="shadow-lg shadow-gray-400 py-4 px-2 rounded-lg bg-gray-100"> */}
-          {/* {allTex.map((t, i) => (
-              <div
-                className={clsx(
-                  "p-2",
-                  this.transformIndex + 1 === i && Styles.SelectedTransContainer
-                )}
-                key={`tt::${i}`}
-                onMouseMove={() => {
-                  this.transformIndex = i - 1;
-                  this.render();
-                }}
-                onClick={() => {
-                  this.callZentinelMethod(ZyGodMethod.simulateKeyPress, {
-                    type: KeyPressBasicType.Enter,
-                  });
-                }}
-              >
-                <TexTransform
-                  tex={t}
-                  showSelector={i === 0}
-                  selector={i === 0 ? DEFAULT_SELECTOR : undefined}
-                  inlineTex={this.inlineTex}
-                />
-              </div>
-            ))} */}
-          {/* </div> */}
+          <div className="relative">
+            <div
+              className={clsx(
+                "absolute left-[-12px] top-1",
+                "min-w-[100px]",
+                "shadow-lg shadow-gray-400",
+                "py-4 px-2",
+                "rounded-lg bg-gray-100"
+              )}
+            >
+              {this.actions.map((action, i) => {
+                const Comp = action.getActionPreviewComponent();
+
+                return (
+                  <div
+                    className={clsx(
+                      "p-2",
+                      this.actionIndex + 1 === i &&
+                        Styles.SelectedTransContainer
+                    )}
+                    key={`tt::${i}`}
+                    onMouseMove={() => {
+                      this.actionIndex = i - 1;
+                      this.render();
+                    }}
+                    onClick={() => {
+                      this.callZentinelMethod(ZyGodMethod.simulateKeyPress, {
+                        type: KeyPressBasicType.Enter,
+                      });
+                    }}
+                  >
+                    <Comp />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </div>
       );
     } else {
+      console.log("frameTex", frameTex);
+
       return (
         <div className={Styles.FrameContainer}>
           <div className={Styles.MainFrameContainer}>
@@ -558,8 +571,13 @@ export class ZymbolFrame extends Zyact<ZymbolFrameSchema, FrameRenderProps> {
     return [this.baseZocket];
   }
 
-  takeSelectedTransformation = (keyPressContext?: BasicContext): Cursor => {
-    const trans = this.transformations[this.transformIndex];
+  runSelectedAction = (keyPressContext?: BasicContext): Cursor | void => {};
+
+  enactTransformation = (
+    transformation: ZymbolTreeTransformation,
+    keyPressContext?: BasicContext
+  ): Cursor => {
+    const trans = transformation;
 
     const t = trans.getCurrentTransformation();
 
@@ -584,38 +602,30 @@ export class ZymbolFrame extends Zyact<ZymbolFrameSchema, FrameRenderProps> {
         },
       });
 
-    this.setNewTransformations([]);
+    this.setNewActions([]);
 
     return [0, ...t.cursor];
   };
 
-  setNewTransformations = (transformations: ZymbolTreeTransformation[]) => {
-    this.transformations = transformations;
+  setNewActions = (actions: FrameAction[]) => {
+    this.actions = actions;
 
-    this.rankTransactions();
-    const topTrans = this.transformations[0];
+    this.rankActions();
+    const topAction = this.actions[0];
 
-    this.transformations.forEach((t) => {
-      t.setRootParentFrame(this);
+    this.actions.forEach((a) => {
+      a.setRootParentFrame(this);
     });
 
-    if (topTrans && topTrans.priority.rank === ZymbolTransformRank.Suggest) {
-      this.transformIndex = 0;
+    if (topAction && topAction.priority.rank === FrameActionRank.Suggest) {
+      this.actionIndex = 0;
     } else {
-      this.transformIndex = -1;
+      this.actionIndex = -1;
     }
   };
 
-  getTopTransformation = () => {
-    if (this.transformations.length > 0) {
-      this.rankTransactions();
-
-      return this.transformations[0];
-    }
-  };
-
-  private rankTransactions = () => {
-    this.transformations.sort((a, b) => {
+  private rankActions = () => {
+    this.actions.sort((a, b) => {
       if (a.priority.rank === b.priority.rank) {
         return a.priority.cost - b.priority.cost;
       } else {
@@ -638,6 +648,7 @@ zymbolFrameMaster.implementTrait(KeyPressTrait, {
       return successfulMoveResponse(cursor);
     }
 
+    /* Copy tex to keyboard */
     if (
       keyPress.type === KeyPressComplexType.Key &&
       keyPress.key === "c" &&
@@ -673,32 +684,36 @@ zymbolFrameMaster.implementTrait(KeyPressTrait, {
       }
 
       /* Check if we have active transformations */
-      if (frame.transformations.length > 0) {
+      if (frame.actions.length > 0) {
         if (
           keyPress.type === KeyPressBasicType.ArrowDown ||
           keyPress.type === KeyPressBasicType.ArrowUp
         ) {
-          frame.transformIndex =
-            ((frame.transformIndex +
+          frame.actionIndex =
+            ((frame.actionIndex +
               1 +
               (keyPress.type === KeyPressBasicType.ArrowDown ? 1 : -1) +
-              frame.transformations.length +
+              frame.actions.length +
               1) %
-              (frame.transformations.length + 1)) -
+              (frame.actions.length + 1)) -
             1;
 
           return successfulMoveResponse(cursor);
         } else if (keyPressEqual(DEFAULT_SELECTOR, keyPress)) {
-          frame.setNewTransformations([]);
+          frame.setNewActions([]);
           return successfulMoveResponse(cursor);
-        } else if (frame.transformIndex > -1) {
-          const trans = frame.transformations[frame.transformIndex];
+        } else if (frame.actionIndex > -1) {
+          const trans = frame.actions[frame.actionIndex];
 
           if (trans) {
             if (trans.handleKeyPress(keyPress)) {
               return successfulMoveResponse(cursor);
             } else if (trans.checkKeypressConfirms(keyPress)) {
-              cursor = frame.takeSelectedTransformation(keyPressContext);
+              const newCursor = frame.runSelectedAction(keyPressContext);
+
+              if (newCursor) {
+                cursor = newCursor;
+              }
 
               const { nextCursorIndex: n, childRelativeCursor: c } =
                 extractCursorInfo(cursor);
@@ -711,26 +726,24 @@ zymbolFrameMaster.implementTrait(KeyPressTrait, {
         }
 
         if (keyPress.type === KeyPressBasicType.Enter) {
-          frame.setNewTransformations([]);
+          frame.setNewActions([]);
 
           setEnterUsedToConfirmTransform(keyPressContext, true);
 
-          unwrapTraitResponse(
-            await zym.children[nextCursorIndex].callTraitMethod(
-              KeyPressTrait.handleKeyPress,
-              {
-                cursor: childRelativeCursor,
-                keyPressContext,
-                keyPress,
-              }
-            )
+          await zym.children[nextCursorIndex].call(
+            KeyPressTrait.handleKeyPress,
+            {
+              cursor: childRelativeCursor,
+              keyPressContext,
+              keyPress,
+            }
           );
 
           return successfulMoveResponse(cursor);
         }
       }
 
-      frame.setNewTransformations([]);
+      frame.setNewActions([]);
 
       /* Otherwise, we handle everything as normal */
 
@@ -751,26 +764,33 @@ zymbolFrameMaster.implementTrait(KeyPressTrait, {
           labelCursor = [0, ...childMove.newRelativeCursor];
         }
 
-        /* Handle potential transformation */
-        /* 1. Ask Hermes for the Transformer */
-        const transformer = await frame.callZ(
-          ZymbolFrameMethod.getTransformer,
-          {
-            cursor: frame.getFullCursorPointer(),
+        frame.setNewActions(
+          await frame.callZ(ZymbolFrameMethod.getFrameActions, {
+            rootZymbol: frame.baseZocket,
             keyPress,
+            zymbolCursor: childMove.newRelativeCursor,
+            cursor: frame.getFullCursorPointer(),
             typeFilters: frame.getTypeFilters(labelCursor),
-          }
+          })
         );
 
-        /* 2. Apply the transformer to get a list of potential transformations */
-        const transformations = await transformer(
-          frame.baseZocket,
-          childMove.newRelativeCursor,
-          keyPress
-        );
+        // /* Handle potential transformation */
+        // /* 1. Ask Hermes for the Transformer */
+        // const transformer = await frame.callZ(
+        //   ZymbolFrameMethod.getTransformer,
+        //   {
+        //     cursor: frame.getFullCursorPointer(),
+        //     keyPress,
+        //     typeFilters: frame.getTypeFilters(labelCursor),
+        //   }
+        // );
 
-        /* 3. Set setting that indicates that we have a transformation for the next render event */
-        frame.setNewTransformations(transformations);
+        // /* 2. Apply the transformer to get a list of potential transformations */
+        // const transformations = await transformer(
+        //   frame.baseZocket,
+        //   childMove.newRelativeCursor,
+        //   keyPress
+        // );
       }
 
       return chainMoveResponse(childMove, (nextCursor) => {
@@ -812,7 +832,7 @@ zymbolFrameMaster.implementTrait(CursorCommandTrait, {
 zymbolFrameMaster.implementTrait(UndoRedoTrait, {
   prepUndoRedo: async (zym) => {
     const frame = zym as ZymbolFrame;
-    frame.setNewTransformations([]);
+    frame.setNewActions([]);
 
     zym.children.forEach((c) =>
       c.callTraitMethod(UndoRedoTrait.prepUndoRedo, undefined)

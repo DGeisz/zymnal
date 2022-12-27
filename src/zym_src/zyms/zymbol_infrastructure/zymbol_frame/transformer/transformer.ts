@@ -4,9 +4,11 @@ import { ZymKeyPress } from "../../../../../zym_lib/zy_god/event_handler/key_pre
 import { Zymbol } from "../../../zymbol/zymbol";
 import { Zocket } from "../../../zymbol/zymbols/zocket/zocket";
 import { ZymbolFrame } from "../zymbol_frame";
+import { FrameAction, FrameActionPriority } from "../zymbol_frame_schema";
+import { FC } from "react";
 
 export enum ZymbolTransformRank {
-  /* Means that the transform is immediately used to transform the input, 
+  /* Means that the action is immediately enacted,
   and the user has to change out in order to access something else */
   Suggest = 0,
   /* The transformation is included, but the user has to select the
@@ -37,6 +39,36 @@ export abstract class ZymbolTreeTransformation {
   handleKeyPress = (_keyPress: ZymKeyPress): boolean => false;
 
   abstract setRootParentFrame(parent: ZymbolFrame): void;
+}
+
+export class ZymbolTreeTransformationAction implements FrameAction {
+  treeTransformation: ZymbolTreeTransformation;
+  priority: FrameActionPriority;
+
+  constructor(treeTransformation: ZymbolTreeTransformation) {
+    this.treeTransformation = treeTransformation;
+    this.priority =
+      treeTransformation.priority as unknown as FrameActionPriority;
+  }
+  getFramePreview(): { newTreeRoot: Zocket; cursor: Cursor } | undefined {
+    return this.treeTransformation.getCurrentTransformation();
+  }
+
+  getActionPreviewComponent(): FC<{}> {
+    /* Implement this! */
+
+    throw new Error("Method not implemented.");
+  }
+
+  setRootParentFrame(zymbolFrame: ZymbolFrame): void {
+    this.treeTransformation.setRootParentFrame(zymbolFrame);
+  }
+
+  checkKeypressConfirms = (keyPress: ZymKeyPress) =>
+    this.treeTransformation.checkKeypressConfirms(keyPress);
+
+  handleKeyPress = (keyPress: ZymKeyPress) =>
+    this.treeTransformation.handleKeyPress(keyPress);
 }
 
 export type KeyPressValidator = (keyPress: ZymKeyPress) => boolean;

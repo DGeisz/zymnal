@@ -39,7 +39,6 @@ import { ZYMBOL_FRAME_MASTER_ID } from "../../../zymbol_infrastructure/zymbol_fr
 import {
   createMathText,
   zyMath,
-  zySpan,
 } from "../../../../../global_building_blocks/tex/autoRender";
 
 class TextZymbolMaster extends ZyMaster<TextZymbolSchema> {
@@ -272,12 +271,12 @@ export class TextZymbol extends Zymbol<TextZymbolSchema> {
     return false;
   };
 
-  getInline = () =>
-    this.parentFrame.inlineTex &&
+  getInline = (opts?: ZymbolRenderArgs) =>
+    (this.parentFrame.inlineTex || !!opts?.inlineTex) &&
     this.parent?.parent?.getMasterId() === ZYMBOL_FRAME_MASTER_ID;
 
   renderTex = (opts: ZymbolRenderArgs) => {
-    const inline = this.getInline();
+    const inline = this.getInline(opts);
 
     const { parentOfCursorElement, nextCursorIndex } = extractCursorInfo(
       opts.cursor

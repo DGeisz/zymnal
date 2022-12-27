@@ -17,6 +17,7 @@ import clsx from "clsx";
 import { ZyFile } from "../../zentinels/file_server_client/file_server_client_schema";
 import { ZymbolModule } from "../zymbol_infrastructure/zymbol_module/zymbol_module";
 import { ZymbolModuleSchema } from "../zymbol_infrastructure/zymbol_module/zymbol_module_schema";
+import { enable } from "darkreader";
 
 /* ==== MASTER ====  */
 class ZageMaster extends ZyMaster<ZageSchema> {
@@ -113,6 +114,14 @@ export class Zage extends Zyact<ZageSchema> {
 
   component = () => {
     const Module = useZymponent(this.module);
+
+    useEffect(() => {
+      enable({
+        brightness: 100,
+        contrast: 90,
+        sepia: 10,
+      });
+    }, []);
 
     return (
       <div className="w-full flex justify-center">

@@ -32,8 +32,6 @@ const katexOpts: any = {
   throwOnError: true,
 };
 
-const invalid = katex.renderToString(INVALID_TEX, katexOpts);
-
 /**
  * Here, we include strings that simply include tex as tex just for clarity
  */

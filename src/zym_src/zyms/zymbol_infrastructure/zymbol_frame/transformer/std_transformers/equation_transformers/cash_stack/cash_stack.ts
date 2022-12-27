@@ -41,50 +41,48 @@ class CashStack extends Zentinel<{}> {
       typeFilters: [STD_TRANSFORMER_TYPE_FILTERS.EQUATION],
       transform(root, cursor) {
         cursor = makeHelperCursor(cursor, root);
-
         const cursorCopy = [...cursor];
 
         const textTransform = getTransformTextZymbolAndParent(root, cursor);
+        if (!textTransform.isTextZymbol) return [];
 
-        if (textTransform.isTextZymbol) {
-          const { text, parent } = textTransform;
+        const { text, parent } = textTransform;
 
-          const word = text.getText().trim();
+        const word = text.getText().trim();
 
-          if (word.startsWith(CASH_DELIM)) {
-            let op = word.slice(1);
+        if (word.startsWith(CASH_DELIM)) {
+          let op = word.slice(1);
 
-            if (op in CashSpecialCommands) {
-              op = CashSpecialCommands[op];
-            }
+          if (op in CashSpecialCommands) {
+            op = CashSpecialCommands[op];
+          }
 
-            if (checkStackOperator(op)) {
-              cursorCopy.pop();
+          if (checkStackOperator(op)) {
+            cursorCopy.pop();
 
-              const stackPointer = cursorCopy.pop()!;
-              const parentZocket = text.parent as Zocket;
+            const stackPointer = cursorCopy.pop()!;
+            const parentZocket = text.parent as Zocket;
 
-              parentZocket.children.splice(
-                stackPointer,
-                1,
-                new StackZymbol(op, root.parentFrame, 0, parent)
-              );
+            parentZocket.children.splice(
+              stackPointer,
+              1,
+              new StackZymbol(op, root.parentFrame, 0, parent)
+            );
 
-              cursorCopy.push(...[stackPointer, StackPosition.TOP, 0]);
+            cursorCopy.push(...[stackPointer, StackPosition.TOP, 0]);
 
-              root.recursivelyReIndexChildren();
+            root.recursivelyReIndexChildren();
 
-              return [
-                new BasicZymbolTreeTransformation({
-                  newTreeRoot: root as Zocket,
-                  cursor: recoverAllowedCursor(cursorCopy, root),
-                  priority: {
-                    rank: ZymbolTransformRank.Suggest,
-                    cost: -500,
-                  },
-                }),
-              ];
-            }
+            return [
+              new BasicZymbolTreeTransformation({
+                newTreeRoot: root as Zocket,
+                cursor: recoverAllowedCursor(cursorCopy, root),
+                priority: {
+                  rank: ZymbolTransformRank.Suggest,
+                  cost: -500,
+                },
+              }),
+            ];
           }
         }
 

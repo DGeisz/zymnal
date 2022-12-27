@@ -82,9 +82,9 @@ import {
   ZymbolModuleMethod,
 } from "../../../zymbol_infrastructure/zymbol_module/zymbol_module_schema";
 import { last } from "../../../../../global_utils/array_utils";
-import { HighlightSpanKind, IndexKind } from "typescript";
+import { USING_VSCODE } from "../../../../../global_utils/vs_code_utils";
 
-const GROUP_COLOR = palette.beneathTheWaves;
+const GROUP_COLOR = USING_VSCODE ? palette.beneathTheWaves : palette.oceanFroth;
 
 /* === Helper Types === */
 

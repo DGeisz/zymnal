@@ -111,3 +111,7 @@ span:focus,
 .display-math {
   font-size: 17px;
 }
+
+[contenteditable]:focus {
+  outline: 0px solid transparent !important;
+}
