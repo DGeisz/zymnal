@@ -15,17 +15,6 @@ class PersistenceZentinel extends Zentinel<PersistenceZentinelSchema> {
   constructor() {
     super();
 
-    let vscode: any;
-
-    try {
-      // @ts-ignore
-      vscode = acquireVsCodeApi();
-    } catch (e) {
-      console.error(
-        "Not running as a vscode extension! This sandbox will not have persistence!"
-      );
-    }
-
     this.setMethodImplementation({
       addDocChangeSubscriber: async (sub) => {
         const newId = Math.random();
@@ -46,13 +35,6 @@ class PersistenceZentinel extends Zentinel<PersistenceZentinelSchema> {
       },
       persistDoc: async (doc) => {
         /* Figure out how to actually grab the doc */
-
-        if (vscode) {
-          vscode.postMessage({
-            type: "save",
-            document: doc,
-          });
-        }
       },
     });
 

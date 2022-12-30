@@ -33,6 +33,8 @@ import { isSuperSub } from "../../../../../../zymbol/zymbols/super_sub/super_sub
 import { STD_TRANSFORMER_TYPE_FILTERS } from "../../std_transformer_type_filters";
 import { isParenthesisZymbol } from "../../../../../../zymbol/zymbols/parenthesis_zymbol/parenthesis_zymbol_schema";
 import { createBasicModifier } from "./dot_mod_utils";
+import { Zym } from "../../../../../../../../zym_lib/zym/zym";
+import { preProcessFile } from "typescript";
 
 const DOT = ".";
 
@@ -154,12 +156,15 @@ class DotModifiers extends Zentinel<DotModifiersMethodSchema> {
                   parent.children.splice(zymbolIndex, 1);
 
                   let changed = false;
+                  let previewZymbol: Zymbol;
+
                   if (
                     isSymbolZymbol(prevZymbol!) ||
                     isZocket(prevZymbol!) ||
                     isParenthesisZymbol(prevZymbol!)
                   ) {
                     prevZymbol.toggleModifier(mod);
+                    previewZymbol = prevZymbol;
                     changed = true;
                   } else if (isSuperSub(prevZymbol!) && zymbolIndex > 1) {
                     const prevPrevZymbol = parent.children[
@@ -172,6 +177,7 @@ class DotModifiers extends Zentinel<DotModifiersMethodSchema> {
                       isParenthesisZymbol(prevPrevZymbol!)
                     ) {
                       prevPrevZymbol.toggleModifier(mod);
+                      previewZymbol = prevPrevZymbol;
                       changed = true;
                     }
                   }
@@ -184,6 +190,7 @@ class DotModifiers extends Zentinel<DotModifiersMethodSchema> {
                       new BasicZymbolTreeTransformation({
                         newTreeRoot: root as Zocket,
                         cursor: recoverAllowedCursor(cursorCopy, root),
+                        previewZymbol: previewZymbol!,
                         priority: {
                           rank,
                           cost: 100,
@@ -227,12 +234,15 @@ class DotModifiers extends Zentinel<DotModifiersMethodSchema> {
                     parent.children.splice(zymbolIndex, 1);
 
                     let changed = false;
+                    let previewZymbol: Zymbol;
+
                     if (
                       isSymbolZymbol(prevZymbol!) ||
                       isZocket(prevZymbol!) ||
                       isParenthesisZymbol(prevZymbol!)
                     ) {
                       prevZymbol.toggleModifier(mod);
+                      previewZymbol = prevZymbol;
                       changed = true;
                     } else if (isSuperSub(prevZymbol!) && zymbolIndex > 1) {
                       const prevPrevZymbol = parent.children[
@@ -245,6 +255,7 @@ class DotModifiers extends Zentinel<DotModifiersMethodSchema> {
                         isParenthesisZymbol(prevPrevZymbol)
                       ) {
                         prevPrevZymbol.toggleModifier(mod);
+                        previewZymbol = prevPrevZymbol;
                         changed = true;
                       }
                     }
@@ -257,6 +268,7 @@ class DotModifiers extends Zentinel<DotModifiersMethodSchema> {
                         new BasicZymbolTreeTransformation({
                           newTreeRoot: rootCopy as Zocket,
                           cursor: recoverAllowedCursor(cursor, rootCopy),
+                          previewZymbol: previewZymbol!,
                           priority: {
                             rank: ZymbolTransformRank.Suggest,
                             cost,
@@ -325,6 +337,7 @@ class DotModifiers extends Zentinel<DotModifiersMethodSchema> {
                       new BasicZymbolTreeTransformation({
                         newTreeRoot: rootCopy as Zocket,
                         cursor: recoverAllowedCursor(cursor, rootCopy),
+                        previewZymbol: newPrevZymbol.val,
                         priority: {
                           rank: ZymbolTransformRank.Suggest,
                           cost,
@@ -368,6 +381,7 @@ class DotModifiers extends Zentinel<DotModifiersMethodSchema> {
                   new BasicZymbolTreeTransformation({
                     newTreeRoot: root as Zocket,
                     cursor: recoverAllowedCursor(cursorCopy, root),
+                    previewZymbol: prevZymbol,
                     priority: {
                       rank: ZymbolTransformRank.Suggest,
                       cost: 100,

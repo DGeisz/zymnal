@@ -29,6 +29,7 @@ import {
   KeyPressComplexType,
   KeyPressModifier,
   KeyPressTrait,
+  ZymKeyPress,
 } from "../../../../zym_lib/zy_god/event_handler/key_press";
 import { ZyGodMethod } from "../../../../zym_lib/zy_god/zy_god_schema";
 import { ZyPartialPersist } from "../../../../zym_lib/zy_schema/zy_schema";
@@ -436,7 +437,8 @@ export class ZymbolModule extends Zyact<ZymbolModuleSchema> {
     super(cursorIndex, parent);
 
     /* Start out with a single standard input as the first line */
-    this.children = [new InlineInput(0, this)];
+    // this.children = [new InlineInput(0, this)];
+    this.children = [new DisplayEquation(0, this)];
 
     this.setPersistenceSchemaSymbols({
       children: "c",
@@ -495,6 +497,7 @@ export class ZymbolModule extends Zyact<ZymbolModuleSchema> {
 
   moveCursorUp = async (
     cursor: Cursor,
+    keyPress: ZymKeyPress,
     ctx: BasicContext
   ): Promise<CursorMoveResponse> => {
     const { nextCursorIndex, childRelativeCursor } = extractCursorInfo(cursor);
@@ -505,7 +508,7 @@ export class ZymbolModule extends Zyact<ZymbolModuleSchema> {
       const childMove = await child.call(KeyPressTrait.handleKeyPress, {
         cursor: childRelativeCursor,
         keyPressContext: ctx,
-        keyPress: basicKeyPress(KeyPressBasicType.ArrowUp),
+        keyPress,
       });
 
       if (childMove.success) {
@@ -532,6 +535,7 @@ export class ZymbolModule extends Zyact<ZymbolModuleSchema> {
 
   moveCursorDown = async (
     cursor: Cursor,
+    keyPress: ZymKeyPress,
     ctx: BasicContext
   ): Promise<CursorMoveResponse> => {
     const { nextCursorIndex, childRelativeCursor } = extractCursorInfo(cursor);
@@ -543,7 +547,7 @@ export class ZymbolModule extends Zyact<ZymbolModuleSchema> {
         await child.callTraitMethod(KeyPressTrait.handleKeyPress, {
           cursor: childRelativeCursor,
           keyPressContext: ctx,
-          keyPress: basicKeyPress(KeyPressBasicType.ArrowDown),
+          keyPress,
         })
       );
 
@@ -652,10 +656,10 @@ zymbolModuleMaster.implementTrait(KeyPressTrait, {
           break;
         }
         case KeyPressBasicType.ArrowDown: {
-          return module.moveCursorDown(cursor, keyPressContext);
+          return module.moveCursorDown(cursor, keyPress, keyPressContext);
         }
         case KeyPressBasicType.ArrowUp: {
-          return module.moveCursorUp(cursor, keyPressContext);
+          return module.moveCursorUp(cursor, keyPress, keyPressContext);
         }
         case KeyPressBasicType.ArrowRight: {
           childMove = await deferToChild();

@@ -115,6 +115,8 @@ export abstract class Zymbol<
     ctx.set(KEYPRESS_ZYMBOL, keyPress);
     this.reIndexChildren();
 
+    console.log("z ke", keyPress);
+
     let res: CursorMoveResponse;
     switch (keyPress.type) {
       case KeyPressBasicType.ArrowLeft:

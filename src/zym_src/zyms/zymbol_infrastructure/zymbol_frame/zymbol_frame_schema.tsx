@@ -3,7 +3,12 @@ import {
   createZentinelMethodList,
   CreateZentinelMethodSchema,
 } from "../../../../zym_lib/hermes/hermes";
-import { Cursor } from "../../../../zym_lib/zy_god/cursor/cursor";
+import {
+  Cursor,
+  CursorMoveResponse,
+  FAILED_CURSOR_MOVE_RESPONSE,
+  NO_CURSOR_MOVE_RESPONSE,
+} from "../../../../zym_lib/zy_god/cursor/cursor";
 import { ZymKeyPress } from "../../../../zym_lib/zy_god/event_handler/key_press";
 import {
   CreateZySchema,
@@ -21,6 +26,7 @@ import {
   ZymbolTransformer,
 } from "./transformer/transformer";
 import { ZymbolFrame } from "./zymbol_frame";
+import { BasicContext } from "../../../../zym_lib/utils/basic_context";
 
 export const ZYMBOL_FRAME_MASTER_ID = "zymbol_frame";
 
@@ -31,19 +37,30 @@ export interface ActionFactory {
 
 export abstract class FrameAction {
   abstract priority: FrameActionPriority;
+  parentFrame?: ZymbolFrame;
 
   /* If the action transformers the zymbol tree, 
   this is used to preview the result of the transformation */
-  abstract getFramePreview():
-    | undefined
-    | {
-        newTreeRoot: Zocket;
-        cursor: Cursor;
-      };
+  getFramePreview(): void | {
+    newTreeRoot: Zocket;
+    cursor: Cursor;
+  } {}
 
   abstract getActionPreviewComponent(): React.FC;
 
-  abstract setRootParentFrame(zymbolFrame: ZymbolFrame): void;
+  setRootParentFrame(_zymbolFrame: ZymbolFrame): void {}
+
+  getParentFrame(): ZymbolFrame {
+    if (!this.parentFrame) throw new Error("Parent frame not set!");
+
+    return this.parentFrame;
+  }
+
+  abstract runAction(keyPressContext?: BasicContext): CursorMoveResponse;
+
+  setParentFrame = (p: ZymbolFrame) => {
+    this.parentFrame = p;
+  };
 
   /* We use this to see if the keypress is allowed to
     be used to confirm the transformation (see in_place_symbols for 
@@ -52,6 +69,27 @@ export abstract class FrameAction {
 
   /* Indicates whether the transformation did something with the keypress */
   handleKeyPress = (_keyPress: ZymKeyPress): boolean => false;
+}
+
+export class DefaultNoOpAction extends FrameAction {
+  constructor(parentFrame: ZymbolFrame) {
+    super();
+    this.parentFrame = parentFrame;
+  }
+
+  runAction(_keyPressContext?: BasicContext | undefined): CursorMoveResponse {
+    this.getParentFrame().setNewActions([]);
+
+    return NO_CURSOR_MOVE_RESPONSE;
+  }
+  /* This doesn't actually matter */
+  priority: FrameActionPriority = { cost: 0, rank: FrameActionRank.Include };
+
+  getActionPreviewComponent(): React.FC<{}> {
+    return () => {
+      return <div className="font-semibold text-gray-400">Default</div>;
+    };
+  }
 }
 
 export enum FrameActionRank {
@@ -78,6 +116,7 @@ export type ZymbolFrameMethodSchema = CreateZentinelMethodSchema<{
     args: {
       rootZymbol: Zymbol;
       cursor: Cursor;
+      parentFrame: ZymbolFrame;
       zymbolCursor: Cursor;
       keyPress: ZymKeyPress;
       typeFilters: TransformerTypeFilter[];

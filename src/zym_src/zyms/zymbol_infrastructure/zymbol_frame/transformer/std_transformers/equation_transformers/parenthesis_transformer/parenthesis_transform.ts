@@ -20,6 +20,7 @@ import { ZymbolFrame } from "../../../../zymbol_frame";
 import { ZymbolFrameMethod } from "../../../../zymbol_frame_schema";
 import {
   BasicZymbolTreeTransformation,
+  PREVIEW_TEX_RENDER_OPTS,
   ZymbolTransformRank,
   ZymbolTreeTransformation,
   ZymbolTreeTransformationPriority,
@@ -74,6 +75,7 @@ class CustomParenthesisTransformation extends ZymbolTreeTransformation {
 
   memo?: { newTreeRoot: Zocket; cursor: Cursor };
   parenthesisPair: ParenthesisPair;
+  parenthesis?: Zymbol;
 
   constructor(
     baseRoot: Zocket,
@@ -130,6 +132,12 @@ class CustomParenthesisTransformation extends ZymbolTreeTransformation {
     cost: 150,
   };
 
+  getTexPreview(): string {
+    if (!this.parenthesis) throw new Error("Haven't set parenthesis!");
+
+    return this.parenthesis.renderTex(PREVIEW_TEX_RENDER_OPTS);
+  }
+
   getCurrentTransformation(): { newTreeRoot: Zocket; cursor: Cursor } {
     if (!this.changedIndex && this.memo) return this.memo;
 
@@ -182,6 +190,7 @@ class CustomParenthesisTransformation extends ZymbolTreeTransformation {
         0,
         parent
       );
+      this.parenthesis = parenthesis;
 
       parenthesis.baseZocket.children = newChildren;
       parenthesis.baseZocket.reConnectParentChildren();
@@ -408,6 +417,7 @@ class Parenthesis extends Zentinel<{}> {
                               extendParentCursor(newPointer, cursorCopy),
                               root
                             ),
+                            previewZymbol: parenthesis,
                             priority: {
                               rank: ZymbolTransformRank.Suggest,
                               cost: 100,

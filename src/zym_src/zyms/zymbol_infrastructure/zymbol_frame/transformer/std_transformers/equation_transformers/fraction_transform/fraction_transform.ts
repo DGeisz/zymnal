@@ -18,6 +18,7 @@ import { ZymbolFrame } from "../../../../zymbol_frame";
 import { ZymbolFrameMethod } from "../../../../zymbol_frame_schema";
 import {
   BasicZymbolTreeTransformation,
+  PREVIEW_TEX_RENDER_OPTS,
   ZymbolTransformRank,
   ZymbolTreeTransformation,
   ZymbolTreeTransformationPriority,
@@ -52,6 +53,8 @@ class CustomFractionTransformation extends ZymbolTreeTransformation {
   initialCursor: Cursor;
 
   changedIndex = true;
+
+  fraction?: StackZymbol;
 
   memo?: { newTreeRoot: Zocket; cursor: Cursor };
 
@@ -88,6 +91,12 @@ class CustomFractionTransformation extends ZymbolTreeTransformation {
     return false;
   };
 
+  getTexPreview(): string {
+    if (!this.fraction) throw Error("Fraction not set yet!");
+
+    return this.fraction.renderTex(PREVIEW_TEX_RENDER_OPTS);
+  }
+
   /* This is sketchy (we should technically await on this to ensure we have enough time for copies...) */
   private makeCopy = async () => {
     this.baseRoot = this.rootCopy;
@@ -122,6 +131,7 @@ class CustomFractionTransformation extends ZymbolTreeTransformation {
       const { parent } = transformText;
 
       const fraction = new StackZymbol(FRAC_FUN, root.parentFrame, 0, parent);
+      this.fraction = fraction;
 
       parent.children.splice(zymbolIndex, 1);
 
@@ -213,6 +223,7 @@ class FractionTransformer extends Zentinel<{}> {
                 new BasicZymbolTreeTransformation({
                   newTreeRoot: root as Zocket,
                   cursor: recoverAllowedCursor(cursorCopy, root),
+                  previewZymbol: fraction,
                   priority: {
                     rank: ZymbolTransformRank.Suggest,
                     cost: 100,

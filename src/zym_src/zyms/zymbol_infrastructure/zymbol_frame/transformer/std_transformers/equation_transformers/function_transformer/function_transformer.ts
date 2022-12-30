@@ -114,6 +114,7 @@ class FunctionTransformer extends Zentinel<FunctionTransformerMethodSchema> {
               new BasicZymbolTreeTransformation({
                 newTreeRoot: root as Zocket,
                 cursor: recoverAllowedCursor(cursorCopy, root),
+                previewZymbol: fnZym,
                 priority: {
                   rank: rank,
                   cost: 100,
@@ -185,6 +186,7 @@ class FunctionTransformer extends Zentinel<FunctionTransformerMethodSchema> {
                 new BasicZymbolTreeTransformation({
                   newTreeRoot: rootCopy as Zocket,
                   cursor: recoverAllowedCursor(cursorCopy, rootCopy),
+                  previewZymbol: fnZym,
                   priority: {
                     rank: ZymbolTransformRank.Suggest,
                     cost: 100,

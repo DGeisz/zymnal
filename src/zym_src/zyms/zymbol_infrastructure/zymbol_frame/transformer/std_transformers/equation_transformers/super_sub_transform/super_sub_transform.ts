@@ -88,6 +88,7 @@ class SuperSubTransform extends Zentinel<{}> {
                 new BasicZymbolTreeTransformation({
                   newTreeRoot: root as Zocket,
                   cursor: recoverAllowedCursor(cursorCopy, root),
+                  previewZymbol: superSub,
                   priority: {
                     rank: ZymbolTransformRank.Suggest,
                     cost: 100,
@@ -124,6 +125,7 @@ class SuperSubTransform extends Zentinel<{}> {
                 new BasicZymbolTreeTransformation({
                   newTreeRoot: root as Zocket,
                   cursor: recoverAllowedCursor(cursorCopy, root),
+                  previewZymbol: superSub,
                   priority: {
                     rank: ZymbolTransformRank.Suggest,
                     cost: 100,

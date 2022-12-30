@@ -5,11 +5,13 @@ import {
   KeyPressBasicType,
   ZymKeyPress,
 } from "../../../../../../../../zym_lib/zy_god/event_handler/key_press";
+import { Zymbol } from "../../../../../../zymbol/zymbol";
 import { Zocket } from "../../../../../../zymbol/zymbols/zocket/zocket";
 import { ZymbolFrame } from "../../../../zymbol_frame";
 import { ZymbolFrameMethod } from "../../../../zymbol_frame_schema";
 import {
   BasicZymbolTreeTransformation,
+  PREVIEW_TEX_RENDER_OPTS,
   ZymbolTransformRank,
   ZymbolTreeTransformation,
   ZymbolTreeTransformationPriority,
@@ -31,6 +33,7 @@ class CustomGroupTransformation extends ZymbolTreeTransformation {
   startIndex: number;
   maxIndex: number;
   initialCursor: Cursor;
+  group?: Zymbol;
 
   changedIndex = true;
 
@@ -68,6 +71,12 @@ class CustomGroupTransformation extends ZymbolTreeTransformation {
 
     return false;
   };
+
+  getTexPreview(): string {
+    if (!this.group) throw new Error("Group not set!");
+
+    return this.group.renderTex(PREVIEW_TEX_RENDER_OPTS);
+  }
 
   /* This is sketchy (we should technically await on this to ensure we have enough time for copies...) */
   private makeCopy = async () => {
@@ -112,6 +121,7 @@ class CustomGroupTransformation extends ZymbolTreeTransformation {
       );
 
       const groupZocket = new Zocket(parent.parentFrame, 0, parent);
+      this.group = groupZocket;
 
       groupZocket.children = newChildren;
       groupZocket.reConnectParentChildren();
@@ -184,6 +194,7 @@ class GroupTransformer extends Zentinel<{}> {
                 new BasicZymbolTreeTransformation({
                   newTreeRoot: root as Zocket,
                   cursor: recoverAllowedCursor(cursorCopy, root),
+                  previewZymbol: group,
                   priority: {
                     rank: ZymbolTransformRank.Suggest,
                     cost: 100,

@@ -1,11 +1,18 @@
 import { Zym } from "../../../../../zym_lib/zym/zym";
-import { Cursor } from "../../../../../zym_lib/zy_god/cursor/cursor";
+import {
+  Cursor,
+  CursorMoveResponse,
+  successfulMoveResponse,
+} from "../../../../../zym_lib/zy_god/cursor/cursor";
 import { ZymKeyPress } from "../../../../../zym_lib/zy_god/event_handler/key_press";
-import { Zymbol } from "../../../zymbol/zymbol";
+import { Zymbol, ZymbolRenderArgs } from "../../../zymbol/zymbol";
 import { Zocket } from "../../../zymbol/zymbols/zocket/zocket";
 import { ZymbolFrame } from "../zymbol_frame";
 import { FrameAction, FrameActionPriority } from "../zymbol_frame_schema";
 import { FC } from "react";
+import { TeX } from "../../../zymbol/zymbol_types";
+import { BasicContext } from "../../../../../zym_lib/utils/basic_context";
+import Tex from "../../../../../global_building_blocks/tex/tex";
 
 export enum ZymbolTransformRank {
   /* Means that the action is immediately enacted,
@@ -30,6 +37,8 @@ export abstract class ZymbolTreeTransformation {
     cursor: Cursor;
   };
 
+  abstract getTexPreview(): TeX;
+
   /* We use this to see if the keypress is allowed to
     be used to confirm the transformation (see in_place_symbols for 
     an example of when we don't do this)  */
@@ -41,23 +50,43 @@ export abstract class ZymbolTreeTransformation {
   abstract setRootParentFrame(parent: ZymbolFrame): void;
 }
 
-export class ZymbolTreeTransformationAction implements FrameAction {
+export class ZymbolTreeTransformationAction extends FrameAction {
   treeTransformation: ZymbolTreeTransformation;
   priority: FrameActionPriority;
 
   constructor(treeTransformation: ZymbolTreeTransformation) {
+    super();
+
     this.treeTransformation = treeTransformation;
     this.priority =
       treeTransformation.priority as unknown as FrameActionPriority;
   }
+
+  runAction(keyPressContext?: BasicContext | undefined): CursorMoveResponse {
+    if (!this.parentFrame) throw new Error("Don't have parent frame ref!");
+
+    return successfulMoveResponse(
+      this.parentFrame.enactTransformation(
+        this.treeTransformation,
+        keyPressContext
+      )
+    );
+  }
+
   getFramePreview(): { newTreeRoot: Zocket; cursor: Cursor } | undefined {
     return this.treeTransformation.getCurrentTransformation();
   }
 
   getActionPreviewComponent(): FC<{}> {
-    /* Implement this! */
+    return () => {
+      const tex = this.treeTransformation.getTexPreview();
 
-    throw new Error("Method not implemented.");
+      return (
+        <div>
+          <Tex tex={tex}></Tex>
+        </div>
+      );
+    };
   }
 
   setRootParentFrame(zymbolFrame: ZymbolFrame): void {
@@ -73,27 +102,41 @@ export class ZymbolTreeTransformationAction implements FrameAction {
 
 export type KeyPressValidator = (keyPress: ZymKeyPress) => boolean;
 
+export const PREVIEW_TEX_RENDER_OPTS: ZymbolRenderArgs = {
+  cursor: [],
+  inlineTex: false,
+  excludeHtmlIds: true,
+};
+
 export class BasicZymbolTreeTransformation extends ZymbolTreeTransformation {
   newTreeRoot;
   cursor: Cursor;
   priority: ZymbolTreeTransformationPriority;
+  previewZymbol: Zymbol;
 
   keyPressValidator?: KeyPressValidator;
 
   constructor(
     s: {
       newTreeRoot: Zocket;
+      previewZymbol: Zymbol;
       cursor: Cursor;
       priority: ZymbolTreeTransformationPriority;
     },
     keyPressValidator?: KeyPressValidator
   ) {
-    const { newTreeRoot, cursor, priority } = s;
     super();
+    const { newTreeRoot, cursor, priority, previewZymbol } = s;
+
+    this.previewZymbol = previewZymbol;
     this.newTreeRoot = newTreeRoot;
     this.cursor = cursor;
     this.priority = priority;
     this.keyPressValidator = keyPressValidator;
+  }
+
+  getTexPreview(): string {
+    return this.previewZymbol.renderTex(PREVIEW_TEX_RENDER_OPTS);
   }
 
   getCurrentTransformation(): { newTreeRoot: Zocket; cursor: Cursor } {

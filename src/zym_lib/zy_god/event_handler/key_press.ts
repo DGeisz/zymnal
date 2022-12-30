@@ -162,6 +162,8 @@ export const defaultKeyPressImplFactory = defaultTraitImplementationFactory(
       const { nextCursorIndex, childRelativeCursor } =
         extractCursorInfo(cursor);
 
+      console.log("hkp", keyPress, zym.getMasterId());
+
       if (nextCursorIndex >= 0) {
         const child: Zym<any, any> = zym.children[nextCursorIndex];
 

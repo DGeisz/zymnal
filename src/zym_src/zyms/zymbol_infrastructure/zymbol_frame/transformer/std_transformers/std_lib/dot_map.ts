@@ -16,5 +16,6 @@ export const StdDotModMap: DotModifierMap = {
     scr: "mathscr",
     cal: "mathcal",
     tt: "text",
+    bb: "mathbb",
   },
 };

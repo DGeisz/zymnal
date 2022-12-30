@@ -433,6 +433,7 @@ export class ZyGod extends Zentinel<ZyGodSchema> {
         this.customKeyPressHandler.beforeKeyPress(ctx, event);
       }
 
+      console.log("god", event);
       const moveResponse = await this.root.call(KeyPressTrait.handleKeyPress, {
         cursor: this.cursor,
         keyPress: event,

@@ -63,11 +63,9 @@ class CashStack extends Zentinel<{}> {
             const stackPointer = cursorCopy.pop()!;
             const parentZocket = text.parent as Zocket;
 
-            parentZocket.children.splice(
-              stackPointer,
-              1,
-              new StackZymbol(op, root.parentFrame, 0, parent)
-            );
+            const stack = new StackZymbol(op, root.parentFrame, 0, parent);
+
+            parentZocket.children.splice(stackPointer, 1, stack);
 
             cursorCopy.push(...[stackPointer, StackPosition.TOP, 0]);
 
@@ -77,6 +75,7 @@ class CashStack extends Zentinel<{}> {
               new BasicZymbolTreeTransformation({
                 newTreeRoot: root as Zocket,
                 cursor: recoverAllowedCursor(cursorCopy, root),
+                previewZymbol: stack,
                 priority: {
                   rank: ZymbolTransformRank.Suggest,
                   cost: -500,

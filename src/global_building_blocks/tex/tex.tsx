@@ -1,6 +1,5 @@
 import React, { useEffect, useRef } from "react";
 import katex from "katex";
-import { INVALID_TEX } from "../../global_utils/latex_utils";
 import { ParsedMathType, parseInlineMathText } from "./autoRender";
 import { memoCompareFactory } from "../../global_utils/object_utils";
 
@@ -57,12 +56,25 @@ interface MathStringProps {
 const MathString: React.FC<MathStringProps> = (props) => {
   const parsedMath = parseInlineMathText(props.mathText, katexOpts);
 
+  if (parsedMath.length === 0) {
+    return (
+      <span
+        className="zytex-wrapper caret text-transparent"
+        contentEditable
+        suppressContentEditableWarning
+      >
+        Fuck you
+      </span>
+    );
+  }
+
   return (
     <span
       className="zytex-wrapper caret"
       contentEditable
       suppressContentEditableWarning
     >
+      {/* <div>{JSON.stringify(parsedMath)}</div> */}
       {parsedMath.map((i, z) => {
         switch (i.type) {
           case ParsedMathType.Math: {
@@ -113,6 +125,22 @@ const MathTexInner: React.FC<MathTexProps> = (props) => {
   }, [props.tex]);
 
   const htmlTex = katex.renderToString(props.tex, finalOpts);
+
+  if (DEV) {
+    return (
+      <div>
+        <span
+          ref={cRef}
+          contentEditable={false}
+          className={props.className}
+          dangerouslySetInnerHTML={{
+            __html: htmlTex,
+          }}
+        />
+        <div>{props.tex}</div>
+      </div>
+    );
+  }
 
   return (
     <span

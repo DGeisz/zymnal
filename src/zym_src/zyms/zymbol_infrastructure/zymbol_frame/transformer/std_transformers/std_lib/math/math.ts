@@ -42,6 +42,7 @@ const logicDirectMap: DirectMap = {
   rar: "rArr",
   ex: "exists",
   fa: "forall",
+  "|": "rvert",
 };
 
 /* +++ Sets! +++ */

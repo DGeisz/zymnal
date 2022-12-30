@@ -178,16 +178,14 @@ class InPlaceSymbols extends Zentinel<InPlaceSymbolsMethodSchema> {
             ) {
               const { parent, zymbolIndex } = tt1;
 
-              parent.children.splice(
+              const sym = new SymbolZymbol(
+                LATEX_SPACE,
+                parent.parentFrame,
                 zymbolIndex,
-                1,
-                new SymbolZymbol(
-                  LATEX_SPACE,
-                  parent.parentFrame,
-                  zymbolIndex,
-                  parent
-                )
+                parent
               );
+
+              parent.children.splice(zymbolIndex, 1, sym);
 
               parent.recursivelyReIndexChildren();
 
@@ -197,6 +195,7 @@ class InPlaceSymbols extends Zentinel<InPlaceSymbolsMethodSchema> {
                 new BasicZymbolTreeTransformation({
                   newTreeRoot: rootCopy as Zocket,
                   cursor: recoverAllowedCursor(cursorCopy, rootCopy),
+                  previewZymbol: sym,
                   priority: {
                     rank: ZymbolTransformRank.Suggest,
                     cost: 100,
@@ -268,6 +267,7 @@ class InPlaceSymbols extends Zentinel<InPlaceSymbolsMethodSchema> {
                         extendParentCursor(newTextPointer, cursorCopy),
                         rootCopy
                       ),
+                      previewZymbol: parentZocket,
                       priority: {
                         rank: ZymbolTransformRank.Suggest,
                         /* Super high cost so this is always suggested last */
@@ -404,6 +404,7 @@ class InPlaceSymbols extends Zentinel<InPlaceSymbolsMethodSchema> {
                         extendParentCursor(newTextPointer, cursorCopy),
                         root
                       ),
+                      previewZymbol: parentZocket,
                       priority: {
                         rank,
                         cost: 100,
@@ -493,15 +494,15 @@ class InPlaceSymbols extends Zentinel<InPlaceSymbolsMethodSchema> {
                     newTextPointer++;
                   }
 
-                  /* Now either create a symbol or a number */
-                  newZym.push(
-                    new SymbolZymbol(
-                      symbol,
-                      parentZocket.parentFrame,
-                      textPointer + 1,
-                      parentZocket
-                    )
+                  const sym = new SymbolZymbol(
+                    symbol,
+                    parentZocket.parentFrame,
+                    textPointer + 1,
+                    parentZocket
                   );
+
+                  /* Now either create a symbol or a number */
+                  newZym.push(sym);
 
                   if (after) {
                     const txt2 = new TextZymbol(
@@ -526,6 +527,7 @@ class InPlaceSymbols extends Zentinel<InPlaceSymbolsMethodSchema> {
                           extendParentCursor(newTextPointer, cursorCopy),
                           rootCopy
                         ),
+                        previewZymbol: sym,
                         priority: {
                           rank,
                           cost,

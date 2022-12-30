@@ -11,7 +11,7 @@ import {
   mathSlashMap,
   sqrtFunctionMap,
 } from "./math/math";
-import { physicsDirect, physicsSlash } from "./physics";
+import { physicsDirect, physicsFunctionMap, physicsSlash } from "./physics";
 
 class StdLibZentinel extends Zentinel<{}> {
   zyId: string = "std-lib";
@@ -33,9 +33,15 @@ class StdLibZentinel extends Zentinel<{}> {
     await this.callZentinelMethod(DotModifiersMethod.addDotMap, StdDotModMap);
 
     /* Standard Function Maps */
-    await this.callZentinelMethod(
-      FunctionTransformMethod.addFunctionTransformerMap,
-      sqrtFunctionMap
+    await Promise.all(
+      _.flatten(
+        [sqrtFunctionMap, physicsFunctionMap].map((fn) =>
+          this.callZentinelMethod(
+            FunctionTransformMethod.addFunctionTransformerMap,
+            fn
+          )
+        )
+      )
     );
 
     await addSqrtDotModifier(this);

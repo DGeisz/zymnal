@@ -50,9 +50,9 @@ class EquationExpander extends Zentinel {
           if (word === EQUATION_EXPANDER_DELIM) {
             text.setText(before);
 
-            const newZymbols: Zymbol[] = [
-              new Zocket(parent.parentFrame, 0, parent),
-            ];
+            const zocket = new Zocket(parent.parentFrame, 0, parent);
+
+            const newZymbols: Zymbol[] = [zocket];
 
             if (after) {
               const afterText = new TextZymbol(root.parentFrame, 0, parent);
@@ -71,6 +71,7 @@ class EquationExpander extends Zentinel {
               new BasicZymbolTreeTransformation({
                 newTreeRoot: root as Zocket,
                 cursor: recoverAllowedCursor(cursorCopy, root),
+                previewZymbol: zocket,
                 priority: {
                   rank: ZymbolTransformRank.Suggest,
                   cost: 100,

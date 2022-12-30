@@ -276,7 +276,6 @@ export class FunctionZymbol extends Zymbol<FunctionZymbolSchema> {
 
   renderTex = (opts: ZymbolRenderArgs) => {
     const { cursor } = opts;
-
     const { childRelativeCursor, nextCursorIndex } = extractCursorInfo(cursor);
 
     let baseTex = `\\${this.baseTex}`;
