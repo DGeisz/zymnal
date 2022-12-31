@@ -496,36 +496,16 @@ export class MatrixZymbol extends Zymbol<MatrixZymbolSchema> {
         keyPress.modifiers &&
         keyPress.modifiers.includes(KeyPressModifier.Shift)
       ) {
-        const { row: rowI, col: colI } = this.getRowCol(nextCursorIndex);
+        if (db?.type === DeleteBehaviorType.ALLOWED) {
+          const { row: rowI, col: colI } = this.getRowCol(nextCursorIndex);
 
-        if (rowI === 0 && this.rows === 1) {
-          return FAILED_CURSOR_MOVE_RESPONSE;
-        }
+          if (rowI === 0 && this.rows === 1) {
+            return FAILED_CURSOR_MOVE_RESPONSE;
+          }
 
-        const row = this.getRow(rowI);
+          const row = this.getRow(rowI);
 
-        if (row.every((z) => z.children.length === 0)) {
-          this.deleteRow(rowI);
-
-          const newCursorIndex = this.getCursorFromRowCol(
-            Math.max(rowI - 1, 0),
-            colI
-          );
-
-          return wrapChildCursorResponse(
-            this.children[newCursorIndex].takeCursorFromRight(ctx),
-            newCursorIndex
-          );
-        } else {
-          return FAILED_CURSOR_MOVE_RESPONSE;
-        }
-      } else {
-        const { row: rowI, col: colI } = this.getRowCol(nextCursorIndex);
-
-        const col = this.getCol(colI);
-
-        if (col.every((z) => z.children.length === 0)) {
-          if (this.cols === 1) {
+          if (row.every((z) => z.children.length === 0)) {
             this.deleteRow(rowI);
 
             const newCursorIndex = this.getCursorFromRowCol(
@@ -538,20 +518,33 @@ export class MatrixZymbol extends Zymbol<MatrixZymbolSchema> {
               newCursorIndex
             );
           } else {
-            this.deleteCol(colI);
-
-            const newCursorIndex = this.getCursorFromRowCol(
-              rowI,
-              Math.max(colI - 1, 0)
-            );
-
-            return wrapChildCursorResponse(
-              this.children[newCursorIndex].takeCursorFromRight(ctx),
-              newCursorIndex
-            );
+            return FAILED_CURSOR_MOVE_RESPONSE;
           }
-        } else {
-          const newCursorIndex = Math.max(0, nextCursorIndex - 1);
+        }
+      } else {
+        const { row: rowI, col: colI } = this.getRowCol(nextCursorIndex);
+
+        const col = this.getCol(colI);
+
+        if (this.cols === 1) {
+          this.deleteRow(rowI);
+
+          const newCursorIndex = this.getCursorFromRowCol(
+            Math.max(rowI - 1, 0),
+            colI
+          );
+
+          return wrapChildCursorResponse(
+            this.children[newCursorIndex].takeCursorFromRight(ctx),
+            newCursorIndex
+          );
+        } else if (col.every((z) => z.children.length === 0)) {
+          this.deleteCol(colI);
+
+          const newCursorIndex = this.getCursorFromRowCol(
+            rowI,
+            Math.max(colI - 1, 0)
+          );
 
           return wrapChildCursorResponse(
             this.children[newCursorIndex].takeCursorFromRight(ctx),
@@ -559,6 +552,18 @@ export class MatrixZymbol extends Zymbol<MatrixZymbolSchema> {
           );
         }
       }
+    }
+
+    if (
+      db?.type === DeleteBehaviorType.ALLOWED ||
+      (childRelativeCursor.length === 1 && childRelativeCursor[0] === 0)
+    ) {
+      const newCursorIndex = Math.max(0, nextCursorIndex - 1);
+
+      return wrapChildCursorResponse(
+        this.children[newCursorIndex].takeCursorFromRight(ctx),
+        newCursorIndex
+      );
     }
 
     return deflectMethodToChild(
