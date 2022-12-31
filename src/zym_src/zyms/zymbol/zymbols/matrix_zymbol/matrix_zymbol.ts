@@ -31,7 +31,12 @@ import {
   DeleteBehaviorType,
   deleteBehaviorNormal,
 } from "../../delete_behavior";
-import { Zymbol, ZymbolRenderArgs, getKeyPress } from "../../zymbol";
+import {
+  Zymbol,
+  ZymbolRenderArgs,
+  enterUsedToConfirmTransform,
+  getKeyPress,
+} from "../../zymbol";
 import { extendZymbol } from "../../zymbol_cmd";
 import { Zocket } from "../zocket/zocket";
 import {
@@ -46,6 +51,7 @@ import { deflectMethodToChild } from "../zymbol_utils";
 import { DotModifiersTrait } from "../../../zymbol_infrastructure/zymbol_frame/transformer/std_transformers/equation_transformers/dot_modifiers/dot_modifiers_schema";
 import { NONE, zySome } from "../../../../../zym_lib/utils/zy_option";
 import { ActionCommandTrait } from "../../../zymbol_infrastructure/zymbol_frame/action_commands";
+import { ZyGodMethod } from "../../../../../zym_lib/zy_god/zy_god_schema";
 
 class MatrixZymbolMaster extends ZyMaster<MatrixZymbolSchema> {
   zyId: string = MATRIX_ZYMBOL_ID;
@@ -274,7 +280,6 @@ export class MatrixZymbol extends Zymbol<MatrixZymbolSchema> {
     }
   };
 
-  // TODO: Add proper enter to move to next child behavior...
   defaultKeyPressHandler = (
     keyPress: ZymKeyPress,
     cursor: Cursor,
@@ -284,10 +289,22 @@ export class MatrixZymbol extends Zymbol<MatrixZymbolSchema> {
 
     if (
       keyPress.type === KeyPressBasicType.Enter &&
+      nextCursorIndex < this.children.length - 1 &&
       childRelativeCursor.length === 1 &&
       this.children[nextCursorIndex].children.length === childRelativeCursor[0]
     ) {
+      if (enterUsedToConfirmTransform(ctx)) {
+        this.callZ(ZyGodMethod.queueSimulatedKeyPress, {
+          type: KeyPressBasicType.Enter,
+        });
+      }
+
+      return wrapChildCursorResponse(
+        this.children[nextCursorIndex + 1].takeCursorFromLeft(ctx),
+        nextCursorIndex + 1
+      );
     }
+
     return wrapChildCursorResponse(
       this.children[nextCursorIndex].defaultKeyPressHandler(
         keyPress,

@@ -248,7 +248,7 @@ export class StackZymbol extends Zymbol<StackZymbolSchema> {
         ])
       ) {
         if (enterUsedToConfirmTransform(ctx)) {
-          this.callZentinelMethod(ZyGodMethod.queueSimulatedKeyPress, {
+          this.callZ(ZyGodMethod.queueSimulatedKeyPress, {
             type: KeyPressBasicType.Enter,
           });
         }
