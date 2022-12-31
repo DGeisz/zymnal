@@ -44,6 +44,7 @@ import {
   ZymbolTreeTransformation,
 } from "../../../transformer";
 import { STD_TRANSFORMER_TYPE_FILTERS } from "../../std_transformer_type_filters";
+import { debug } from "console";
 
 /* =============================================================================================== */
 export type SlashMap = { [key: string]: string };
@@ -169,13 +170,8 @@ class InPlaceSymbols extends Zentinel<InPlaceSymbolsMethodSchema> {
 
             const tt1 = getTransformTextZymbolAndParent(rootCopy, cursor);
 
-            /* If the keypress is a power space, we're going to steal and return with tt1 */
-            if (
-              keyPress.type === KeyPressComplexType.Key &&
-              keyPress.key === " " &&
-              keyPress.modifiers?.includes(KeyPressModifier.Shift) &&
-              tt1.isTextZymbol
-            ) {
+            /* If the keypress is a power space (double space), we're going to steal and return with tt1 */
+            if (tt1.isTextZymbol && tt1.text.getText() == "  ") {
               const { parent, zymbolIndex } = tt1;
 
               const sym = new SymbolZymbol(
