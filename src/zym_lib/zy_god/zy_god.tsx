@@ -144,7 +144,6 @@ export class ZyGod extends Zentinel<ZyGodSchema> {
     this.callZ(
       PersistenceMethod.addDocChangeSubscriber,
       (doc: PersistedPage) => {
-        console.log("got the doc", doc);
         if (!this.receivedHydration) {
           (async () => {
             if (doc) {
@@ -433,7 +432,6 @@ export class ZyGod extends Zentinel<ZyGodSchema> {
         this.customKeyPressHandler.beforeKeyPress(ctx, event);
       }
 
-      console.log("god", event);
       const moveResponse = await this.root.call(KeyPressTrait.handleKeyPress, {
         cursor: this.cursor,
         keyPress: event,

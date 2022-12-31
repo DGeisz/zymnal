@@ -79,6 +79,7 @@ import { isTextZymbol } from "../../zymbol/zymbols/text_zymbol/text_zymbol_schem
 import { STD_TRANSFORMER_TYPE_FILTERS } from "./transformer/std_transformers/std_transformer_type_filters";
 import { displayEquationTypeFilters } from "../zymbol_module/module_lines/display_equation/display_equation_schema";
 import Tex from "../../../../global_building_blocks/tex/tex";
+import { ActionCommandTrait } from "./action_commands";
 
 const VIMIUM_HINT_PERIOD = 2;
 class ZymbolFrameMaster extends ZyMaster<
@@ -284,6 +285,9 @@ export class ZymbolFrame extends Zyact<ZymbolFrameSchema, FrameRenderProps> {
 
   vimiumMode = new VimiumMode();
 
+  private useActionLock = false;
+  private actionLockEnabled = false;
+
   getTypeFilters: (cursor: Cursor) => TransformerTypeFilter[];
   usingDefaultTypeFilters = false;
   inlineTex: boolean;
@@ -321,6 +325,24 @@ export class ZymbolFrame extends Zyact<ZymbolFrameSchema, FrameRenderProps> {
       inlineTex: "i",
     });
   }
+
+  toggleUseActionLock = (useLock: boolean) => {
+    if (!this.useActionLock && useLock) {
+      this.useActionLock = true;
+      this.actionLockEnabled = true;
+    } else if (this.useActionLock && !useLock) {
+      this.useActionLock = false;
+      this.actionLockEnabled = false;
+    }
+  };
+
+  setActionLock = (lock: boolean) => {
+    if (this.useActionLock) {
+      this.actionLockEnabled = lock;
+    }
+  };
+
+  getActionsLocked = () => this.useActionLock && this.actionLockEnabled;
 
   inlineTypeFilters = (cursor: Cursor) => {
     const potentialText = this.baseZocket.children[cursor[1]];
@@ -530,6 +552,31 @@ export class ZymbolFrame extends Zyact<ZymbolFrameSchema, FrameRenderProps> {
         selectedTex = frameTex;
       }
 
+      const actionsInner = this.actions.map((action, i) => {
+        const Comp = action.getActionPreviewComponent();
+
+        return (
+          <div
+            className={clsx(
+              "p-2",
+              this.actionIndex === i && Styles.SelectedTransContainer
+            )}
+            key={`tt::${i}`}
+            onMouseMove={() => {
+              this.actionIndex = i;
+              this.render();
+            }}
+            onClick={() => {
+              this.callZentinelMethod(ZyGodMethod.simulateKeyPress, {
+                type: KeyPressBasicType.Enter,
+              });
+            }}
+          >
+            <Comp />
+          </div>
+        );
+      });
+
       return (
         <div className={Styles.FrameContainer}>
           <div className={Styles.MainFrameContainer}>
@@ -542,6 +589,7 @@ export class ZymbolFrame extends Zyact<ZymbolFrameSchema, FrameRenderProps> {
           <div className="relative">
             <div
               className={clsx(
+                "z-50",
                 "absolute left-[-12px] top-1",
                 "min-w-[360px]",
                 "shadow-lg shadow-gray-400",
@@ -549,30 +597,18 @@ export class ZymbolFrame extends Zyact<ZymbolFrameSchema, FrameRenderProps> {
                 "rounded-lg bg-gray-100"
               )}
             >
-              {this.actions.map((action, i) => {
-                const Comp = action.getActionPreviewComponent();
-
-                return (
+              {this.getActionsLocked() ? (
+                <>
                   <div
-                    className={clsx(
-                      "p-2",
-                      this.actionIndex === i && Styles.SelectedTransContainer
-                    )}
-                    key={`tt::${i}`}
-                    onMouseMove={() => {
-                      this.actionIndex = i;
-                      this.render();
-                    }}
-                    onClick={() => {
-                      this.callZentinelMethod(ZyGodMethod.simulateKeyPress, {
-                        type: KeyPressBasicType.Enter,
-                      });
-                    }}
+                    className={clsx("font-semibold", "text-sm", "pl-1 pb-2")}
                   >
-                    <Comp />
+                    Press "ESC" to unlock actions
                   </div>
-                );
-              })}
+                  <div className={clsx("opacity-50")}>{actionsInner}</div>
+                </>
+              ) : (
+                actionsInner
+              )}
             </div>
           </div>
         </div>
@@ -749,11 +785,29 @@ zymbolFrameMaster.implementTrait(KeyPressTrait, {
         isTransformationKey = true;
       }
 
+      /* Check if we lock the actions */
+      frame.toggleUseActionLock(
+        await frame.call(ActionCommandTrait.checkActionLock, cursor)
+      );
+
+      if (
+        frame.getActionsLocked() &&
+        keyPress.type === KeyPressBasicType.Escape
+      ) {
+        frame.setActionLock(false);
+        return successfulMoveResponse(cursor);
+      }
+
       /* Check if we have available actions */
       if (frame.actions.length > 0) {
         if (
-          keyPress.type === KeyPressBasicType.ArrowDown ||
-          keyPress.type === KeyPressBasicType.ArrowUp
+          !frame.getActionsLocked() &&
+          (keyPress.type === KeyPressBasicType.ArrowDown ||
+            keyPress.type === KeyPressBasicType.ArrowUp) &&
+          !(
+            keyPress.modifiers &&
+            keyPress.modifiers.includes(KeyPressModifier.Shift)
+          )
         ) {
           frame.actionIndex =
             (frame.actionIndex +
@@ -762,7 +816,11 @@ zymbolFrameMaster.implementTrait(KeyPressTrait, {
             frame.actions.length;
 
           return successfulMoveResponse(cursor);
-        } else if (keyPressEqual(DEFAULT_SELECTOR, keyPress)) {
+        }
+
+        frame.setActionLock(true);
+
+        if (keyPressEqual(DEFAULT_SELECTOR, keyPress)) {
           frame.setNewActions([]);
           return successfulMoveResponse(cursor);
         } else if (frame.actionIndex > -1) {
@@ -837,24 +895,6 @@ zymbolFrameMaster.implementTrait(KeyPressTrait, {
             typeFilters: frame.getTypeFilters(labelCursor),
           })
         );
-
-        // /* Handle potential transformation */
-        // /* 1. Ask Hermes for the Transformer */
-        // const transformer = await frame.callZ(
-        //   ZymbolFrameMethod.getTransformer,
-        //   {
-        //     cursor: frame.getFullCursorPointer(),
-        //     keyPress,
-        //     typeFilters: frame.getTypeFilters(labelCursor),
-        //   }
-        // );
-
-        // /* 2. Apply the transformer to get a list of potential transformations */
-        // const transformations = await transformer(
-        //   frame.baseZocket,
-        //   childMove.newRelativeCursor,
-        //   keyPress
-        // );
       }
 
       return chainMoveResponse(childMove, (nextCursor) => {

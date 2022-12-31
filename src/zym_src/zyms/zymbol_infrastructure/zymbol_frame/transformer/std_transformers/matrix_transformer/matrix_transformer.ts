@@ -1,9 +1,11 @@
 import { Zentinel } from "../../../../../../../zym_lib/zentinel/zentinel";
 import {
   BASIC_MATRIX_WRAPPER,
+  MATRIX_MAP,
+  MATRIX_MAP_LABELS,
   MatrixWrapperTex,
 } from "../../../../../zymbol/zymbols/matrix_zymbol/matrix_zymbol_schema";
-import { MatrixZymbol } from "../../../../../zymbol/zymbols/matrix_zymbol/matrix_zymbols";
+import { MatrixZymbol } from "../../../../../zymbol/zymbols/matrix_zymbol/matrix_zymbol";
 import { Zocket } from "../../../../../zymbol/zymbols/zocket/zocket";
 import { ZymbolFrameMethod } from "../../../zymbol_frame_schema";
 import {
@@ -18,47 +20,6 @@ import {
 } from "../transform_utils";
 
 export const MATRIX_TRANSFORMER = "mat-trans";
-
-const MATRIX_MAP: Record<string, MatrixWrapperTex> = {
-  mt: BASIC_MATRIX_WRAPPER,
-  pmt: {
-    envName: "pmatrix",
-    leftSymbol: "\\lparen",
-    rightSymbol: "\\rparen",
-  },
-  bmt: {
-    envName: "bmatrix",
-    leftSymbol: "\\lbrack",
-    rightSymbol: "\\rbrack",
-  },
-  vmt: {
-    envName: "vmatrix",
-    leftSymbol: "\\vert",
-    rightSymbol: "\\vert",
-  },
-  vvmt: {
-    envName: "Vmatrix",
-    leftSymbol: "\\Vert",
-    rightSymbol: "\\Vert",
-  },
-  brmt: {
-    envName: "Bmatrix",
-    leftSymbol: "\\lbrace",
-    rightSymbol: "\\rbrace",
-  },
-  case: {
-    envName: "cases",
-    leftSymbol: "\\lbrace",
-    rightSymbol: "",
-  },
-  rcase: {
-    envName: "rcases",
-    leftSymbol: "",
-    rightSymbol: "\\rbrace",
-  },
-};
-
-const matrixMapLabels = Object.keys(MATRIX_MAP);
 
 class MatrixTransformer extends Zentinel {
   zyId = MATRIX_TRANSFORMER;
@@ -82,7 +43,7 @@ class MatrixTransformer extends Zentinel {
 
           let rank = ZymbolTransformRank.Suggest;
 
-          if (matrixMapLabels.includes(mat)) {
+          if (MATRIX_MAP_LABELS.includes(mat)) {
             cursorCopy.pop();
 
             const textPointer = cursorCopy.pop()!;

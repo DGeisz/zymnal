@@ -1,4 +1,4 @@
-import _, { all } from "underscore";
+import _ from "underscore";
 import { BasicContext } from "../../../../../zym_lib/utils/basic_context";
 import {
   Cursor,
@@ -10,15 +10,12 @@ import {
   wrapChildCursorResponse,
 } from "../../../../../zym_lib/zy_god/cursor/cursor";
 import {
+  KeyPressBasicType,
   KeyPressModifier,
   ZymKeyPress,
   ZymbolDirection,
 } from "../../../../../zym_lib/zy_god/event_handler/key_press";
-import {
-  IdentifiedBaseSchema,
-  ZymPersist,
-  ZyPartialPersist,
-} from "../../../../../zym_lib/zy_schema/zy_schema";
+import { ZyPartialPersist } from "../../../../../zym_lib/zy_schema/zy_schema";
 import {
   hydrateChild,
   safeHydrate,
@@ -29,21 +26,26 @@ import {
   DUMMY_FRAME,
   ZymbolFrame,
 } from "../../../zymbol_infrastructure/zymbol_frame/zymbol_frame";
-import { DeleteBehavior, DeleteBehaviorType } from "../../delete_behavior";
+import {
+  DeleteBehavior,
+  DeleteBehaviorType,
+  deleteBehaviorNormal,
+} from "../../delete_behavior";
 import { Zymbol, ZymbolRenderArgs, getKeyPress } from "../../zymbol";
 import { extendZymbol } from "../../zymbol_cmd";
 import { Zocket } from "../zocket/zocket";
 import {
   BASIC_MATRIX_WRAPPER,
+  EXTENDED_MATRIX_MAP,
+  MATRIX_MAP,
   MATRIX_ZYMBOL_ID,
   MatrixWrapperTex,
   MatrixZymbolSchema,
 } from "./matrix_zymbol_schema";
-import { BsHandThumbsUpFill } from "react-icons/bs";
 import { deflectMethodToChild } from "../zymbol_utils";
-import { HighlightSpanKind, convertToObject } from "typescript";
-import { debug } from "console";
-import { mathDirectMap } from "../../../zymbol_infrastructure/zymbol_frame/transformer/std_transformers/std_lib/math/math";
+import { DotModifiersTrait } from "../../../zymbol_infrastructure/zymbol_frame/transformer/std_transformers/equation_transformers/dot_modifiers/dot_modifiers_schema";
+import { NONE, zySome } from "../../../../../zym_lib/utils/zy_option";
+import { ActionCommandTrait } from "../../../zymbol_infrastructure/zymbol_frame/action_commands";
 
 class MatrixZymbolMaster extends ZyMaster<MatrixZymbolSchema> {
   zyId: string = MATRIX_ZYMBOL_ID;
@@ -61,6 +63,7 @@ export class MatrixZymbol extends Zymbol<MatrixZymbolSchema> {
   children: Zocket[];
 
   wrapper: MatrixWrapperTex;
+  showEmptyZockets = true;
 
   rows = 1;
   cols = 1;
@@ -81,6 +84,7 @@ export class MatrixZymbol extends Zymbol<MatrixZymbolSchema> {
       cols: "cl",
       rows: "r",
       wrapper: "w",
+      showEmptyZockets: "s",
     });
   }
 
@@ -222,8 +226,11 @@ export class MatrixZymbol extends Zymbol<MatrixZymbolSchema> {
     }
   };
 
-  takeCursorFromLeft = (ctx: BasicContext): CursorMoveResponse =>
-    wrapChildCursorResponse(this.children[0].takeCursorFromLeft(ctx), 0);
+  takeCursorFromLeft = (ctx: BasicContext): CursorMoveResponse => {
+    const i = this.getCursorFromRowCol(Math.floor(this.rows / 2), 0);
+
+    return wrapChildCursorResponse(this.children[i].takeCursorFromLeft(ctx), i);
+  };
 
   moveCursorRight = (cursor: Cursor, ctx: BasicContext): CursorMoveResponse => {
     const keyPress: ZymKeyPress = getKeyPress(ctx);
@@ -267,11 +274,41 @@ export class MatrixZymbol extends Zymbol<MatrixZymbolSchema> {
     }
   };
 
-  takeCursorFromRight = (ctx: BasicContext): CursorMoveResponse =>
-    wrapChildCursorResponse(
-      this.children[this.cols - 1].takeCursorFromRight(ctx),
+  // TODO: Add proper enter to move to next child behavior...
+  defaultKeyPressHandler = (
+    keyPress: ZymKeyPress,
+    cursor: Cursor,
+    ctx: BasicContext
+  ): CursorMoveResponse => {
+    const { childRelativeCursor, nextCursorIndex } = extractCursorInfo(cursor);
+
+    if (
+      keyPress.type === KeyPressBasicType.Enter &&
+      childRelativeCursor.length === 1 &&
+      this.children[nextCursorIndex].children.length === childRelativeCursor[0]
+    ) {
+    }
+    return wrapChildCursorResponse(
+      this.children[nextCursorIndex].defaultKeyPressHandler(
+        keyPress,
+        childRelativeCursor,
+        ctx
+      ),
+      nextCursorIndex
+    );
+  };
+
+  takeCursorFromRight = (ctx: BasicContext): CursorMoveResponse => {
+    const i = this.getCursorFromRowCol(
+      Math.floor(this.rows / 2),
       this.cols - 1
     );
+
+    return wrapChildCursorResponse(
+      this.children[i].takeCursorFromRight(ctx),
+      i
+    );
+  };
 
   moveCursorUp = (cursor: Cursor, ctx: BasicContext): CursorMoveResponse => {
     const keyPress: ZymKeyPress = getKeyPress(ctx);
@@ -317,7 +354,12 @@ export class MatrixZymbol extends Zymbol<MatrixZymbolSchema> {
     fromSide: ZymbolDirection,
     ctx: BasicContext
   ): CursorMoveResponse {
-    throw new Error("Method not implemented.");
+    const i = this.getCursorFromRowCol(
+      0,
+      fromSide === ZymbolDirection.LEFT ? 0 : this.cols - 1
+    );
+
+    return wrapChildCursorResponse(this.children[i].takeCursorFromLeft(ctx), i);
   }
 
   moveCursorDown = (cursor: Cursor, ctx: BasicContext): CursorMoveResponse => {
@@ -366,7 +408,12 @@ export class MatrixZymbol extends Zymbol<MatrixZymbolSchema> {
     fromSide: ZymbolDirection,
     ctx: BasicContext
   ): CursorMoveResponse {
-    throw new Error("Method not implemented.");
+    const i = this.getCursorFromRowCol(
+      this.rows - 1,
+      fromSide === ZymbolDirection.LEFT ? 0 : this.cols - 1
+    );
+
+    return wrapChildCursorResponse(this.children[i].takeCursorFromLeft(ctx), i);
   }
 
   addCharacter(
@@ -398,7 +445,11 @@ export class MatrixZymbol extends Zymbol<MatrixZymbolSchema> {
   }
 
   getDeleteBehavior(): DeleteBehavior {
-    throw new Error("Method not implemented.");
+    if (this.children.every((c) => c.children.length === 0)) {
+      return deleteBehaviorNormal(DeleteBehaviorType.ALLOWED);
+    } else {
+      return deleteBehaviorNormal(DeleteBehaviorType.ABSORB);
+    }
   }
 
   delete = (cursor: Cursor, ctx: BasicContext): CursorMoveResponse => {
@@ -416,6 +467,10 @@ export class MatrixZymbol extends Zymbol<MatrixZymbolSchema> {
         keyPress.modifiers.includes(KeyPressModifier.Shift)
       ) {
         const { row: rowI, col: colI } = this.getRowCol(nextCursorIndex);
+
+        if (rowI === 0 && this.rows === 1) {
+          return FAILED_CURSOR_MOVE_RESPONSE;
+        }
 
         const row = this.getRow(rowI);
 
@@ -437,6 +492,10 @@ export class MatrixZymbol extends Zymbol<MatrixZymbolSchema> {
       } else {
         const { row, col: colI } = this.getRowCol(nextCursorIndex);
 
+        if (colI === 0 && this.cols === 1) {
+          return FAILED_CURSOR_MOVE_RESPONSE;
+        }
+
         const col = this.getCol(colI);
 
         if (col.every((z) => z.children.length === 0)) {
@@ -452,7 +511,15 @@ export class MatrixZymbol extends Zymbol<MatrixZymbolSchema> {
             newCursorIndex
           );
         } else {
-          return FAILED_CURSOR_MOVE_RESPONSE;
+          const newCursorIndex = this.getCursorFromRowCol(
+            row,
+            Math.max(colI - 1, 0)
+          );
+
+          return wrapChildCursorResponse(
+            this.children[newCursorIndex].takeCursorFromRight(ctx),
+            newCursorIndex
+          );
         }
       }
     }
@@ -490,7 +557,7 @@ export class MatrixZymbol extends Zymbol<MatrixZymbolSchema> {
 
         let tex;
 
-        if (noCursor) {
+        if (noCursor && !this.showEmptyZockets) {
           if (col.children.length) {
             tex = col.renderTex(cOpts);
           } else {
@@ -519,6 +586,7 @@ export class MatrixZymbol extends Zymbol<MatrixZymbolSchema> {
       cols: this.cols,
       rows: this.rows,
       wrapper: { ...this.wrapper },
+      showEmptyZockets: this.showEmptyZockets,
     };
   };
 
@@ -540,6 +608,9 @@ export class MatrixZymbol extends Zymbol<MatrixZymbolSchema> {
       wrapper: (w) => {
         this.wrapper = w;
       },
+      showEmptyZockets: (s) => {
+        this.showEmptyZockets = s;
+      },
     });
   }
 
@@ -547,3 +618,44 @@ export class MatrixZymbol extends Zymbol<MatrixZymbolSchema> {
     return this.children;
   }
 }
+
+enum MATRIX_DOT_COMMANDS {
+  HIDE = "hide",
+  SHOW = "show",
+}
+
+matrixZymbolMaster.implementTrait(DotModifiersTrait, {
+  async getNodeTransforms() {
+    return {
+      id: {
+        group: "matrix",
+        item: "toggle",
+      },
+      transform: ({ zymbol, word }) => {
+        const matrix = zymbol as MatrixZymbol;
+
+        if (word === MATRIX_DOT_COMMANDS.HIDE) {
+          matrix.showEmptyZockets = false;
+          return zySome(matrix);
+        } else if (word === MATRIX_DOT_COMMANDS.SHOW) {
+          matrix.showEmptyZockets = true;
+          return zySome(matrix);
+        }
+
+        if (word in EXTENDED_MATRIX_MAP) {
+          const wrapper = EXTENDED_MATRIX_MAP[word];
+          matrix.wrapper = wrapper;
+
+          return zySome(matrix);
+        }
+
+        return NONE;
+      },
+      cost: 100,
+    };
+  },
+});
+
+matrixZymbolMaster.implementTrait(ActionCommandTrait, {
+  checkActionLock: async (_zym, _cursor) => true,
+});

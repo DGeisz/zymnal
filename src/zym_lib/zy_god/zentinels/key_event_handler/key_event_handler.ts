@@ -99,7 +99,6 @@ class KeyEventHandler extends Zentinel<KeyEventHandlerMethodSchema> {
   };
 
   invokeKeyEventHandlers = (event: ZymKeyPress) => {
-    console.log("Invoke", event);
     for (const handler of this.keyEventHandlers.values()) {
       handler(event);
     }

@@ -4,6 +4,7 @@ import { ParsedMathType, parseInlineMathText } from "./autoRender";
 import { memoCompareFactory } from "../../global_utils/object_utils";
 
 const DEV = false;
+const PERF = false;
 
 interface TexProps {
   tex: string;
@@ -124,7 +125,18 @@ const MathTexInner: React.FC<MathTexProps> = (props) => {
     }
   }, [props.tex]);
 
+  let start = 0;
+  let end = 0;
+
+  if (PERF) {
+    start = performance.now();
+  }
+
   const htmlTex = katex.renderToString(props.tex, finalOpts);
+
+  if (PERF) {
+    end = performance.now();
+  }
 
   if (DEV) {
     return (
@@ -137,7 +149,23 @@ const MathTexInner: React.FC<MathTexProps> = (props) => {
             __html: htmlTex,
           }}
         />
-        <div>{props.tex}</div>
+        <div>{htmlTex}</div>
+      </div>
+    );
+  }
+
+  if (PERF) {
+    return (
+      <div>
+        <span
+          ref={cRef}
+          contentEditable={false}
+          className={props.className}
+          dangerouslySetInnerHTML={{
+            __html: htmlTex,
+          }}
+        />
+        <div>{Math.round((end - start) * 100) / 100} Millis</div>
       </div>
     );
   }
