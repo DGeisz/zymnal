@@ -44,6 +44,7 @@ import {
   EXTENDED_MATRIX_MAP,
   MATRIX_MAP,
   MATRIX_ZYMBOL_ID,
+  MatrixMap,
   MatrixWrapperTex,
   MatrixZymbolSchema,
 } from "./matrix_zymbol_schema";
@@ -469,6 +470,18 @@ export class MatrixZymbol extends Zymbol<MatrixZymbolSchema> {
     }
   }
 
+  letParentDeleteWithDeleteBehavior = (cursor: Cursor, ctx: BasicContext) => {
+    if (
+      this.rows === 1 &&
+      this.cols === 1 &&
+      this.children[0].children.length === 0
+    ) {
+      return deleteBehaviorNormal(DeleteBehaviorType.ALLOWED);
+    }
+
+    return undefined;
+  };
+
   delete = (cursor: Cursor, ctx: BasicContext): CursorMoveResponse => {
     const { nextCursorIndex, childRelativeCursor } = extractCursorInfo(cursor);
     const keyPress = getKeyPress(ctx);
@@ -507,31 +520,38 @@ export class MatrixZymbol extends Zymbol<MatrixZymbolSchema> {
           return FAILED_CURSOR_MOVE_RESPONSE;
         }
       } else {
-        const { row, col: colI } = this.getRowCol(nextCursorIndex);
-
-        if (colI === 0 && this.cols === 1) {
-          return FAILED_CURSOR_MOVE_RESPONSE;
-        }
+        const { row: rowI, col: colI } = this.getRowCol(nextCursorIndex);
 
         const col = this.getCol(colI);
 
         if (col.every((z) => z.children.length === 0)) {
-          this.deleteCol(colI);
+          if (this.cols === 1) {
+            this.deleteRow(rowI);
 
-          const newCursorIndex = this.getCursorFromRowCol(
-            row,
-            Math.max(colI - 1, 0)
-          );
+            const newCursorIndex = this.getCursorFromRowCol(
+              Math.max(rowI - 1, 0),
+              colI
+            );
 
-          return wrapChildCursorResponse(
-            this.children[newCursorIndex].takeCursorFromRight(ctx),
-            newCursorIndex
-          );
+            return wrapChildCursorResponse(
+              this.children[newCursorIndex].takeCursorFromRight(ctx),
+              newCursorIndex
+            );
+          } else {
+            this.deleteCol(colI);
+
+            const newCursorIndex = this.getCursorFromRowCol(
+              rowI,
+              Math.max(colI - 1, 0)
+            );
+
+            return wrapChildCursorResponse(
+              this.children[newCursorIndex].takeCursorFromRight(ctx),
+              newCursorIndex
+            );
+          }
         } else {
-          const newCursorIndex = this.getCursorFromRowCol(
-            row,
-            Math.max(colI - 1, 0)
-          );
+          const newCursorIndex = Math.max(0, nextCursorIndex - 1);
 
           return wrapChildCursorResponse(
             this.children[newCursorIndex].takeCursorFromRight(ctx),
@@ -641,6 +661,17 @@ enum MATRIX_DOT_COMMANDS {
   SHOW = "show",
 }
 
+const matrixDotMap: MatrixMap = {
+  ...EXTENDED_MATRIX_MAP,
+  p: EXTENDED_MATRIX_MAP.pmt,
+  bk: EXTENDED_MATRIX_MAP.bmt,
+  br: EXTENDED_MATRIX_MAP.brmt,
+  vm: EXTENDED_MATRIX_MAP.vmt,
+  vv: EXTENDED_MATRIX_MAP.vvmt,
+  c: EXTENDED_MATRIX_MAP.case,
+  rc: EXTENDED_MATRIX_MAP.rcase,
+};
+
 matrixZymbolMaster.implementTrait(DotModifiersTrait, {
   async getNodeTransforms() {
     return {
@@ -659,8 +690,8 @@ matrixZymbolMaster.implementTrait(DotModifiersTrait, {
           return zySome(matrix);
         }
 
-        if (word in EXTENDED_MATRIX_MAP) {
-          const wrapper = EXTENDED_MATRIX_MAP[word];
+        if (word in matrixDotMap) {
+          const wrapper = matrixDotMap[word];
           matrix.wrapper = wrapper;
 
           return zySome(matrix);

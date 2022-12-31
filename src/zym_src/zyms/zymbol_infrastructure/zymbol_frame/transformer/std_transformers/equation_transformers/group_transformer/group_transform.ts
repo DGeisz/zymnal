@@ -73,6 +73,7 @@ class CustomGroupTransformation extends ZymbolTreeTransformation {
   };
 
   getTexPreview(): string {
+    this.getCurrentTransformation();
     if (!this.group) throw new Error("Group not set!");
 
     return this.group.renderTex(PREVIEW_TEX_RENDER_OPTS);

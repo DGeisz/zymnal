@@ -133,6 +133,7 @@ class CustomParenthesisTransformation extends ZymbolTreeTransformation {
   };
 
   getTexPreview(): string {
+    this.getCurrentTransformation();
     if (!this.parenthesis) throw new Error("Haven't set parenthesis!");
 
     return this.parenthesis.renderTex(PREVIEW_TEX_RENDER_OPTS);

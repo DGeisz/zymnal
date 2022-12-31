@@ -19,7 +19,7 @@ export const BASIC_MATRIX_WRAPPER: MatrixWrapperTex = {
   rightSymbol: "",
 };
 
-type MatrixMap = Record<string, MatrixWrapperTex>;
+export type MatrixMap = Record<string, MatrixWrapperTex>;
 
 export const MATRIX_MAP: MatrixMap = {
   mt: BASIC_MATRIX_WRAPPER,

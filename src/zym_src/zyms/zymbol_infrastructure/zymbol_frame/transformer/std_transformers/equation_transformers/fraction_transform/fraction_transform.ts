@@ -92,6 +92,7 @@ class CustomFractionTransformation extends ZymbolTreeTransformation {
   };
 
   getTexPreview(): string {
+    this.getCurrentTransformation();
     if (!this.fraction) throw Error("Fraction not set yet!");
 
     return this.fraction.renderTex(PREVIEW_TEX_RENDER_OPTS);

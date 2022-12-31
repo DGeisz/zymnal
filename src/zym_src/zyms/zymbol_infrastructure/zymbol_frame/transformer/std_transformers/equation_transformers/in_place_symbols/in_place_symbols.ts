@@ -44,7 +44,6 @@ import {
   ZymbolTreeTransformation,
 } from "../../../transformer";
 import { STD_TRANSFORMER_TYPE_FILTERS } from "../../std_transformer_type_filters";
-import { debug } from "console";
 
 /* =============================================================================================== */
 export type SlashMap = { [key: string]: string };
@@ -52,12 +51,11 @@ export type DirectMap = SlashMap;
 
 const slashes = ["\\", "/"];
 
-const SINGLE_DIRECT_SYMBOL_DELIM = ":";
 const MULTI_DIRECT_SYMBOL_DELIM = ";";
 
 const stringPrefixList = ["(", "[", "{"];
 
-const STRING_TEST = /^[a-zA-Z,:0-9]+$/;
+const STRING_TEST = /^[a-zA-Z,:!0-9]+$/;
 
 const alphaValidator = (keyPress: ZymKeyPress) =>
   !(
@@ -296,18 +294,11 @@ class InPlaceSymbols extends Zentinel<InPlaceSymbolsMethodSchema> {
 
               /* Checks for a direct character insert */
               if (
-                word.length === 2 &&
-                word.startsWith(SINGLE_DIRECT_SYMBOL_DELIM)
-              ) {
-                changed = true;
-                symbol = word.slice(1);
-                rank = ZymbolTransformRank.Suggest;
-              } else if (
                 word.startsWith(MULTI_DIRECT_SYMBOL_DELIM) &&
                 word.length > 1
               ) {
                 changed = true;
-                symbol = word.slice(1);
+                symbol = `\\text{${word.slice(1)}}`;
                 rank = ZymbolTransformRank.Suggest;
 
                 keyPressValidator = alphaValidator;

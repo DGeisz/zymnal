@@ -43,6 +43,9 @@ const logicDirectMap: DirectMap = {
   ex: "exists",
   fa: "forall",
   if: "text{if }",
+  st: "text{st }",
+  tfr: "therefore",
+  bc: "because",
   "|": "rvert",
 };
 
