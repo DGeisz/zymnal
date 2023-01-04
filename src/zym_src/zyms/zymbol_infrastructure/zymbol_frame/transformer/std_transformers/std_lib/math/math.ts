@@ -60,6 +60,8 @@ const setSlashMap: SlashMap = {
   R: "R",
   C: "mathbb{C}",
   Z: "mathbb{Z}",
+  I: "mathbb{I}",
+  Q: "mathbb{Q}",
 };
 
 /* +++ Calculus! +++ */

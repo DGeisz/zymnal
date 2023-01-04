@@ -15,6 +15,15 @@ export async function hydrateChild<
   return zym.callZentinelMethod(ZyGodMethod.hydratePersistedZym, childPersist);
 }
 
+export async function hydrateChildren<Z extends Zym = Zym>(
+  zym: Zym,
+  children: ZymPersist<any>[]
+) {
+  return (await Promise.all(
+    children.map((c) => hydrateChild<any, any>(zym, c))
+  )) as Z[];
+}
+
 export async function safeHydrate<T extends object>(
   p: Partial<T>,
   resolver: { [key in keyof T]: (t: T[key]) => Promise<void> | void }

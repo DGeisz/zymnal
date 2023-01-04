@@ -265,7 +265,7 @@ class InPlaceSymbols extends Zentinel<InPlaceSymbolsMethodSchema> {
                       priority: {
                         rank: ZymbolTransformRank.Suggest,
                         /* Super high cost so this is always suggested last */
-                        cost: 10000,
+                        cost: 1000,
                       },
                     },
                     alphaValidator

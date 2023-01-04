@@ -5,6 +5,7 @@ import { BasicContext } from "../../../../zym_lib/utils/basic_context";
 import { isSome, unwrapOption } from "../../../../zym_lib/utils/zy_option";
 import {
   hydrateChild,
+  hydrateChildren,
   safeHydrate,
 } from "../../../../zym_lib/zym/utils/hydrate";
 import { Zym } from "../../../../zym_lib/zym/zym";
@@ -24,7 +25,6 @@ import {
 } from "../../../../zym_lib/zy_god/cursor/cursor";
 import { CursorCommandTrait } from "../../../../zym_lib/zy_god/cursor/cursor_commands";
 import {
-  basicKeyPress,
   KeyPressBasicType,
   KeyPressComplexType,
   KeyPressModifier,
@@ -51,6 +51,8 @@ import {
   ZYMBOL_MODULE_ID,
 } from "./zymbol_module_schema";
 import ReactModal from "react-modal";
+import { ZymbolFrameMethod } from "../zymbol_frame/zymbol_frame_schema";
+import { snippetActionFactory } from "./snippet_modal/snippet_modal";
 
 const LF_UNICODE = "\u000A";
 
@@ -364,6 +366,13 @@ class ZymbolModuleMaster extends ZyMaster<
   newBlankChild() {
     return new ZymbolModule(0, undefined);
   }
+
+  onRegistration = async () => {
+    this.callZentinelMethod(
+      ZymbolFrameMethod.registerActionFactory,
+      snippetActionFactory
+    );
+  };
 }
 
 export const zymbolModuleMaster = new ZymbolModuleMaster();
@@ -446,34 +455,18 @@ export class ZymbolModule extends Zyact<ZymbolModuleSchema> {
   }
 
   component: React.FC = () => {
-    // const Comps = useZymponents(this.children);
-
-    // return (
-    //   <div
-    //     contentEditable
-    //     suppressContentEditableWarning
-    //     className="outline-none"
-    //   >
-    //     {Comps.map((C, i) => (
-    //       <C key={i} />
-    //     ))}
-    //   </div>
-    // );
-
     const lineClusters = clusterLines(this.children);
 
     return (
-      <div
-        // contentEditable
-        // suppressContentEditableWarning
-        className="outline-none focus:outline-none"
-      >
+      <div className="outline-none focus:outline-none">
         {lineClusters.map((c, i) => (
           <ClusterHelper cluster={c} key={i} />
         ))}
       </div>
     );
   };
+
+  toggleSnippetsModal = (open: boolean) => {};
 
   addLine = (newLinePosition: number, inline: boolean) => {
     this.children.splice(
@@ -584,9 +577,7 @@ export class ZymbolModule extends Zyact<ZymbolModuleSchema> {
   ): Promise<void> {
     await safeHydrate(p, {
       children: async (children) => {
-        this.children = (await Promise.all(
-          children.map((c) => hydrateChild<any, any>(this, c))
-        )) as ModuleLine[];
+        this.children = await hydrateChildren<ModuleLine>(this, children);
       },
     });
   }

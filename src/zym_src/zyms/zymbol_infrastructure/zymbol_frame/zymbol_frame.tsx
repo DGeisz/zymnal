@@ -80,6 +80,7 @@ import { STD_TRANSFORMER_TYPE_FILTERS } from "./transformer/std_transformers/std
 import { displayEquationTypeFilters } from "../zymbol_module/module_lines/display_equation/display_equation_schema";
 import Tex from "../../../../global_building_blocks/tex/tex";
 import { ActionCommandTrait } from "./action_commands";
+import { isJSDocThisTag } from "typescript";
 
 const VIMIUM_HINT_PERIOD = 2;
 class ZymbolFrameMaster extends ZyMaster<
@@ -187,12 +188,13 @@ class ZymbolFrameMaster extends ZyMaster<
         )
         .map((t) => t.transform)
     );
-    const copies = await rootZymbol.clone(transformers.length);
+
+    const transformerCopies = await rootZymbol.clone(transformers.length);
 
     const treeTransformations = _.flatten(
       await Promise.all(
         transformers.map((t, i) => {
-          return t(copies[i] as Zymbol, zymbolCursor, keyPress);
+          return t(transformerCopies[i] as Zymbol, zymbolCursor, keyPress);
         })
       )
     );
@@ -201,11 +203,21 @@ class ZymbolFrameMaster extends ZyMaster<
       (t) => new ZymbolTreeTransformationAction(t)
     );
 
-    const actions = [...transformationActions];
+    /* Now process the action factories */
+
+    const actionCopies = await rootZymbol.clone(this.actionFactories.length);
+
+    const normalActions = _.flatten(
+      this.actionFactories.map((f, i) =>
+        f.getActions(root, cursor, actionCopies[i] as Zymbol, zymbolCursor)
+      )
+    );
+
+    const actions = [...transformationActions, ...normalActions];
 
     actions.forEach((a) => a.setParentFrame(parentFrame));
 
-    return transformationActions;
+    return actions;
   };
 
   getZymbolTransformer = async (
@@ -558,7 +570,7 @@ export class ZymbolFrame extends Zyact<ZymbolFrameSchema, FrameRenderProps> {
         return (
           <div
             className={clsx(
-              "p-2",
+              "px-2",
               this.actionIndex === i && Styles.SelectedTransContainer
             )}
             key={`tt::${i}`}
@@ -572,7 +584,16 @@ export class ZymbolFrame extends Zyact<ZymbolFrameSchema, FrameRenderProps> {
               });
             }}
           >
-            <Comp />
+            <div
+              className={clsx(
+                "py-2",
+                i > 0 &&
+                  !(this.actionIndex === i || this.actionIndex === i - 1) &&
+                  "border-t border-solid border-gray-100"
+              )}
+            >
+              <Comp selected={this.actionIndex === i} />
+            </div>
           </div>
         );
       });
@@ -734,6 +755,8 @@ export class ZymbolFrame extends Zyact<ZymbolFrameSchema, FrameRenderProps> {
         return a.priority.rank - b.priority.rank;
       }
     });
+
+    console.log("ranked actions", this.actions);
   };
 }
 
@@ -918,14 +941,12 @@ zymbolFrameMaster.implementTrait(CursorCommandTrait, {
     if (!frame.inlineTex) return VerticalNavigationHandleType.ZyManaged;
 
     const { nextCursorIndex, childRelativeCursor } = extractCursorInfo(cursor);
-    const child = zym.children[nextCursorIndex];
+    const child = frame.children[nextCursorIndex];
 
     if (child) {
-      return unwrapTraitResponse(
-        await child.callTraitMethod(
-          CursorCommandTrait.checkVerticalNavigationType,
-          childRelativeCursor
-        )
+      return await child.call(
+        CursorCommandTrait.checkVerticalNavigationType,
+        childRelativeCursor
       );
     }
 
