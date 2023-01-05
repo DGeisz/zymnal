@@ -51,7 +51,7 @@ import {
 import { deflectMethodToChild } from "../zymbol_utils";
 import { DotModifiersTrait } from "../../../zymbol_infrastructure/zymbol_frame/transformer/std_transformers/equation_transformers/dot_modifiers/dot_modifiers_schema";
 import { NONE, zySome } from "../../../../../zym_lib/utils/zy_option";
-import { ActionCommandTrait } from "../../../zymbol_infrastructure/zymbol_frame/action_commands";
+import { ActionCommandTrait } from "../../../zymbol_infrastructure/zymbol_frame/actions/action_commands";
 import { ZyGodMethod } from "../../../../../zym_lib/zy_god/zy_god_schema";
 
 class MatrixZymbolMaster extends ZyMaster<MatrixZymbolSchema> {

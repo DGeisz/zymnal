@@ -124,17 +124,6 @@ export function keyPressEqual(k1: ZymKeyPress, k2: ZymKeyPress): boolean {
   return false;
 }
 
-export const DEFAULT_SELECTOR: ZymKeyPress = {
-  type: KeyPressBasicType.Enter,
-  modifiers: [KeyPressModifier.Shift],
-};
-
-export const SECONDARY_SELECTOR: ZymKeyPress = {
-  type: KeyPressComplexType.Key,
-  modifiers: [KeyPressModifier.Shift, KeyPressModifier.Ctrl],
-  key: " ",
-};
-
 /* ==== COMMANDS ===== */
 
 const KEY_PRESS_CMD_ID = "keypress-cmd-6a62";

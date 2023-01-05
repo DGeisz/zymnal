@@ -8,11 +8,11 @@ import { ZymKeyPress } from "../../../../../zym_lib/zy_god/event_handler/key_pre
 import { Zymbol, ZymbolRenderArgs } from "../../../zymbol/zymbol";
 import { Zocket } from "../../../zymbol/zymbols/zocket/zocket";
 import { ZymbolFrame } from "../zymbol_frame";
-import { FrameAction, FrameActionPriority } from "../zymbol_frame_schema";
 import { FC } from "react";
 import { TeX } from "../../../zymbol/zymbol_types";
 import { BasicContext } from "../../../../../zym_lib/utils/basic_context";
 import Tex from "../../../../../global_building_blocks/tex/tex";
+import { FrameAction, FrameActionPriority } from "../actions/actions";
 
 export enum ZymbolTransformRank {
   /* Means that the action is immediately enacted,
@@ -51,6 +51,7 @@ export abstract class ZymbolTreeTransformation {
 }
 
 export class ZymbolTreeTransformationAction extends FrameAction {
+  finishActionWithoutHandlingKeypress: boolean = false;
   treeTransformation: ZymbolTreeTransformation;
   priority: FrameActionPriority;
 

@@ -1,15 +1,13 @@
 import React from "react";
-import { BsHandThumbsUpFill } from "react-icons/bs";
 import { last } from "../../../../global_utils/array_utils";
 import { BasicContext } from "../../../../zym_lib/utils/basic_context";
 import { isSome, unwrapOption } from "../../../../zym_lib/utils/zy_option";
 import {
-  hydrateChild,
   hydrateChildren,
   safeHydrate,
 } from "../../../../zym_lib/zym/utils/hydrate";
 import { Zym } from "../../../../zym_lib/zym/zym";
-import { useZymponents } from "../../../../zym_lib/zym/zymplementations/zyact/hooks";
+import { ZyComp } from "../../../../zym_lib/zym/zymplementations/zyact/hooks";
 import { Zyact } from "../../../../zym_lib/zym/zymplementations/zyact/zyact";
 import { ZyMaster } from "../../../../zym_lib/zym/zy_master";
 import {
@@ -50,9 +48,14 @@ import {
   ZymbolModuleSchema,
   ZYMBOL_MODULE_ID,
 } from "./zymbol_module_schema";
-import ReactModal from "react-modal";
+import Modal from "react-modal";
 import { ZymbolFrameMethod } from "../zymbol_frame/zymbol_frame_schema";
-import { snippetActionFactory } from "./snippet_modal/snippet_modal";
+import {
+  SnippetModal,
+  snippetActionFactory,
+} from "./snippet_modal/snippet_modal";
+
+Modal.setAppElement("#root");
 
 const LF_UNICODE = "\u000A";
 
@@ -424,49 +427,78 @@ const ClusterHelper: React.FC<{
   cluster: LineCluster;
 }> = ({ cluster }) => {
   const lines = cluster.cluster;
-  const Comps = useZymponents(lines);
 
   return (
     <div
       contentEditable={cluster.type === "inline"}
       suppressContentEditableWarning
     >
-      {Comps.map((C, i) => {
-        return <C key={i} />;
-      })}
+      {lines.map((l, i) => (
+        <ZyComp zyact={l} key={i} />
+      ))}
     </div>
   );
 };
 
+interface ModuleChildren {
+  lines: ModuleLine[];
+  snippetModal: SnippetModal;
+}
+
 export class ZymbolModule extends Zyact<ZymbolModuleSchema> {
   zyMaster = zymbolModuleMaster;
-  children: ModuleLine[];
+  /* All lines, and then the last child is a snippet */
+  children: (ModuleLine | SnippetModal)[];
+  showSnippetModal = false;
 
   constructor(cursorIndex: CursorIndex, parent?: Zym<any, any, any>) {
     super(cursorIndex, parent);
 
     /* Start out with a single standard input as the first line */
     // this.children = [new InlineInput(0, this)];
-    this.children = [new DisplayEquation(0, this)];
+    this.children = [new DisplayEquation(0, this), new SnippetModal(1, this)];
 
     this.setPersistenceSchemaSymbols({
       children: "c",
     });
   }
 
+  parseChildren(): ModuleChildren {
+    const children = [...this.children];
+    const snippetModal = children.pop() as SnippetModal;
+
+    return {
+      snippetModal,
+      lines: children as ModuleLine[],
+    };
+  }
+
+  setChildren(lines: ModuleLine[], snippetModal: SnippetModal) {
+    this.children = [...lines, snippetModal];
+  }
+
   component: React.FC = () => {
-    const lineClusters = clusterLines(this.children);
+    const { lines, snippetModal } = this.parseChildren();
+
+    const lineClusters = clusterLines(lines);
 
     return (
       <div className="outline-none focus:outline-none">
         {lineClusters.map((c, i) => (
           <ClusterHelper cluster={c} key={i} />
         ))}
+        <Modal isOpen={this.showSnippetModal}>
+          <ZyComp zyact={snippetModal} />
+        </Modal>
       </div>
     );
   };
 
-  toggleSnippetsModal = (open: boolean) => {};
+  toggleSnippetsModal = (open: boolean) => {
+    this.showSnippetModal = open;
+
+    this.callZ(ZyGodMethod.reRender, undefined);
+  };
 
   addLine = (newLinePosition: number, inline: boolean) => {
     this.children.splice(
@@ -536,13 +568,11 @@ export class ZymbolModule extends Zyact<ZymbolModuleSchema> {
     if (nextCursorIndex >= 0) {
       const child: Zym<any, any> = this.children[nextCursorIndex];
 
-      const childMove = unwrapTraitResponse(
-        await child.callTraitMethod(KeyPressTrait.handleKeyPress, {
-          cursor: childRelativeCursor,
-          keyPressContext: ctx,
-          keyPress,
-        })
-      );
+      const childMove = await child.call(KeyPressTrait.handleKeyPress, {
+        cursor: childRelativeCursor,
+        keyPressContext: ctx,
+        keyPress,
+      });
 
       if (childMove.success) {
         return chainMoveResponse(childMove, (nextCursor) => {
@@ -603,7 +633,7 @@ zymbolModuleMaster.implementTrait(KeyPressTrait, {
         keyPress.modifiers?.includes(KeyPressModifier.Cmd)
       ) {
         let tex = "";
-        for (const c of module.children) {
+        for (const c of module.parseChildren().lines) {
           tex += c.getCopyTex() + LF_UNICODE;
         }
 

@@ -21,10 +21,8 @@ import {
   successfulMoveResponse,
 } from "../../../../zym_lib/zy_god/cursor/cursor";
 import {
-  DEFAULT_SELECTOR,
   KeyPressBasicType,
   KeyPressComplexType,
-  keyPressEqual,
   KeyPressModifier,
   KeyPressTrait,
   ZymKeyPress,
@@ -55,10 +53,6 @@ import {
   ZymbolFrameOpts,
   ZymbolFrameSchema,
   ZYMBOL_FRAME_MASTER_ID,
-  ActionFactory,
-  FrameAction,
-  FrameActionRank,
-  DefaultNoOpAction,
 } from "./zymbol_frame_schema";
 import {
   VimiumHint,
@@ -79,8 +73,13 @@ import { isTextZymbol } from "../../zymbol/zymbols/text_zymbol/text_zymbol_schem
 import { STD_TRANSFORMER_TYPE_FILTERS } from "./transformer/std_transformers/std_transformer_type_filters";
 import { displayEquationTypeFilters } from "../zymbol_module/module_lines/display_equation/display_equation_schema";
 import Tex from "../../../../global_building_blocks/tex/tex";
-import { ActionCommandTrait } from "./action_commands";
-import { isJSDocThisTag } from "typescript";
+import { ActionCommandTrait } from "./actions/action_commands";
+import {
+  ActionFactory,
+  DefaultNoOpAction,
+  FrameAction,
+  FrameActionRank,
+} from "./actions/actions";
 
 const VIMIUM_HINT_PERIOD = 2;
 class ZymbolFrameMaster extends ZyMaster<
@@ -204,11 +203,14 @@ class ZymbolFrameMaster extends ZyMaster<
     );
 
     /* Now process the action factories */
+    const actionFactories = this.actionFactories.filter((a) =>
+      a.typeFilters.every((filter) => typeFilters.includes(filter))
+    );
 
-    const actionCopies = await rootZymbol.clone(this.actionFactories.length);
+    const actionCopies = await rootZymbol.clone(actionFactories.length);
 
     const normalActions = _.flatten(
-      this.actionFactories.map((f, i) =>
+      actionFactories.map((f, i) =>
         f.getActions(root, cursor, actionCopies[i] as Zymbol, zymbolCursor)
       )
     );
@@ -755,8 +757,6 @@ export class ZymbolFrame extends Zyact<ZymbolFrameSchema, FrameRenderProps> {
         return a.priority.rank - b.priority.rank;
       }
     });
-
-    console.log("ranked actions", this.actions);
   };
 }
 
@@ -843,10 +843,7 @@ zymbolFrameMaster.implementTrait(KeyPressTrait, {
 
         frame.setActionLock(true);
 
-        if (keyPressEqual(DEFAULT_SELECTOR, keyPress)) {
-          frame.setNewActions([]);
-          return successfulMoveResponse(cursor);
-        } else if (frame.actionIndex > -1) {
+        if (frame.actionIndex > -1) {
           const action = frame.actions[frame.actionIndex];
 
           if (action) {
@@ -857,6 +854,9 @@ zymbolFrameMaster.implementTrait(KeyPressTrait, {
 
               if (move.success) {
                 cursor = move.newRelativeCursor;
+
+                if (action.finishActionWithoutHandlingKeypress)
+                  return successfulMoveResponse(cursor);
               }
 
               const { nextCursorIndex: n, childRelativeCursor: c } =

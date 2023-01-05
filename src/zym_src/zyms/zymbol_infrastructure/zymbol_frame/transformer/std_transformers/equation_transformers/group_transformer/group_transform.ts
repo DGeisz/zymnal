@@ -176,50 +176,47 @@ class GroupTransformer extends Zentinel<{}> {
         const cursorCopy = [...cursor];
         const transformText = getTransformTextZymbolAndParent(root, cursorCopy);
 
-        if (transformText.isTextZymbol) {
-          const { text, parent } = transformText;
+        if (!transformText.isTextZymbol) return [];
+        const { text, parent } = transformText;
 
-          const fullText = text.getText();
-          const word = fullText.trim();
+        const fullText = text.getText();
+        const word = fullText.trim();
 
-          if (word === GROUP_DELIM) {
-            /* Handle standalone group */
-            if (zymbolIndex === 0 || /^\s/.test(fullText)) {
-              const group = new Zocket(root.parentFrame, 0, parent);
-              parent.children.splice(zymbolIndex, 1, group);
+        if (word !== GROUP_DELIM) return [];
 
-              cursorCopy.splice(cursorCopy.length - 2, 2, ...[zymbolIndex, 0]);
+        /* Handle standalone group */
+        if (zymbolIndex === 0 || /^\s/.test(fullText)) {
+          const group = new Zocket(root.parentFrame, 0, parent);
+          parent.children.splice(zymbolIndex, 1, group);
 
-              root.recursivelyReIndexChildren();
-              return [
-                new BasicZymbolTreeTransformation({
-                  newTreeRoot: root as Zocket,
-                  cursor: recoverAllowedCursor(cursorCopy, root),
-                  previewZymbol: group,
-                  priority: {
-                    rank: ZymbolTransformRank.Suggest,
-                    cost: 100,
-                  },
-                }),
-              ];
-            } else {
-              /* First we're going to wrap around a single operator */
-              let startIndex = zymbolIndex - 1;
+          cursorCopy.splice(cursorCopy.length - 2, 2, ...[zymbolIndex, 0]);
 
-              const t = new CustomGroupTransformation(
-                root as Zocket,
-                [...cursorCopy],
-                startIndex
-              );
+          root.recursivelyReIndexChildren();
+          return [
+            new BasicZymbolTreeTransformation({
+              newTreeRoot: root as Zocket,
+              cursor: recoverAllowedCursor(cursorCopy, root),
+              previewZymbol: group,
+              priority: {
+                rank: ZymbolTransformRank.Suggest,
+                cost: 100,
+              },
+            }),
+          ];
+        } else {
+          /* First we're going to wrap around a single operator */
+          let startIndex = zymbolIndex - 1;
 
-              await t.init();
+          const t = new CustomGroupTransformation(
+            root as Zocket,
+            [...cursorCopy],
+            startIndex
+          );
 
-              return [t];
-            }
-          }
+          await t.init();
+
+          return [t];
         }
-
-        return [];
       },
     });
   };
