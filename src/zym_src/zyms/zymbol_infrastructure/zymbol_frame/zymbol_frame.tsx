@@ -80,6 +80,7 @@ import {
   FrameAction,
   FrameActionRank,
 } from "./actions/actions";
+import { SNIPPET_ID } from "../zymbol_module/snippets/snippet_schema";
 
 const VIMIUM_HINT_PERIOD = 2;
 class ZymbolFrameMaster extends ZyMaster<
@@ -293,6 +294,7 @@ export class ZymbolFrame extends Zyact<ZymbolFrameSchema, FrameRenderProps> {
 
   baseZocket: Zocket;
   children: Zym<any, any>[];
+  defaultText?: string;
 
   actions: FrameAction[] = [];
   actionIndex = -1;
@@ -317,7 +319,7 @@ export class ZymbolFrame extends Zyact<ZymbolFrameSchema, FrameRenderProps> {
       this.usingDefaultTypeFilters = true;
     }
 
-    const { getTypeFilters, inlineTex } = _.defaults(opts, {
+    const { getTypeFilters, inlineTex, defaultText } = _.defaults(opts, {
       getTypeFilters: (cursor: Cursor) => {
         if (this.inlineTex) {
           return this.inlineTypeFilters(cursor);
@@ -326,8 +328,10 @@ export class ZymbolFrame extends Zyact<ZymbolFrameSchema, FrameRenderProps> {
         }
       },
       inlineTex: false,
+      defaultText: undefined,
     });
 
+    this.defaultText = defaultText;
     this.inlineTex = inlineTex;
 
     this.baseZocket = new Zocket(this, 0, this, this.inlineTex);
@@ -338,6 +342,10 @@ export class ZymbolFrame extends Zyact<ZymbolFrameSchema, FrameRenderProps> {
       baseZocket: "b",
       inlineTex: "i",
     });
+  }
+
+  setDefaultText(text: string) {
+    this.defaultText = text;
   }
 
   toggleUseActionLock = (useLock: boolean) => {
@@ -388,6 +396,15 @@ export class ZymbolFrame extends Zyact<ZymbolFrameSchema, FrameRenderProps> {
       ZyGodMethod.getFullCursor,
       undefined
     );
+
+    if (this.parent?.getMasterId() === SNIPPET_ID) {
+      console.log(
+        "Zocket cursor",
+        fullCursor,
+        this.getFullCursorPointer(),
+        zocketCursor
+      );
+    }
 
     if (fullCursor) {
       const opt = getRelativeCursor(this.getFullCursorPointer(), fullCursor);
@@ -607,6 +624,7 @@ export class ZymbolFrame extends Zyact<ZymbolFrameSchema, FrameRenderProps> {
               tex={selectedTex}
               inlineTex={this.inlineTex}
               className={texClass ?? undefined}
+              defaultText={this.defaultText}
             />
           </div>
           <div className="relative">
@@ -644,6 +662,7 @@ export class ZymbolFrame extends Zyact<ZymbolFrameSchema, FrameRenderProps> {
               tex={frameTex}
               inlineTex={this.inlineTex}
               className={texClass ?? undefined}
+              defaultText={this.defaultText}
             />
           </div>
         </div>

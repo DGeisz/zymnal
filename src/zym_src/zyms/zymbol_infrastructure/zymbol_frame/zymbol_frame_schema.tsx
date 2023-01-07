@@ -72,9 +72,9 @@ export const STD_FRAME_LABELS = {
 };
 
 export interface ZymbolFrameOpts {
-  inlineFrame?: boolean;
   getTypeFilters: (cursor: Cursor) => TransformerTypeFilter[];
   inlineTex: boolean;
+  defaultText: string;
 }
 
 export type ZymbolFrameSchema = CreateZySchema<

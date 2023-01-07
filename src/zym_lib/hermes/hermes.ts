@@ -4,6 +4,7 @@ import { VIMIUM_MODE_ID } from "../../zym_src/zyms/zymbol_infrastructure/zymbol_
 import { Zentinel } from "../zentinel/zentinel";
 import { Zyact } from "../zym/zymplementations/zyact/zyact";
 import { ZyId } from "../zy_schema/zy_schema";
+import { SNIPPET_ID } from "../../zym_src/zyms/zymbol_infrastructure/zymbol_module/snippets/snippet_schema";
 
 export interface ZentinelMessage<T = any> {
   message: string | number;
@@ -110,7 +111,9 @@ export function useHermesValue<
 
   useEffect(() => {
     (async () => {
-      setValue(await zyact.callZentinelMethod(pointer, args));
+      const val = await zyact.callZ(pointer, args);
+
+      setValue(val);
     })();
     // Put args in dep array if you want it to be a dependency
   }, [renderCount, ...(depArray ? depArray : [])]);

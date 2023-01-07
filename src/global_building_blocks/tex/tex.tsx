@@ -10,6 +10,7 @@ interface TexProps {
   tex: string;
   inlineTex?: boolean;
   className?: string;
+  defaultText?: string;
 }
 
 function recursivelyRemovePointerEvents(e: HTMLElement) {
@@ -37,7 +38,7 @@ const katexOpts: any = {
  */
 const Tex: React.FC<TexProps> = (props) => {
   if (props.inlineTex) {
-    return <MathString mathText={props.tex} />;
+    return <MathString mathText={props.tex} defaultText={props.defaultText} />;
   }
 
   return <MathTex tex={props.tex} displayMode className={props.className} />;
@@ -52,6 +53,7 @@ export default React.memo(
 
 interface MathStringProps {
   mathText: string;
+  defaultText?: string;
 }
 
 const MathString: React.FC<MathStringProps> = (props) => {
@@ -60,11 +62,11 @@ const MathString: React.FC<MathStringProps> = (props) => {
   if (parsedMath.length === 0) {
     return (
       <span
-        className="zytex-wrapper caret text-transparent"
+        className="zytex-wrapper caret opacity-70"
         contentEditable
         suppressContentEditableWarning
       >
-        Fuck you
+        {props.defaultText ?? " "}
       </span>
     );
   }

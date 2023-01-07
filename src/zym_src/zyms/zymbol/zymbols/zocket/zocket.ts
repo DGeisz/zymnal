@@ -290,7 +290,7 @@ export class Zocket extends Zymbol<ZocketSchema> {
     ) {
       const { success, newRelativeCursor } = last(
         this.children
-      ).takeCursorFromLeft(ctx);
+      ).takeCursorFromRight(ctx);
 
       if (success) {
         return successfulMoveResponse([

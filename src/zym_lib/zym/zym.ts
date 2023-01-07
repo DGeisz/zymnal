@@ -110,6 +110,18 @@ export abstract class Zym<
     }
   };
 
+  __fullCursorIdPointer = (): { c: CursorIndex; id: string }[] => {
+    const item = {
+      c: this.cursorIndex,
+      id: this.getMasterId(),
+    };
+    if (this.parent) {
+      return [...this.parent.__fullCursorIdPointer(), item];
+    } else {
+      return [item];
+    }
+  };
+
   /* ===== MAIN RENDER METHODS ===== */
 
   /**
@@ -225,7 +237,7 @@ export abstract class Zym<
     }
 
     /* Use a magic hermes call to get an implementation from either god or the default trait zentinel */
-    return await this.callZentinelMethod(
+    const val = await this.callZentinelMethod(
       defaultTraitZentinelMethodList.callTraitMethod,
       {
         zym: this,
@@ -233,6 +245,8 @@ export abstract class Zym<
         args,
       }
     );
+
+    return val;
   };
 
   call = async <Schema extends ZyTraitSchema, Method extends keyof Schema>(

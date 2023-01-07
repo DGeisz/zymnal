@@ -24,7 +24,6 @@ export const inlineInputMaster = new InlineInputMaster();
 export class InlineInput extends Zyact<InlineInputSchema> {
   zyMaster: ZyMaster = inlineInputMaster;
   inputFrame: ZymbolFrame = new ZymbolFrame(0, this, {
-    inlineFrame: true,
     getTypeFilters: (cursor) => {
       return this.inputFrame.inlineTypeFilters(cursor);
     },

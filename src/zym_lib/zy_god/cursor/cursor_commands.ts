@@ -6,6 +6,7 @@ import {
   unwrapTraitResponse,
 } from "../../zy_trait/zy_trait";
 import { Cursor, extendChildCursor, extractCursorInfo } from "./cursor";
+import { SNIPPET_MODAL_ID } from "../../../zym_src/zyms/zymbol_infrastructure/zymbol_module/snippets/snippet_modal_schema";
 
 /* ==== LOCAL COMMANDS ==== */
 
@@ -150,7 +151,13 @@ export const defaultCursorImplFactory = defaultTraitImplementationFactory(
     cursorRender: async (zym, args: CursorRenderArgs) => {
       const { oldCursor, newCursor } = args;
 
+      console.log("cursor render", zym.getMasterId());
+
       zym.render();
+
+      // if (zym.getMasterId() === SNIPPET_MODAL_ID) {
+      //   debugger;
+      // }
 
       const canHandleChildren = await zym.callTraitMethod(
         CursorCommandTrait.canHandleCursorBranchRender,
@@ -177,20 +184,29 @@ export const defaultCursorImplFactory = defaultTraitImplementationFactory(
         } = extractCursorInfo(newCursor.val);
 
         if (oI === nI) {
-          zym.children[oI].callTraitMethod(CursorCommandTrait.cursorRender, {
-            newCursor: nP ? NONE : zySome(nRel),
-            oldCursor: oP ? NONE : zySome(oRel),
-          });
+          await zym.children[oI].callTraitMethod(
+            CursorCommandTrait.cursorRender,
+            {
+              newCursor: nP ? NONE : zySome(nRel),
+              oldCursor: oP ? NONE : zySome(oRel),
+            }
+          );
         } else {
-          zym.children[oI].callTraitMethod(CursorCommandTrait.cursorRender, {
-            newCursor: NONE,
-            oldCursor: oP ? NONE : zySome(oRel),
-          });
+          await zym.children[oI].callTraitMethod(
+            CursorCommandTrait.cursorRender,
+            {
+              newCursor: NONE,
+              oldCursor: oP ? NONE : zySome(oRel),
+            }
+          );
 
-          zym.children[nI].callTraitMethod(CursorCommandTrait.cursorRender, {
-            newCursor: nP ? NONE : zySome(nRel),
-            oldCursor: NONE,
-          });
+          await zym.children[nI].callTraitMethod(
+            CursorCommandTrait.cursorRender,
+            {
+              newCursor: nP ? NONE : zySome(nRel),
+              oldCursor: NONE,
+            }
+          );
         }
       } else if (isSome(oldCursor)) {
         const {
@@ -199,10 +215,13 @@ export const defaultCursorImplFactory = defaultTraitImplementationFactory(
           parentOfCursorElement: oP,
         } = extractCursorInfo(oldCursor.val);
 
-        zym.children[oI].callTraitMethod(CursorCommandTrait.cursorRender, {
-          newCursor: NONE,
-          oldCursor: oP ? NONE : zySome(oRel),
-        });
+        await zym.children[oI].callTraitMethod(
+          CursorCommandTrait.cursorRender,
+          {
+            newCursor: NONE,
+            oldCursor: oP ? NONE : zySome(oRel),
+          }
+        );
       } else if (isSome(newCursor)) {
         const {
           childRelativeCursor: nRel,
@@ -210,11 +229,9 @@ export const defaultCursorImplFactory = defaultTraitImplementationFactory(
           parentOfCursorElement: nP,
         } = extractCursorInfo(newCursor.val);
 
-        if (!zym.children[nI]) {
-          debugger;
-        }
+        const child = zym.children[nI];
 
-        zym.children[nI].callTraitMethod(CursorCommandTrait.cursorRender, {
+        await child.callTraitMethod(CursorCommandTrait.cursorRender, {
           newCursor: nP ? NONE : zySome(nRel),
           oldCursor: NONE,
         });

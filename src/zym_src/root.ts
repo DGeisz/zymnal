@@ -1,7 +1,7 @@
 import { Zentinel } from "../zym_lib/zentinel/zentinel";
 import { Zyact } from "../zym_lib/zym/zymplementations/zyact/zyact";
 import { ZyMaster } from "../zym_lib/zym/zy_master";
-import { BASE_ZAGE, Zage, zageMaster } from "./zyms/zage/zage";
+import { BASE_ZAGE, zageMaster } from "./zyms/zage/zage";
 import { zymbolMasterList } from "./zyms/zymbol/zymbols/zymbol_list";
 import {
   zymbolInfrastructureMasters,

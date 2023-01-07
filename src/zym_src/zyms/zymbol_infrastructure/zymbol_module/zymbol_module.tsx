@@ -50,10 +50,7 @@ import {
 } from "./zymbol_module_schema";
 import Modal from "react-modal";
 import { ZymbolFrameMethod } from "../zymbol_frame/zymbol_frame_schema";
-import {
-  SnippetModal,
-  snippetActionFactory,
-} from "./snippet_modal/snippet_modal";
+import { SnippetModal, snippetActionFactory } from "./snippets/snippet_modal";
 
 Modal.setAppElement("#root");
 
@@ -497,6 +494,10 @@ export class ZymbolModule extends Zyact<ZymbolModuleSchema> {
   toggleSnippetsModal = (open: boolean) => {
     this.showSnippetModal = open;
 
+    if (open) {
+      this.parseChildren().snippetModal.focusOnFirstSnippet();
+    }
+
     this.callZ(ZyGodMethod.reRender, undefined);
   };
 
@@ -687,7 +688,8 @@ zymbolModuleMaster.implementTrait(KeyPressTrait, {
 
           if (
             !childMove.success &&
-            nextCursorIndex < module.children.length - 1
+            // Need to ignore the snippet modal
+            nextCursorIndex < module.children.length - 2
           ) {
             const newCursor = unwrapOption(
               await zym.children[nextCursorIndex + 1].call(
@@ -704,7 +706,12 @@ zymbolModuleMaster.implementTrait(KeyPressTrait, {
         case KeyPressBasicType.ArrowLeft: {
           childMove = await deferToChild();
 
-          if (!childMove.success && nextCursorIndex > 0) {
+          if (
+            !childMove.success &&
+            nextCursorIndex > 0 &&
+            // Need to ignore the snippet modal
+            nextCursorIndex < module.children.length - 1
+          ) {
             const newCursor = unwrapOption(
               await zym.children[nextCursorIndex - 1].call(
                 CursorCommandTrait.getEndCursor,

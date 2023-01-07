@@ -1,13 +1,19 @@
 import Tex from "../../../../global_building_blocks/tex/tex";
-import { text_with_cursor } from "../../../../global_utils/latex_utils";
+import {
+  LATEX_EMPTY_SOCKET,
+  text_with_cursor,
+} from "../../../../global_utils/latex_utils";
 import { stringSplice } from "../../../../global_utils/string_utils";
 import { safeHydrate } from "../../../../zym_lib/zym/utils/hydrate";
 import { Zym } from "../../../../zym_lib/zym/zym";
 import { Zyact } from "../../../../zym_lib/zym/zymplementations/zyact/zyact";
 import { ZyMaster } from "../../../../zym_lib/zym/zy_master";
 import {
+  Cursor,
   CursorIndex,
   FAILED_CURSOR_MOVE_RESPONSE,
+  extractCursorInfo,
+  getRelativeCursor,
   successfulMoveResponse,
 } from "../../../../zym_lib/zy_god/cursor/cursor";
 import {
@@ -17,6 +23,9 @@ import {
 } from "../../../../zym_lib/zy_god/event_handler/key_press";
 import { ZyPartialPersist } from "../../../../zym_lib/zy_schema/zy_schema";
 import { ZinputSchema, ZINPUT_ID } from "./zinput_schema";
+import { useHermesValue } from "../../../../zym_lib/hermes/hermes";
+import { ZyGodMethod } from "../../../../zym_lib/zy_god/zy_god_schema";
+import { isSome } from "../../../../zym_lib/utils/zy_option";
 
 class ZinputMaster extends ZyMaster<ZinputSchema> {
   zyId: string = ZINPUT_ID;
@@ -71,9 +80,35 @@ export class Zinput extends Zyact<ZinputSchema, ZinputProps> {
   }
 
   component: React.FC<ZinputProps> = ({ text, cursor }) => {
+    let zinputCursor = -1;
+
+    const fullCursor = useHermesValue(
+      this,
+      ZyGodMethod.getFullCursor,
+      undefined
+    );
+
+    if (fullCursor) {
+      const opt = getRelativeCursor(this.getFullCursorPointer(), fullCursor);
+
+      if (isSome(opt)) {
+        const { parentOfCursorElement, nextCursorIndex } = extractCursorInfo(
+          opt.val
+        );
+
+        if (parentOfCursorElement) {
+          zinputCursor = nextCursorIndex;
+        }
+      }
+    }
+
     return (
-      <div className="flex self-start">
-        <Tex tex={text_with_cursor(text, cursor)} inlineTex />
+      <div className="flex self-start mt-3">
+        {zinputCursor > -1 ? (
+          <Tex tex={text_with_cursor(text, zinputCursor)} />
+        ) : (
+          <Tex tex={!!text ? text : LATEX_EMPTY_SOCKET} />
+        )}
       </div>
     );
   };

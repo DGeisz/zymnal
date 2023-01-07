@@ -22,6 +22,12 @@ import {
   FrameActionRank,
 } from "../../zymbol_frame/actions/actions";
 import { STD_TRANSFORMER_TYPE_FILTERS } from "../../zymbol_frame/transformer/std_transformers/std_transformer_type_filters";
+import { Snippet } from "./snippet";
+import { ZyComp } from "../../../../../zym_lib/zym/zymplementations/zyact/hooks";
+import { IoClose } from "react-icons/io5";
+import { HiPlus } from "react-icons/hi";
+import { ZyGodMethod } from "../../../../../zym_lib/zy_god/zy_god_schema";
+import { sleep } from "../../../../../global_utils/promise_utils";
 
 export const snippetActionFactory = new AutocompleteTextActionFactory({
   source: "snippet",
@@ -81,9 +87,13 @@ class SnippetModalMaster extends ZyMaster<SnippetModalSchema> {
 
 export const snippetModalMaster = new SnippetModalMaster();
 
+const SnippetModalStyles: Record<string, string> = {
+  TableName: clsx("text-left"),
+};
+
 export class SnippetModal extends Zyact<SnippetModalSchema> {
   zyMaster: ZyMaster = snippetModalMaster;
-  children: Zym[] = [];
+  children: Snippet[] = [new Snippet(0, this)];
 
   constructor(cursorIndex: CursorIndex, parent: Zym | undefined) {
     super(cursorIndex, parent);
@@ -93,6 +103,12 @@ export class SnippetModal extends Zyact<SnippetModalSchema> {
     });
   }
 
+  addSnippet = () => {
+    this.children.push(new Snippet(0, this));
+    this.recursivelyReIndexChildren();
+    this.rerender();
+  };
+
   getModule(): ZymbolModule {
     if (!this.parent) {
       throw new Error("Parent not set yet!");
@@ -101,18 +117,57 @@ export class SnippetModal extends Zyact<SnippetModalSchema> {
     return this.parent as ZymbolModule;
   }
 
+  focusOnFirstSnippet = async () => {
+    const firstSnippetCursor = [...this.getFullCursorPointer(), 0, 0, 0, 0];
+
+    await sleep(100);
+    await this.callZ(ZyGodMethod.takeCursor, firstSnippetCursor);
+    // await this.callZ(ZyGodMethod.takeCursor, a);
+  };
+
   component: FC<{}> = () => {
     return (
       <div>
-        <div className={clsx("flex flex-row items-start")}>
+        <div className={"flex items-start"}>
           <div
-            className={clsx("bg-red-400 cursor-pointer rounded-md px-2")}
+            className={clsx(
+              "cursor-pointer rounded-md",
+              "p-1",
+              "mb-4",
+              "hover:bg-gray-300"
+            )}
             onClick={() => this.getModule().toggleSnippetsModal(false)}
           >
-            X
+            <IoClose size={20} />
           </div>
         </div>
-        <div></div>
+        <table className="table-fixed w-full">
+          <thead>
+            <tr className={clsx("border-b border-solid border-gray-200")}>
+              <th className={SnippetModalStyles.TableName}>Keyword</th>
+              <th className={SnippetModalStyles.TableName}>Snippet</th>
+            </tr>
+          </thead>
+          <tbody>
+            {this.children.map((s, i) => (
+              <ZyComp zyact={s} key={i} />
+            ))}
+          </tbody>
+        </table>
+        <div className="flex items-start">
+          <div
+            className={clsx(
+              "mt-3",
+              "opacity-50 hover:opacity-100",
+              "cursor-pointer rounded-md",
+              "p-1",
+              "hover:bg-gray-300"
+            )}
+            onClick={this.addSnippet}
+          >
+            <HiPlus size={20} />
+          </div>
+        </div>
       </div>
     );
   };

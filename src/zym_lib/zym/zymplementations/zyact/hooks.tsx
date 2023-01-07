@@ -12,7 +12,7 @@ export function useZymponents(zyms: Zyact[]): React.FC[] {
   return useMemo(() => zyms.map((z) => z.getRenderContent()), [listId]);
 }
 
-export const ZyComp: React.FC<{ zyact: Zyact; props?: any }> = ({
+export const ZyComp: React.FC<{ zyact: Zyact<any, any>; props?: any }> = ({
   zyact,
   props,
 }) => {
