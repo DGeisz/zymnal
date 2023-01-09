@@ -1,5 +1,3 @@
-import { join } from "path";
-import { CURSOR_NAME } from "../../../../global_utils/latex_utils";
 import { Zentinel } from "../../../zentinel/zentinel";
 import { cursorBlink } from "../../cursor/cursor";
 import { VerticalNavigationHandleType } from "../../cursor/cursor_commands";
@@ -158,6 +156,10 @@ class KeyEventHandler extends Zentinel<KeyEventHandlerMethodSchema> {
       }
       case "ArrowRight": {
         keyPressType = KeyPressBasicType.ArrowRight;
+        break;
+      }
+      case "Tab": {
+        keyPressType = KeyPressBasicType.Tab;
         break;
       }
       case "Backspace": {

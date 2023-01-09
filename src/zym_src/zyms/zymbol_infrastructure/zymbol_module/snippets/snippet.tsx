@@ -23,8 +23,10 @@ import { ZyComp } from "../../../../../zym_lib/zym/zymplementations/zyact/hooks"
 import clsx from "clsx";
 import { CursorCommandTrait } from "../../../../../zym_lib/zy_god/cursor/cursor_commands";
 import {
+  BasicKeyPress,
   KeyPressBasicType,
   KeyPressTrait,
+  keyPressTypeToString,
 } from "../../../../../zym_lib/zy_god/event_handler/key_press";
 
 class SnippetMaster extends ZyMaster<SnippetSchema> {
@@ -66,11 +68,9 @@ export class Snippet extends Zyact<SnippetSchema> {
 
     const ItemStyle = clsx("pb-3");
 
-    console.log("Rendering Snippet!", this.getRenderCount());
-
     return (
       <tr className={clsx("border-b border-solid border-gray-100")}>
-        <td className={clsx(ItemStyle, "bg-red")}>
+        <td className={ItemStyle}>
           <ZyComp zyact={zinput} />
         </td>
         <td className={ItemStyle}>
@@ -117,6 +117,37 @@ snippetMaster.implementTrait(KeyPressTrait, {
     if (parentOfCursorElement || nextCursorIndex < 0)
       return NO_CURSOR_MOVE_RESPONSE;
 
+    const moveCursorToSnippet = () => {
+      return chainMoveResponse(
+        snippet.children[1].baseZocket.takeCursorFromLeft(keyPressContext),
+        (newRelativeCursor) => {
+          return successfulMoveResponse([1, 0, ...newRelativeCursor]);
+        }
+      );
+    };
+
+    const moveCursorToKeyword = () => {
+      return chainMoveResponse(
+        snippet.children[0].baseZocket.takeCursorFromRight(keyPressContext),
+        (newRelativeCursor) => {
+          return successfulMoveResponse([0, 0, ...newRelativeCursor]);
+        }
+      );
+    };
+
+    if (
+      nextCursorIndex === 0 &&
+      (keyPress.type === KeyPressBasicType.Enter ||
+        keyPress.type === KeyPressBasicType.Tab)
+    ) {
+      return moveCursorToSnippet();
+    } else if (
+      nextCursorIndex === 1 &&
+      keyPress.type === KeyPressBasicType.Delete
+    ) {
+      return moveCursorToKeyword();
+    }
+
     const move = await snippet.children[nextCursorIndex].call(
       KeyPressTrait.handleKeyPress,
       { cursor: childRelativeCursor, keyPress, keyPressContext }
@@ -126,26 +157,14 @@ snippetMaster.implementTrait(KeyPressTrait, {
 
     if (
       nextCursorIndex === 0 &&
-      (keyPress.type === KeyPressBasicType.ArrowRight ||
-        keyPress.type === KeyPressBasicType.Enter)
+      keyPress.type === KeyPressBasicType.ArrowRight
     ) {
-      return chainMoveResponse(
-        snippet.children[1].baseZocket.takeCursorFromLeft(keyPressContext),
-        (newRelativeCursor) => {
-          return successfulMoveResponse([1, 0, ...newRelativeCursor]);
-        }
-      );
+      return moveCursorToSnippet();
     } else if (
       nextCursorIndex === 1 &&
-      (keyPress.type === KeyPressBasicType.ArrowLeft ||
-        keyPress.type === KeyPressBasicType.Delete)
+      keyPress.type === KeyPressBasicType.ArrowLeft
     ) {
-      return chainMoveResponse(
-        snippet.children[0].baseZocket.takeCursorFromRight(keyPressContext),
-        (newRelativeCursor) => {
-          return successfulMoveResponse([0, 0, ...newRelativeCursor]);
-        }
-      );
+      return moveCursorToKeyword();
     }
 
     return NO_CURSOR_MOVE_RESPONSE;

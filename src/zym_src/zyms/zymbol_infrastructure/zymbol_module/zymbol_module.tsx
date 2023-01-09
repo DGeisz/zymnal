@@ -51,6 +51,7 @@ import {
 import Modal from "react-modal";
 import { ZymbolFrameMethod } from "../zymbol_frame/zymbol_frame_schema";
 import { SnippetModal, snippetActionFactory } from "./snippets/snippet_modal";
+import mod from "zod/lib";
 
 Modal.setAppElement("#root");
 
@@ -275,8 +276,9 @@ class ZymbolModuleMaster extends ZyMaster<
 
           if (childRelativeCursor.length > 3) {
             const lineIndex = childRelativeCursor[0];
+            const { lines } = module.parseChildren();
 
-            const inlineInput = module.children[lineIndex] as InlineInput;
+            const inlineInput = lines[lineIndex] as InlineInput;
 
             if (inlineInput) {
               const zocketRelativeCursor = childRelativeCursor.slice(3);

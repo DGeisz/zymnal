@@ -39,6 +39,28 @@ export enum KeyPressBasicType {
   Escape,
 }
 
+export function keyPressTypeToString(type: KeyPressBasicType): string {
+  switch (type) {
+    case KeyPressBasicType.Enter:
+      return "Enter";
+    case KeyPressBasicType.Tab:
+      return "Tab";
+    case KeyPressBasicType.ArrowDown:
+      return "ArrowDown";
+    case KeyPressBasicType.ArrowUp:
+      return "ArrowUp";
+    case KeyPressBasicType.ArrowLeft:
+      return "ArrowLeft";
+    case KeyPressBasicType.ArrowRight:
+      return "ArrowRight";
+    case KeyPressBasicType.Delete:
+      return "Delete";
+    case KeyPressBasicType.Escape:
+      return "Escape";
+    default:
+      return "";
+  }
+}
 export enum KeyPressModifier {
   Shift,
   Ctrl,

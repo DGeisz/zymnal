@@ -164,6 +164,10 @@ export abstract class Zymbol<
 
       return FAILED_CURSOR_MOVE_RESPONSE;
     } else {
+      if (!this.children[nextCursorIndex]) {
+        return FAILED_CURSOR_MOVE_RESPONSE;
+      }
+
       return wrapChildCursorResponse(
         this.children[nextCursorIndex].defaultKeyPressHandler(
           keyPress,

@@ -151,13 +151,7 @@ export const defaultCursorImplFactory = defaultTraitImplementationFactory(
     cursorRender: async (zym, args: CursorRenderArgs) => {
       const { oldCursor, newCursor } = args;
 
-      console.log("cursor render", zym.getMasterId());
-
       zym.render();
-
-      // if (zym.getMasterId() === SNIPPET_MODAL_ID) {
-      //   debugger;
-      // }
 
       const canHandleChildren = await zym.callTraitMethod(
         CursorCommandTrait.canHandleCursorBranchRender,

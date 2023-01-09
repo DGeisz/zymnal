@@ -397,15 +397,6 @@ export class ZymbolFrame extends Zyact<ZymbolFrameSchema, FrameRenderProps> {
       undefined
     );
 
-    if (this.parent?.getMasterId() === SNIPPET_ID) {
-      console.log(
-        "Zocket cursor",
-        fullCursor,
-        this.getFullCursorPointer(),
-        zocketCursor
-      );
-    }
-
     if (fullCursor) {
       const opt = getRelativeCursor(this.getFullCursorPointer(), fullCursor);
 

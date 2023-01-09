@@ -620,6 +620,9 @@ export class Zocket extends Zymbol<ZocketSchema> {
         return FAILED_CURSOR_MOVE_RESPONSE;
       }
     }
+    if (!this.children[nextCursorIndex]) {
+      console.error("master", this.getMasterId(), this.__fullCursorIdPointer());
+    }
 
     return wrapChildCursorResponse(
       this.children[nextCursorIndex].defaultKeyPressHandler(
