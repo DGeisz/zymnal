@@ -3,6 +3,7 @@ import { ZymbolModule } from "../zymbol_module";
 import {
   CursorIndex,
   FAILED_CURSOR_MOVE_RESPONSE,
+  getAllZymWithId,
   getLastZymInCursorWithId,
 } from "../../../../../zym_lib/zy_god/cursor/cursor";
 import { ZyMaster } from "../../../../../zym_lib/zym/zy_master";
@@ -22,12 +23,25 @@ import {
   FrameActionRank,
 } from "../../zymbol_frame/actions/actions";
 import { STD_TRANSFORMER_TYPE_FILTERS } from "../../zymbol_frame/transformer/std_transformers/std_transformer_type_filters";
-import { Snippet } from "./snippet";
+import { Snippet, SnippetInfo } from "./snippet";
 import { ZyComp } from "../../../../../zym_lib/zym/zymplementations/zyact/hooks";
 import { IoClose } from "react-icons/io5";
 import { HiPlus } from "react-icons/hi";
 import { ZyGodMethod } from "../../../../../zym_lib/zy_god/zy_god_schema";
 import { sleep } from "../../../../../global_utils/promise_utils";
+import { ZymbolFrameMethod } from "../../zymbol_frame/zymbol_frame_schema";
+import _ from "underscore";
+import {
+  getTransformTextZymbolAndParent,
+  makeHelperCursor,
+  recoverAllowedCursor,
+} from "../../zymbol_frame/transformer/std_transformers/transform_utils";
+import { Zymbol } from "../../../zymbol/zymbol";
+import { Zocket } from "../../../zymbol/zymbols/zocket/zocket";
+import {
+  BasicZymbolTreeTransformation,
+  ZymbolTransformRank,
+} from "../../zymbol_frame/transformer/transformer";
 
 export const snippetActionFactory = new AutocompleteTextActionFactory({
   source: "snippet",
@@ -83,6 +97,99 @@ class SnippetModalMaster extends ZyMaster<SnippetModalSchema> {
   newBlankChild(): Zym {
     return new SnippetModal(0, undefined);
   }
+
+  onRegistration = async () => {
+    this.callZ(ZymbolFrameMethod.registerTransformerFactory, {
+      source: SNIPPET_MODAL_ID,
+      name: "snippet-factory",
+      typeFilters: [
+        STD_TRANSFORMER_TYPE_FILTERS.EQUATION,
+        STD_TRANSFORMER_TYPE_FILTERS.SNIPPETS,
+      ],
+      factory: async (root, cursor) => {
+        const modules = getAllZymWithId<ZymbolModule>(
+          root,
+          cursor,
+          ZYMBOL_MODULE_ID
+        );
+
+        /* Reverse so the last modules are first */
+        modules.reverse();
+
+        /* Map modules to snippet lists 
+        We flatten this to deal with all snippets at once
+        */
+        const snippetList = _.flatten(
+          await Promise.all(
+            modules.map((m) =>
+              m.parseChildren().snippetModal.getParsedSnippets()
+            )
+          )
+        );
+
+        return [
+          async (root, cursor, keyPress) => {
+            cursor = makeHelperCursor(cursor, root);
+            const cursorCopy = [...cursor];
+
+            const textTransform = getTransformTextZymbolAndParent(
+              root,
+              cursorCopy
+            );
+
+            if (!textTransform.isTextZymbol) return [];
+
+            const { text } = textTransform;
+            const word = text.getText();
+
+            /* Want to get all relevant snippets */
+            const matchedSnippets = snippetList
+              .filter((s) => s.keyword === word)
+              .map((s) => s.template);
+
+            if (matchedSnippets.length === 0) return [];
+
+            const rootClones = (await root.clone(
+              matchedSnippets.length
+            )) as Zocket[];
+
+            return matchedSnippets.map((template, i) => {
+              const newCursor = [...cursorCopy];
+              const newRoot = rootClones[i];
+
+              const textTransform = getTransformTextZymbolAndParent(
+                newRoot,
+                newCursor
+              );
+
+              if (!textTransform.isTextZymbol) throw Error("Fuck you");
+              const { parent, zymbolIndex } = textTransform;
+
+              /* NOTE:  We're going to use the template without cloning because we refresh on each keypress */
+              parent.children.splice(zymbolIndex, 1, ...template.children);
+              newCursor.splice(
+                newCursor.length - 2,
+                2,
+                zymbolIndex + template.children.length
+              );
+
+              newRoot.recursivelyReIndexChildren();
+
+              return new BasicZymbolTreeTransformation({
+                newTreeRoot: newRoot,
+                cursor: recoverAllowedCursor(newCursor, newRoot),
+                previewZymbol: template,
+                priority: {
+                  rank: ZymbolTransformRank.Suggest,
+                  cost: i,
+                },
+              });
+            });
+          },
+        ];
+      },
+    });
+  };
 }
 
 export const snippetModalMaster = new SnippetModalMaster();
@@ -122,7 +229,12 @@ export class SnippetModal extends Zyact<SnippetModalSchema> {
 
     await sleep(100);
     await this.callZ(ZyGodMethod.takeCursor, firstSnippetCursor);
-    // await this.callZ(ZyGodMethod.takeCursor, a);
+  };
+
+  getParsedSnippets = async (): Promise<SnippetInfo[]> => {
+    return (
+      await Promise.all(this.children.map((s) => s.getSnippetInfo()))
+    ).filter((a) => !!a) as SnippetInfo[];
   };
 
   component: FC<{}> = () => {

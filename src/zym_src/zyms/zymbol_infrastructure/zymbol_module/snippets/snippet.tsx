@@ -21,13 +21,15 @@ import {
 } from "../../../../../zym_lib/zym/utils/hydrate";
 import { ZyComp } from "../../../../../zym_lib/zym/zymplementations/zyact/hooks";
 import clsx from "clsx";
-import { CursorCommandTrait } from "../../../../../zym_lib/zy_god/cursor/cursor_commands";
 import {
-  BasicKeyPress,
   KeyPressBasicType,
   KeyPressTrait,
-  keyPressTypeToString,
 } from "../../../../../zym_lib/zy_god/event_handler/key_press";
+import _ from "underscore";
+import { Zocket } from "../../../zymbol/zymbols/zocket/zocket";
+import { keyEventHandler } from "../../../../../zym_lib/zy_god/zentinels/key_event_handler/key_event_handler";
+import { TextZymbol } from "../../../zymbol/zymbols/text_zymbol/text_zymbol";
+import { STD_TRANSFORMER_TYPE_FILTERS } from "../../zymbol_frame/transformer/std_transformers/std_transformer_type_filters";
 
 class SnippetMaster extends ZyMaster<SnippetSchema> {
   zyId: string = SNIPPET_ID;
@@ -41,6 +43,11 @@ export const snippetMaster = new SnippetMaster();
 
 const KEYWORD_DEFAULT_TEXT = "Enter Keyword...";
 
+export interface SnippetInfo {
+  keyword: string;
+  template: Zocket;
+}
+
 export class Snippet extends Zyact<SnippetSchema> {
   zyMaster: ZyMaster = snippetMaster;
 
@@ -51,7 +58,8 @@ export class Snippet extends Zyact<SnippetSchema> {
       defaultText: KEYWORD_DEFAULT_TEXT,
     }),
     new ZymbolFrame(1, this, {
-      getTypeFilters: displayEquationTypeFilters,
+      // @We don't want any transformers related to snippets
+      getTypeFilters: () => [STD_TRANSFORMER_TYPE_FILTERS.EQUATION],
     }),
   ];
 
@@ -78,6 +86,33 @@ export class Snippet extends Zyact<SnippetSchema> {
         </td>
       </tr>
     );
+  };
+
+  parseChildren = (): { keyword: ZymbolFrame; template: ZymbolFrame } => {
+    return {
+      keyword: this.children[0],
+      template: this.children[1],
+    };
+  };
+
+  getSnippetInfo = async (): Promise<SnippetInfo | undefined> => {
+    /* Making sure both of our lads have children */
+    if (this.children.some((c) => c.baseZocket.children.length === 0))
+      return undefined;
+
+    /* Get keyword */
+    const { keyword: keywordFrame, template: templateFrame } =
+      this.parseChildren();
+
+    const keyword = (
+      keywordFrame.baseZocket.children[0] as TextZymbol
+    ).getText();
+
+    const template = (await templateFrame.baseZocket.clone(1))[0] as Zocket;
+
+    if (!keyword) return undefined;
+
+    return { keyword, template };
   };
 
   persistData(): ZyPartialPersist<SnippetSchema> {
@@ -135,6 +170,14 @@ snippetMaster.implementTrait(KeyPressTrait, {
       );
     };
 
+    /* Check if we're deleting from the beginning of the keyword */
+    if (
+      _.isEqual(cursor, [0, 0, 0]) &&
+      keyPress.type === KeyPressBasicType.Delete
+    ) {
+      return NO_CURSOR_MOVE_RESPONSE;
+    }
+
     if (
       nextCursorIndex === 0 &&
       (keyPress.type === KeyPressBasicType.Enter ||
@@ -142,7 +185,7 @@ snippetMaster.implementTrait(KeyPressTrait, {
     ) {
       return moveCursorToSnippet();
     } else if (
-      nextCursorIndex === 1 &&
+      _.isEqual(cursor, [1, 0, 0]) &&
       keyPress.type === KeyPressBasicType.Delete
     ) {
       return moveCursorToKeyword();

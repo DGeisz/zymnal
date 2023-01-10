@@ -10,6 +10,7 @@ import { ZyPartialPersist } from "../../../zym_lib/zy_schema/zy_schema";
 import { ZymbolModule } from "../zymbol_infrastructure/zymbol_module/zymbol_module";
 import { ZymbolModuleSchema } from "../zymbol_infrastructure/zymbol_module/zymbol_module_schema";
 import { enable } from "darkreader";
+import { USING_JEST } from "../../../global_vars/testing";
 
 /* ==== MASTER ====  */
 class ZageMaster extends ZyMaster<ZageSchema> {
@@ -43,11 +44,13 @@ export class Zage extends Zyact<ZageSchema> {
     const Module = useZymponent(this.module);
 
     useEffect(() => {
-      enable({
-        brightness: 100,
-        contrast: 90,
-        sepia: 10,
-      });
+      if (!USING_JEST) {
+        enable({
+          brightness: 100,
+          contrast: 90,
+          sepia: 10,
+        });
+      }
     }, []);
 
     return (

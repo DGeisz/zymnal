@@ -52,7 +52,10 @@
     "typescript": "^4.4.2",
     "underscore": "^1.13.4",
     "web-vitals": "^2.1.0",
-    "zod": "^3.17.3"
+    "zod": "^3.17.3",
+    "cors": "^2.8.5",
+    "express": "^4.18.1",
+    "socket.io": "^4.5.2"
   },
   "scripts": {
     "start": "react-app-rewired start",
@@ -75,6 +78,11 @@
       "last 1 chrome version",
       "last 1 firefox version",
       "last 1 safari version"
+    ]
+  },
+  "jest": {
+    "setupFiles": [
+      "./src/setupTests.js"
     ]
   },
   "devDependencies": {

@@ -546,6 +546,13 @@ export class ZymbolFrame extends Zyact<ZymbolFrameSchema, FrameRenderProps> {
       })();
     }, [frameTex, vimiumActive, vimiumChars]);
 
+    const selectEmptyZocket = () => {
+      this.callZ(ZyGodMethod.takeCursor, [
+        ...this.baseZocket.getFullCursorPointer(),
+        0,
+      ]);
+    };
+
     if (this.actions.length > 0) {
       let selectedTex: string;
 
@@ -616,6 +623,7 @@ export class ZymbolFrame extends Zyact<ZymbolFrameSchema, FrameRenderProps> {
               inlineTex={this.inlineTex}
               className={texClass ?? undefined}
               defaultText={this.defaultText}
+              onEmptyClick={selectEmptyZocket}
             />
           </div>
           <div className="relative">
@@ -654,6 +662,7 @@ export class ZymbolFrame extends Zyact<ZymbolFrameSchema, FrameRenderProps> {
               inlineTex={this.inlineTex}
               className={texClass ?? undefined}
               defaultText={this.defaultText}
+              onEmptyClick={selectEmptyZocket}
             />
           </div>
         </div>

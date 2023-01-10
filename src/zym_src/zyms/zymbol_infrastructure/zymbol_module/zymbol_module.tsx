@@ -51,9 +51,11 @@ import {
 import Modal from "react-modal";
 import { ZymbolFrameMethod } from "../zymbol_frame/zymbol_frame_schema";
 import { SnippetModal, snippetActionFactory } from "./snippets/snippet_modal";
-import mod from "zod/lib";
+import { USING_JEST } from "../../../../global_vars/testing";
 
-Modal.setAppElement("#root");
+if (!USING_JEST) {
+  Modal.setAppElement("#root");
+}
 
 const LF_UNICODE = "\u000A";
 
@@ -568,6 +570,7 @@ export class ZymbolModule extends Zyact<ZymbolModuleSchema> {
   ): Promise<CursorMoveResponse> => {
     const { nextCursorIndex, childRelativeCursor } = extractCursorInfo(cursor);
 
+    /* Need to take the snippet modal into account */
     if (nextCursorIndex >= 0) {
       const child: Zym<any, any> = this.children[nextCursorIndex];
 
@@ -584,7 +587,8 @@ export class ZymbolModule extends Zyact<ZymbolModuleSchema> {
           );
         });
       } else {
-        if (nextCursorIndex < this.children.length - 1) {
+        /* We only want to handle module lines here */
+        if (nextCursorIndex < this.children.length - 2) {
           const downChild = this.children[nextCursorIndex + 1];
 
           const childCursor = unwrapOption(

@@ -120,7 +120,6 @@ export class ZyGod extends Zentinel<ZyGodSchema> {
         this.basicHandleKeyPress(keyPress);
       },
       takeCursor: async (cursor) => {
-        console.log("Got take cursor cmd", cursor);
         this.handleCursorChange(cursor);
       },
       getFullCursor: async () => {
@@ -269,7 +268,6 @@ export class ZyGod extends Zentinel<ZyGodSchema> {
   };
 
   private handleCursorChange = (newCursor: Cursor) => {
-    console.log("\n\n cursor render", newCursor);
     this.root?.call(CursorCommandTrait.cursorRender, {
       oldCursor: zySome(this.cursor),
       newCursor: zySome(newCursor),

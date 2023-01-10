@@ -150,6 +150,26 @@ export function getLastZymInCursorWithId<Z extends Zym>(
   }
 }
 
+export function getAllZymWithId<Z extends Zym>(
+  root: Zym,
+  cursor: Cursor,
+  id: ZyId
+): Z[] {
+  const allZ: Z[] = [];
+  let currZym = root;
+
+  for (const i of cursor) {
+    if (currZym.getMasterId() === id) {
+      allZ.push(currZym as Z);
+    }
+
+    currZym = currZym.children[i];
+    if (currZym === undefined) break;
+  }
+
+  return allZ;
+}
+
 export function extractCursorInfo(cursor: Cursor): CursorInfo {
   if (cursor.length === 1) {
     return {
