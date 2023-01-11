@@ -9,13 +9,15 @@ import { stdLibZentinel } from "./std_lib/std_lib_zentinel";
 import { superSubTransform } from "./equation_transformers/super_sub_transform/super_sub_transform";
 import { groupTransformer } from "./equation_transformers/group_transformer/group_transform";
 import { equationExpander } from "./input_transformers/equation_expander";
-import { matrixTransformer } from "./matrix_transformer/matrix_transformer";
+import { matrixTransformer } from "./equation_transformers/matrix_transformer/matrix_transformer";
+import { placeholderTransformer } from "./snippet_transformers/placeholder_transformer";
 
 export const stdEquationTransformers: Zentinel<any>[] = [
   inPlaceSymbols,
   dotModifiers,
   parenthesisModifiers,
   functionTransformer,
+  placeholderTransformer,
   matrixTransformer,
   fractionTransformer,
   superSubTransform,

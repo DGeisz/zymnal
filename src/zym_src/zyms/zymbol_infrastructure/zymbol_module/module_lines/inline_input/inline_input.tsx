@@ -69,6 +69,7 @@ export class InlineInput extends Zyact<InlineInputSchema> {
     const baseTex = this.inputFrame.baseZocket
       .renderTex({
         cursor: [],
+        baseZocketRelativeCursor: [],
         excludeHtmlIds: true,
         inlineTex: true,
         copyTex: true,

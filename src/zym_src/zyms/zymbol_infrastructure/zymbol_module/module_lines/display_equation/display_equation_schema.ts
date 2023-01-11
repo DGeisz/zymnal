@@ -23,6 +23,6 @@ export type DisplayEquationSchema = CreateZySchema<
 export function displayEquationTypeFilters() {
   return [
     STD_TRANSFORMER_TYPE_FILTERS.EQUATION,
-    STD_TRANSFORMER_TYPE_FILTERS.SNIPPETS,
+    STD_TRANSFORMER_TYPE_FILTERS.USE_SNIPPETS,
   ];
 }

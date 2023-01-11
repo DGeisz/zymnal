@@ -10,7 +10,7 @@ import {
   Cursor,
   CursorIndex,
   CursorMoveResponse,
-  FAILED_CURSOR_MOVE_RESPONSE,
+  NO_CURSOR_MOVE_RESPONSE,
 } from "../../../../../zym_lib/zy_god/cursor/cursor";
 import { ZymbolDirection } from "../../../../../zym_lib/zy_god/event_handler/key_press";
 import { BasicContext } from "../../../../../zym_lib/utils/basic_context";
@@ -94,26 +94,26 @@ export class SymbolZymbol extends Zymbol<SymbolZymbolSchema> {
     );
   };
 
-  moveCursorLeft = (_cursor: Cursor) => FAILED_CURSOR_MOVE_RESPONSE;
-  takeCursorFromLeft = () => FAILED_CURSOR_MOVE_RESPONSE;
-  moveCursorRight = (_cursor: Cursor) => FAILED_CURSOR_MOVE_RESPONSE;
-  takeCursorFromRight = () => FAILED_CURSOR_MOVE_RESPONSE;
+  moveCursorLeft = (_cursor: Cursor) => NO_CURSOR_MOVE_RESPONSE;
+  takeCursorFromLeft = () => NO_CURSOR_MOVE_RESPONSE;
+  moveCursorRight = (_cursor: Cursor) => NO_CURSOR_MOVE_RESPONSE;
+  takeCursorFromRight = () => NO_CURSOR_MOVE_RESPONSE;
 
   moveCursorUp = (_cursor: Cursor, _ctx: BasicContext): CursorMoveResponse =>
-    FAILED_CURSOR_MOVE_RESPONSE;
+    NO_CURSOR_MOVE_RESPONSE;
   captureArrowUp = (
     _fromSide: ZymbolDirection,
     _ctx: BasicContext
-  ): CursorMoveResponse => FAILED_CURSOR_MOVE_RESPONSE;
+  ): CursorMoveResponse => NO_CURSOR_MOVE_RESPONSE;
   moveCursorDown = (_cursor: Cursor, _ctx: BasicContext): CursorMoveResponse =>
-    FAILED_CURSOR_MOVE_RESPONSE;
+    NO_CURSOR_MOVE_RESPONSE;
   captureArrowDown = (
     _fromSide: ZymbolDirection,
     _ctx: BasicContext
-  ): CursorMoveResponse => FAILED_CURSOR_MOVE_RESPONSE;
+  ): CursorMoveResponse => NO_CURSOR_MOVE_RESPONSE;
 
   addCharacter = (_character: string, _cursor: Cursor) =>
-    FAILED_CURSOR_MOVE_RESPONSE;
+    NO_CURSOR_MOVE_RESPONSE;
 
   renderTex = (opts: ZymbolRenderArgs) => {
     const { excludeHtmlIds } = opts;
@@ -135,7 +135,7 @@ export class SymbolZymbol extends Zymbol<SymbolZymbolSchema> {
   getDeleteBehavior = () => deleteBehaviorNormal(DeleteBehaviorType.ALLOWED);
 
   delete(_cursor: Cursor, _ctx: BasicContext): CursorMoveResponse {
-    return FAILED_CURSOR_MOVE_RESPONSE;
+    return NO_CURSOR_MOVE_RESPONSE;
   }
 
   persistData() {

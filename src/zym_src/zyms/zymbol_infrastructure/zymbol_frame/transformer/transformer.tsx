@@ -105,6 +105,7 @@ export type KeyPressValidator = (keyPress: ZymKeyPress) => boolean;
 
 export const PREVIEW_TEX_RENDER_OPTS: ZymbolRenderArgs = {
   cursor: [],
+  baseZocketRelativeCursor: [],
   inlineTex: false,
   excludeHtmlIds: true,
 };
@@ -124,6 +125,9 @@ export class BasicZymbolTreeTransformation extends ZymbolTreeTransformation {
       cursor: Cursor;
       priority: ZymbolTreeTransformationPriority;
     },
+    /* Checks if keypress can be used to confirm transformation
+    (Return false if you want to reprocess the new string) 
+    */
     keyPressValidator?: KeyPressValidator
   ) {
     super();

@@ -430,6 +430,7 @@ export class ZymbolFrame extends Zyact<ZymbolFrameSchema, FrameRenderProps> {
 
     let frameTex = this.baseZocket.renderTex({
       cursor: zocketCursor,
+      baseZocketRelativeCursor: zocketCursor,
       inlineTex: this.inlineTex,
     });
 
@@ -558,6 +559,7 @@ export class ZymbolFrame extends Zyact<ZymbolFrameSchema, FrameRenderProps> {
 
       frameTex = this.baseZocket.renderTex({
         cursor: zocketCursor,
+        baseZocketRelativeCursor: zocketCursor,
         inlineTex: this.inlineTex,
         onlyUseLatexCaret: true,
       });
@@ -572,6 +574,7 @@ export class ZymbolFrame extends Zyact<ZymbolFrameSchema, FrameRenderProps> {
 
           selectedTex = newRoot.renderTex({
             cursor: actionPreview.cursor,
+            baseZocketRelativeCursor: actionPreview.cursor,
             inlineTex: this.inlineTex,
           });
         } else {
@@ -727,7 +730,7 @@ export class ZymbolFrame extends Zyact<ZymbolFrameSchema, FrameRenderProps> {
     const framePointer = this.getFullCursorPointer();
 
     /* We can probably get undo/redo info directly from the transformation */
-    if (keyPressContext)
+    if (keyPressContext) {
       addZymChangeLink<ZymbolFrameSchema>(keyPressContext, {
         zymLocation: framePointer,
         beforeChange: {
@@ -741,6 +744,7 @@ export class ZymbolFrame extends Zyact<ZymbolFrameSchema, FrameRenderProps> {
           },
         },
       });
+    }
 
     this.setNewActions([]);
 
@@ -800,6 +804,7 @@ zymbolFrameMaster.implementTrait(KeyPressTrait, {
     ) {
       let tex = frame.baseZocket.renderTex({
         cursor: [],
+        baseZocketRelativeCursor: [],
         excludeHtmlIds: true,
         inlineTex: frame.inlineTex,
       });
@@ -869,6 +874,11 @@ zymbolFrameMaster.implementTrait(KeyPressTrait, {
             if (action.handleKeyPress(keyPress)) {
               return successfulMoveResponse(cursor);
             } else if (action.checkKeypressConfirms(keyPress)) {
+              // @ts-ignore
+              if (window.w) {
+                debugger;
+              }
+
               const move = frame.runSelectedAction(keyPressContext);
 
               if (move.success) {

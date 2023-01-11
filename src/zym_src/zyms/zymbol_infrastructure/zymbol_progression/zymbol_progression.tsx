@@ -73,6 +73,7 @@ export class ZymbolProgression extends Zyact<ZymbolProgressionSchema> {
   getCopyTex = () => {
     return `$$ ${this.baseFrame.baseZocket.renderTex({
       cursor: [],
+      baseZocketRelativeCursor: [],
       excludeHtmlIds: true,
       inlineTex: false,
     })} $$`;

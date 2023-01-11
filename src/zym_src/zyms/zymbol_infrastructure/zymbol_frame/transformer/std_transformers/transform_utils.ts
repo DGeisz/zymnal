@@ -1,3 +1,4 @@
+import { join } from "path";
 import { last } from "../../../../../../global_utils/array_utils";
 import { backslash } from "../../../../../../global_utils/latex_utils";
 import { unwrapOption } from "../../../../../../zym_lib/utils/zy_option";
@@ -13,6 +14,7 @@ import { SymbolZymbol } from "../../../../zymbol/zymbols/symbol_zymbol/symbol_zy
 import { TextZymbol } from "../../../../zymbol/zymbols/text_zymbol/text_zymbol";
 import { TEXT_ZYMBOL_NAME } from "../../../../zymbol/zymbols/text_zymbol/text_zymbol_schema";
 import { ZOCKET_MASTER_ID } from "../../../../zymbol/zymbols/zocket/zocket_schema";
+import _ from "underscore";
 
 export async function getZymbol<Z extends Zymbol = Zymbol>(
   cursor: Cursor,
@@ -77,6 +79,22 @@ export function getTransformTextZymbolAndParent(
   } else {
     return { isTextZymbol: false };
   }
+}
+
+/* Modifies  */
+export function inPlaceReplaceTextWithZymbols(
+  zymbols: Zymbol | Zymbol[],
+  textIndex: CursorIndex,
+  parent: Zymbol,
+  cursor: Cursor
+): { newCursor: Cursor } {
+  zymbols = _.isArray(zymbols) ? zymbols : [zymbols];
+
+  parent.children.splice(textIndex, 1, ...zymbols);
+  const newCursor = [...cursor];
+  newCursor.splice(newCursor.length - 2, 2, textIndex + zymbols.length);
+
+  return { newCursor };
 }
 
 /* 

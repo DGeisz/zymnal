@@ -39,6 +39,8 @@ import {
 export interface ZymbolRenderArgs {
   cursor: Cursor;
   inlineTex: boolean;
+  /* This is the cursor relative to the parent frame (first index is the first pointer after the base zocket) */
+  baseZocketRelativeCursor: Cursor;
   /* Whether we only want to use Latex to create the cursor */
   onlyUseLatexCaret?: boolean;
   excludeHtmlIds?: boolean;

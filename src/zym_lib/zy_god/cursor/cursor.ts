@@ -200,6 +200,20 @@ export function wrapChildCursorResponse(
   }
 }
 
+export function getZymAtId(root: Zym, cursor: Cursor): Zym | undefined {
+  let currZym = root;
+
+  for (const i of cursor) {
+    currZym = currZym.children[i];
+
+    if (!currZym) {
+      return undefined;
+    }
+  }
+
+  return currZym;
+}
+
 export function successfulMoveResponse(
   cursorIndex: CursorIndex | Cursor
 ): CursorMoveResponse {

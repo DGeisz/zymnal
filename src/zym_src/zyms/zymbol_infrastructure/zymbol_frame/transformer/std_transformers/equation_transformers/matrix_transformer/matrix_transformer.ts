@@ -1,23 +1,23 @@
-import { Zentinel } from "../../../../../../../zym_lib/zentinel/zentinel";
+import { Zentinel } from "../../../../../../../../zym_lib/zentinel/zentinel";
 import {
   BASIC_MATRIX_WRAPPER,
   MATRIX_MAP,
   MATRIX_MAP_LABELS,
   MatrixWrapperTex,
-} from "../../../../../zymbol/zymbols/matrix_zymbol/matrix_zymbol_schema";
-import { MatrixZymbol } from "../../../../../zymbol/zymbols/matrix_zymbol/matrix_zymbol";
-import { Zocket } from "../../../../../zymbol/zymbols/zocket/zocket";
-import { ZymbolFrameMethod } from "../../../zymbol_frame_schema";
+} from "../../../../../../zymbol/zymbols/matrix_zymbol/matrix_zymbol_schema";
+import { MatrixZymbol } from "../../../../../../zymbol/zymbols/matrix_zymbol/matrix_zymbol";
+import { Zocket } from "../../../../../../zymbol/zymbols/zocket/zocket";
+import { ZymbolFrameMethod } from "../../../../zymbol_frame_schema";
 import {
   BasicZymbolTreeTransformation,
   ZymbolTransformRank,
-} from "../../transformer";
-import { STD_TRANSFORMER_TYPE_FILTERS } from "../std_transformer_type_filters";
+} from "../../../transformer";
+import { STD_TRANSFORMER_TYPE_FILTERS } from "../../std_transformer_type_filters";
 import {
   getTransformTextZymbolAndParent,
   makeHelperCursor,
   recoverAllowedCursor,
-} from "../transform_utils";
+} from "../../transform_utils";
 
 export const MATRIX_TRANSFORMER = "mat-trans";
 

@@ -59,7 +59,10 @@ export class Snippet extends Zyact<SnippetSchema> {
     }),
     new ZymbolFrame(1, this, {
       // @We don't want any transformers related to snippets
-      getTypeFilters: () => [STD_TRANSFORMER_TYPE_FILTERS.EQUATION],
+      getTypeFilters: () => [
+        STD_TRANSFORMER_TYPE_FILTERS.EQUATION,
+        STD_TRANSFORMER_TYPE_FILTERS.SNIPPET_EDITOR,
+      ],
     }),
   ];
 

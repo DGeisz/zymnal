@@ -104,7 +104,7 @@ class SnippetModalMaster extends ZyMaster<SnippetModalSchema> {
       name: "snippet-factory",
       typeFilters: [
         STD_TRANSFORMER_TYPE_FILTERS.EQUATION,
-        STD_TRANSFORMER_TYPE_FILTERS.SNIPPETS,
+        STD_TRANSFORMER_TYPE_FILTERS.USE_SNIPPETS,
       ],
       factory: async (root, cursor) => {
         const modules = getAllZymWithId<ZymbolModule>(

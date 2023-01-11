@@ -74,6 +74,7 @@ export class DisplayEquation extends Zyact<DisplayEquationSchema> {
   getCopyTex = () => {
     return `$$ ${this.baseFrame.baseZocket.renderTex({
       cursor: [],
+      baseZocketRelativeCursor: [],
       excludeHtmlIds: true,
       inlineTex: false,
       copyTex: true,
